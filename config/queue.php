@@ -73,6 +73,15 @@ return [
             'after_commit' => false,
         ],
 
+        'emails' => [
+            'driver' => 'redis',
+            'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
+            'queue' => 'emails',
+            'retry_after' => 600, // 10 minutes
+            'block_for' => null,
+            'after_commit' => false,
+        ],
+
         'deferred' => [
             'driver' => 'deferred',
         ],

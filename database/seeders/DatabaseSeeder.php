@@ -15,11 +15,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            EventSeeder::class, // Must run first to create the event
+            AdminSeeder::class,
+            RegistrationStatusSeeder::class,
+            PersonaSeeder::class,
+            MembershipSeeder::class,
+            CategoryTypeSeeder::class,
+            RegistrationCategorySeeder::class,
+            EmailTemplateSeeder::class,
+            // EventDataSeeder::class, // Skipped - needs agenda system update
+            // FileSeeder::class, // Skipped - optional
+            // SponsorSeeder::class, // Skipped - optional
+            // PartnerSeeder::class, // Skipped - optional
+            // AgendaSeeder::class, // Skipped - optional
         ]);
     }
 }

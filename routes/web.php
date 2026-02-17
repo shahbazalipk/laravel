@@ -1,7 +1,279 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\AgendaController;
+use App\Http\Controllers\Admin\RegistrationStatusController;
+use App\Http\Controllers\Admin\PersonaController;
+use App\Http\Controllers\Admin\MembershipController;
+use App\Http\Controllers\Admin\FileController;
+use App\Http\Controllers\Admin\SponsorController;
+use App\Http\Controllers\Admin\PartnerController;
+use App\Http\Controllers\Admin\ProductTypeController;
+use App\Http\Controllers\Admin\ExhibitorTagController;
+use App\Http\Controllers\Admin\BoothTypeController;
+use App\Http\Controllers\Admin\ExhibitorTypeController;
+use App\Http\Controllers\Admin\IndustryController;
+use App\Http\Controllers\Admin\BusinessActivityController;
+use App\Http\Controllers\Admin\ExhibitorController;
+use App\Http\Controllers\Admin\GroupTypeController;
+use App\Http\Controllers\Admin\GroupController;
+use App\Http\Controllers\Admin\EventSettingsController;
+use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
+use App\Http\Controllers\Admin\AgendaManagementController;
+use App\Http\Controllers\Admin\TrackController;
+use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\SpeakerController;
+use App\Http\Controllers\Admin\SessionController;
+use App\Http\Controllers\Admin\LectureController;
+use App\Http\Controllers\Admin\EmailTemplateController;
+use App\Http\Controllers\Admin\EmailCampaignController;
+use App\Http\Controllers\Admin\RecipientUploadController;
+use App\Http\Controllers\Admin\EmailWebhookController;
+use App\Http\Controllers\Admin\EmailProviderConfigController;
+use App\Http\Controllers\UnsubscribeController;
 
-Route::get('/', function () {
-    return view('welcome');
+// Base URL shows event landing page
+Route::get('/', [EventController::class, 'landing'])->name('event.landing');
+
+// Public Registration Routes
+Route::prefix('register')->name('registration.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\RegistrationController::class, 'showForm'])->name('form');
+    Route::post('/', [\App\Http\Controllers\RegistrationController::class, 'store'])->name('store');
+    Route::get('/category/{category}', [\App\Http\Controllers\RegistrationController::class, 'getCategoryDetails'])->name('category.details');
+    Route::post('/validate-step', [\App\Http\Controllers\RegistrationController::class, 'validateStep'])->name('validate-step');
+    Route::get('/confirmation/{hash}', [\App\Http\Controllers\RegistrationController::class, 'confirmation'])->name('confirmation');
+    Route::get('/verify-email/{token}', [\App\Http\Controllers\RegistrationController::class, 'verifyEmail'])->name('verify-email');
 });
+
+// Admin authentication routes
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // Protected admin routes
+    Route::middleware(['event.admin'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::resource('categories', CategoryController::class);
+        Route::resource('agenda', AgendaController::class);
+        
+        // Parameters
+        Route::resource('registration-statuses', RegistrationStatusController::class);
+        Route::post('registration-statuses/{registrationStatus}/toggle', [RegistrationStatusController::class, 'toggleActive'])
+            ->name('registration-statuses.toggle');
+        
+        Route::resource('personas', PersonaController::class);
+        Route::post('personas/{persona}/toggle', [PersonaController::class, 'toggleActive'])
+            ->name('personas.toggle');
+        
+        // Category Types
+        Route::resource('category-types', \App\Http\Controllers\Admin\CategoryTypeController::class);
+        Route::post('category-types/{categoryType}/toggle', [\App\Http\Controllers\Admin\CategoryTypeController::class, 'toggleActive'])
+            ->name('category-types.toggle');
+        
+        // Product Types
+        Route::resource('product-types', ProductTypeController::class);
+        Route::patch('product-types/{productType}/toggle-active', [ProductTypeController::class, 'toggleActive'])
+            ->name('product-types.toggle-active');
+        
+        // Exhibitor Tags
+        Route::resource('exhibitor-tags', ExhibitorTagController::class);
+        Route::patch('exhibitor-tags/{exhibitorTag}/toggle-active', [ExhibitorTagController::class, 'toggleActive'])
+            ->name('exhibitor-tags.toggle-active');
+        
+        // Booth Types
+        Route::resource('booth-types', BoothTypeController::class);
+        Route::patch('booth-types/{boothType}/toggle-active', [BoothTypeController::class, 'toggleActive'])
+            ->name('booth-types.toggle-active');
+        
+        // Exhibitor Types
+        Route::resource('exhibitor-types', ExhibitorTypeController::class);
+        Route::patch('exhibitor-types/{exhibitorType}/toggle-active', [ExhibitorTypeController::class, 'toggleActive'])
+            ->name('exhibitor-types.toggle-active');
+        
+        // Industries
+        Route::resource('industries', IndustryController::class);
+        Route::patch('industries/{industry}/toggle-active', [IndustryController::class, 'toggleActive'])
+            ->name('industries.toggle-active');
+        
+        // Business Activities
+        Route::resource('business-activities', BusinessActivityController::class);
+        Route::patch('business-activities/{businessActivity}/toggle-active', [BusinessActivityController::class, 'toggleActive'])
+            ->name('business-activities.toggle-active');
+        
+        // Group Types
+        Route::resource('group-types', GroupTypeController::class);
+        Route::patch('group-types/{groupType}/toggle-active', [GroupTypeController::class, 'toggleActive'])
+            ->name('group-types.toggle-active');
+        
+        // Groups
+        Route::resource('groups', GroupController::class);
+        Route::patch('groups/{group}/toggle-active', [GroupController::class, 'toggleActive'])
+            ->name('groups.toggle-active');
+        Route::patch('groups/{group}/toggle-vip', [GroupController::class, 'toggleVip'])
+            ->name('groups.toggle-vip');
+        
+        // Exhibitors
+        Route::resource('exhibitors', ExhibitorController::class);
+        Route::patch('exhibitors/{exhibitor}/toggle-active', [ExhibitorController::class, 'toggleActive'])
+            ->name('exhibitors.toggle-active');
+        Route::patch('exhibitors/{exhibitor}/toggle-featured', [ExhibitorController::class, 'toggleFeatured'])
+            ->name('exhibitors.toggle-featured');
+        
+        // Sponsors
+        Route::resource('sponsors', SponsorController::class);
+        Route::post('sponsors/{sponsor}/toggle', [SponsorController::class, 'toggleActive'])
+            ->name('sponsors.toggle');
+        
+        // Partners
+        Route::resource('partners', PartnerController::class);
+        Route::post('partners/{partner}/toggle', [PartnerController::class, 'toggleActive'])
+            ->name('partners.toggle');
+        
+        // Settings
+        Route::get('event-settings', [EventSettingsController::class, 'edit'])
+            ->name('event-settings.edit');
+        Route::put('event-settings', [EventSettingsController::class, 'update'])
+            ->name('event-settings.update');
+        
+        Route::resource('memberships', MembershipController::class);
+        Route::post('memberships/{membership}/toggle', [MembershipController::class, 'toggleActive'])
+            ->name('memberships.toggle');
+        Route::post('memberships/{membership}/codes', [MembershipController::class, 'storeCode'])
+            ->name('memberships.codes.store');
+        Route::delete('memberships/{membership}/codes/{code}', [MembershipController::class, 'destroyCode'])
+            ->name('memberships.codes.destroy');
+        Route::post('memberships/{membership}/codes/import', [MembershipController::class, 'importCodes'])
+            ->name('memberships.codes.import');
+        
+        // File Manager
+        Route::resource('files', FileController::class);
+        Route::get('files/{file}/download', [FileController::class, 'download'])
+            ->name('files.download');
+        
+        // Registration Categories (Categories > List)
+        Route::resource('registration-categories', \App\Http\Controllers\Admin\RegistrationCategoryController::class);
+        Route::post('registration-categories/{registrationCategory}/types/attach', [\App\Http\Controllers\Admin\RegistrationCategoryController::class, 'attachType'])
+            ->name('registration-categories.types.attach');
+        Route::delete('registration-categories/{registrationCategory}/types/{categoryType}', [\App\Http\Controllers\Admin\RegistrationCategoryController::class, 'detachType'])
+            ->name('registration-categories.types.detach');
+        
+        // Registrations Management
+        Route::resource('registrations', AdminRegistrationController::class);
+        
+        // Check-in
+        Route::get('registrations-checkin', [AdminRegistrationController::class, 'showCheckin'])
+            ->name('registrations.checkin');
+        Route::post('registrations/{registration}/check-in', [AdminRegistrationController::class, 'checkIn'])
+            ->name('registrations.check-in');
+        
+        // Badge Printing
+        Route::get('registrations-badges', [AdminRegistrationController::class, 'showBadges'])
+            ->name('registrations.badges');
+        Route::get('registrations/{registration}/preview-badge', [AdminRegistrationController::class, 'previewBadge'])
+            ->name('registrations.preview-badge');
+        Route::post('registrations/{registration}/print-badge', [AdminRegistrationController::class, 'printBadge'])
+            ->name('registrations.print-badge');
+        Route::post('registrations-print-all-badges', [AdminRegistrationController::class, 'printAllBadges'])
+            ->name('registrations.print-all-badges');
+        
+        // Export
+        Route::get('registrations-export', [AdminRegistrationController::class, 'showExport'])
+            ->name('registrations.export-page');
+        Route::post('registrations-export', [AdminRegistrationController::class, 'export'])
+            ->name('registrations.export');
+        
+        // Other actions
+        Route::post('registrations/{registration}/resend-verification', [AdminRegistrationController::class, 'resendVerification'])
+            ->name('registrations.resend-verification');
+        
+        // Agenda Management System
+        Route::resource('agenda-management', AgendaManagementController::class)->parameters([
+            'agenda-management' => 'agenda'
+        ]);
+        Route::resource('tracks', TrackController::class);
+        Route::resource('locations', LocationController::class);
+        Route::resource('speakers', SpeakerController::class);
+        Route::resource('sessions', SessionController::class);
+        Route::resource('lectures', LectureController::class);
+        
+        // Email Campaigns System
+        Route::prefix('email-campaigns')->name('email-campaigns.')->group(function () {
+            // Templates
+            Route::resource('templates', EmailTemplateController::class)->names([
+                'index' => 'email-templates.index',
+                'create' => 'email-templates.create',
+                'store' => 'email-templates.store',
+                'show' => 'email-templates.show',
+                'edit' => 'email-templates.edit',
+                'update' => 'email-templates.update',
+                'destroy' => 'email-templates.destroy',
+            ])->parameters(['templates' => 'emailTemplate']);
+            
+            Route::post('templates/{emailTemplate}/clone', [EmailTemplateController::class, 'clone'])
+                ->name('email-templates.clone');
+            Route::get('templates/{emailTemplate}/preview', [EmailTemplateController::class, 'preview'])
+                ->name('email-templates.preview');
+            
+            // Campaigns
+            Route::resource('campaigns', EmailCampaignController::class)->names([
+                'index' => 'email-campaigns.index',
+                'create' => 'email-campaigns.create',
+                'store' => 'email-campaigns.store',
+                'show' => 'email-campaigns.show',
+                'edit' => 'email-campaigns.edit',
+                'update' => 'email-campaigns.update',
+                'destroy' => 'email-campaigns.destroy',
+            ])->parameters(['campaigns' => 'emailCampaign']);
+            
+            Route::post('campaigns/{emailCampaign}/send', [EmailCampaignController::class, 'send'])
+                ->name('email-campaigns.send');
+            Route::post('campaigns/{emailCampaign}/pause', [EmailCampaignController::class, 'pause'])
+                ->name('email-campaigns.pause');
+            Route::post('campaigns/{emailCampaign}/resume', [EmailCampaignController::class, 'resume'])
+                ->name('email-campaigns.resume');
+            Route::post('campaigns/{emailCampaign}/cancel', [EmailCampaignController::class, 'cancel'])
+                ->name('email-campaigns.cancel');
+            
+            // Recipient Upload
+            Route::get('campaigns/{emailCampaign}/recipients/upload', [RecipientUploadController::class, 'create'])
+                ->name('email-campaigns.recipients.create');
+            Route::post('campaigns/{emailCampaign}/recipients/upload', [RecipientUploadController::class, 'store'])
+                ->name('email-campaigns.recipients.store');
+            Route::get('campaigns/{emailCampaign}/recipients/preview', [RecipientUploadController::class, 'preview'])
+                ->name('email-campaigns.recipients.preview');
+            Route::post('campaigns/{emailCampaign}/recipients/confirm', [RecipientUploadController::class, 'confirm'])
+                ->name('email-campaigns.recipients.confirm');
+            
+            // Provider Configurations
+            Route::resource('provider-configs', EmailProviderConfigController::class)->names([
+                'index' => 'provider-configs.index',
+                'create' => 'provider-configs.create',
+                'store' => 'provider-configs.store',
+                'edit' => 'provider-configs.edit',
+                'update' => 'provider-configs.update',
+                'destroy' => 'provider-configs.destroy',
+            ])->parameters(['provider-configs' => 'providerConfig']);
+            
+            Route::post('provider-configs/{providerConfig}/test', [EmailProviderConfigController::class, 'test'])
+                ->name('provider-configs.test');
+        });
+    });
+});
+
+// Public unsubscribe route (no authentication required)
+Route::get('/unsubscribe/{hash}', [UnsubscribeController::class, 'show'])
+    ->name('email.unsubscribe');
+Route::post('/unsubscribe', [UnsubscribeController::class, 'store'])
+    ->name('email.unsubscribe.store');
+
+// Email provider webhook routes (no authentication, signature validation in controller)
+Route::post('/event/webhooks/infobip', [EmailWebhookController::class, 'infobip'])
+    ->name('webhooks.email.infobip');
+Route::post('/event/webhooks/mailchimp', [EmailWebhookController::class, 'mailchimp'])
+    ->name('webhooks.email.mailchimp');
+
