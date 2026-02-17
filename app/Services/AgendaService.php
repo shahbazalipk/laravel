@@ -17,6 +17,16 @@ class AgendaService
             ->orderBy('start_date', 'desc')
             ->get();
     }
+    /**
+     * Get all agenda items (sessions)
+     */
+    public function getAllAgendaItems(): Collection
+    {
+        return \App\Models\Session::with(['track', 'location', 'speakers'])
+            ->orderBy('start_time')
+            ->get();
+    }
+
 
     /**
      * Create a new agenda

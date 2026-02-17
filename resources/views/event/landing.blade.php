@@ -39,9 +39,15 @@
                 </div>
                 <div class="hidden md:flex space-x-8">
                     <a href="#about" class="text-gray-700 hover:text-primary transition">About</a>
-                    <a href="#agenda" class="text-gray-700 hover:text-primary transition">Agenda</a>
-                    <a href="#speakers" class="text-gray-700 hover:text-primary transition">Speakers</a>
-                    <a href="#sponsors" class="text-gray-700 hover:text-primary transition">Sponsors</a>
+                    @if($agendaItems->isNotEmpty())
+                        <a href="#agenda" class="text-gray-700 hover:text-primary transition">Agenda</a>
+                    @endif
+                    @if($speakers->isNotEmpty())
+                        <a href="#speakers" class="text-gray-700 hover:text-primary transition">Speakers</a>
+                    @endif
+                    @if($sponsors->isNotEmpty())
+                        <a href="#sponsors" class="text-gray-700 hover:text-primary transition">Sponsors</a>
+                    @endif
                     <a href="#register" class="bg-primary text-white px-6 py-2 rounded-lg hover:opacity-90 transition">Register Now</a>
                 </div>
                 <button class="md:hidden text-gray-700">
@@ -85,9 +91,11 @@
                     <a href="#register" class="bg-white text-primary px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition shadow-lg">
                         Register Now
                     </a>
-                    <a href="#agenda" class="bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/20 transition border-2 border-white/30">
-                        View Agenda
-                    </a>
+                    @if($agendaItems->isNotEmpty())
+                        <a href="#agenda" class="bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/20 transition border-2 border-white/30">
+                            View Agenda
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -109,7 +117,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">500+</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ $event->expected_attendees ?? 'TBA' }}</h3>
                     <p class="text-gray-600">Expected Attendees</p>
                 </div>
                 <div class="text-center p-6">
@@ -135,6 +143,7 @@
     </section>
 
     <!-- Event Tracks -->
+    @if($tracks->isNotEmpty())
     <section class="py-16 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
@@ -142,32 +151,34 @@
                 <p class="text-xl text-gray-600">Explore diverse topics across multiple tracks</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                @forelse($categories as $category)
-                    <div class="bg-white rounded-xl shadow-lg p-8 border-t-4 hover:shadow-xl transition" style="border-color: {{ $category->color }}">
-                        <div class="w-12 h-12 rounded-lg mb-4 flex items-center justify-center" style="background-color: {{ $category->color }}20">
-                            <svg class="w-6 h-6" style="color: {{ $category->color }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                @foreach($tracks as $track)
+                    <div class="bg-white rounded-xl shadow-lg p-8 border-t-4 hover:shadow-xl transition" style="border-color: {{ $track->color ?? $event->primary_color }}">
+                        <div class="w-12 h-12 rounded-lg mb-4 flex items-center justify-center" style="background-color: {{ $track->color ?? $event->primary_color }}20">
+                            <svg class="w-6 h-6" style="color: {{ $track->color ?? $event->primary_color }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-3">{{ $category->name }}</h3>
-                        <p class="text-gray-600 mb-4">{{ $category->description }}</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">{{ $track->name }}</h3>
+                        @if($track->description)
+                            <p class="text-gray-600 mb-4">{{ $track->description }}</p>
+                        @endif
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium" style="color: {{ $category->color }}">
-                                {{ $category->agendaItems->count() }} Sessions
+                            <span class="text-sm font-medium" style="color: {{ $track->color ?? $event->primary_color }}">
+                                {{ $agendaItems->where('track_id', $track->id)->count() }} Sessions
                             </span>
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
                         </div>
                     </div>
-                @empty
-                    <p class="text-gray-500 col-span-3 text-center">No tracks available yet.</p>
-                @endforelse
+                @endforeach
             </div>
         </div>
     </section>
+    @endif
 
     <!-- Agenda Section -->
+    @if($agendaItems->isNotEmpty())
     <section id="agenda" class="py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
@@ -175,8 +186,8 @@
                 <p class="text-xl text-gray-600">Detailed schedule of sessions and activities</p>
             </div>
             <div class="space-y-4">
-                @forelse($agendaItems as $item)
-                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition overflow-hidden border-l-4" style="border-color: {{ $item->category->color ?? $event->primary_color }}">
+                @foreach($agendaItems as $item)
+                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition overflow-hidden border-l-4" style="border-color: {{ $item->track->color ?? $event->primary_color }}">
                         <div class="p-6">
                             <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                                 <div class="flex-1">
@@ -184,12 +195,7 @@
                                         <span class="text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded">
                                             {{ $item->start_time->format('g:i A') }}
                                         </span>
-                                        @if($item->is_featured)
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                ⭐ Featured
-                                            </span>
-                                        @endif
-                                        @if($item->is_break)
+                                        @if($item->type === 'break')
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                 ☕ Break
                                             </span>
@@ -204,50 +210,48 @@
                                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                             </svg>
-                                            {{ $item->duration }} min
+                                            {{ $item->start_time->diffInMinutes($item->end_time) }} min
                                         </div>
-                                        @if($item->category)
+                                        @if($item->track)
                                             <div class="flex items-center">
-                                                <span class="w-3 h-3 rounded-full mr-1" style="background-color: {{ $item->category->color }}"></span>
-                                                {{ $item->category->name }}
+                                                <span class="w-3 h-3 rounded-full mr-1" style="background-color: {{ $item->track->color }}"></span>
+                                                {{ $item->track->name }}
                                             </div>
                                         @endif
-                                        @if($item->level)
+                                        @if($item->location)
                                             <div class="flex items-center">
                                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                                 </svg>
-                                                {{ $item->level }}
+                                                {{ $item->location->name }}
                                             </div>
                                         @endif
-                                        @if($item->capacity)
+                                        @if($item->max_attendees)
                                             <div class="flex items-center">
                                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                                 </svg>
-                                                {{ $item->capacity }} seats
+                                                {{ $item->max_attendees }} seats
                                             </div>
                                         @endif
                                     </div>
                                 </div>
                                 <div class="mt-4 md:mt-0 md:ml-6">
                                     <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-primary/10 text-primary">
-                                        {{ ucfirst($item->session_type) }}
+                                        {{ ucfirst($item->type) }}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                @empty
-                    <div class="text-center py-12 text-gray-500">
-                        No agenda items available yet.
-                    </div>
-                @endforelse
+                @endforeach
             </div>
         </div>
     </section>
+    @endif
 
     <!-- Speakers Section -->
+    @if($speakers->isNotEmpty())
     <section id="speakers" class="py-16 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
@@ -255,19 +259,36 @@
                 <p class="text-xl text-gray-600">Learn from industry experts and thought leaders</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                @for($i = 1; $i <= 4; $i++)
+                @foreach($speakers as $speaker)
                     <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden">
-                        <div class="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20"></div>
+                        @if($speaker->profile_image)
+                            <div class="aspect-square bg-cover bg-center" style="background-image: url('{{ $speaker->profile_image }}')"></div>
+                        @else
+                            <div class="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                                <svg class="w-24 h-24 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </svg>
+                            </div>
+                        @endif
                         <div class="p-6 text-center">
-                            <h3 class="text-xl font-bold text-gray-900 mb-1">Speaker Name</h3>
-                            <p class="text-sm text-gray-600 mb-2">Title & Company</p>
-                            <p class="text-sm text-gray-500">Expert in Technology</p>
+                            <h3 class="text-xl font-bold text-gray-900 mb-1">{{ $speaker->full_name }}</h3>
+                            @if($speaker->job_title || $speaker->company)
+                                <p class="text-sm text-gray-600 mb-2">
+                                    @if($speaker->job_title){{ $speaker->job_title }}@endif
+                                    @if($speaker->job_title && $speaker->company) at @endif
+                                    @if($speaker->company){{ $speaker->company }}@endif
+                                </p>
+                            @endif
+                            @if($speaker->bio)
+                                <p class="text-sm text-gray-500 line-clamp-2">{{ $speaker->bio }}</p>
+                            @endif
                         </div>
                     </div>
-                @endfor
+                @endforeach
             </div>
         </div>
     </section>
+    @endif
 
     <!-- Registration CTA -->
     <section id="register" class="py-20 gradient-primary text-white">
@@ -282,6 +303,7 @@
     </section>
 
     <!-- Sponsors Section -->
+    @if($sponsors->isNotEmpty())
     <section id="sponsors" class="py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
@@ -289,14 +311,19 @@
                 <p class="text-xl text-gray-600">Supported by leading organizations</p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-                @for($i = 1; $i <= 8; $i++)
+                @foreach($sponsors as $sponsor)
                     <div class="bg-gray-50 rounded-lg p-8 flex items-center justify-center hover:shadow-md transition">
-                        <div class="text-gray-400 font-bold text-lg">SPONSOR {{ $i }}</div>
+                        @if($sponsor->logo_thumbnail || $sponsor->logo_defined_size)
+                            <img src="{{ $sponsor->logo_thumbnail ?? $sponsor->logo_defined_size }}" alt="{{ $sponsor->name }}" class="max-h-16 max-w-full object-contain">
+                        @else
+                            <div class="text-gray-400 font-bold text-lg text-center">{{ $sponsor->name }}</div>
+                        @endif
                     </div>
-                @endfor
+                @endforeach
             </div>
         </div>
     </section>
+    @endif
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-white py-12">
@@ -310,8 +337,12 @@
                     <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
                     <ul class="space-y-2 text-gray-400 text-sm">
                         <li><a href="#about" class="hover:text-white transition">About</a></li>
-                        <li><a href="#agenda" class="hover:text-white transition">Agenda</a></li>
-                        <li><a href="#speakers" class="hover:text-white transition">Speakers</a></li>
+                        @if($agendaItems->isNotEmpty())
+                            <li><a href="#agenda" class="hover:text-white transition">Agenda</a></li>
+                        @endif
+                        @if($speakers->isNotEmpty())
+                            <li><a href="#speakers" class="hover:text-white transition">Speakers</a></li>
+                        @endif
                         <li><a href="#register" class="hover:text-white transition">Register</a></li>
                     </ul>
                 </div>
