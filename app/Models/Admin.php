@@ -14,6 +14,9 @@ class Admin extends Model
         'name',
         'email',
         'password',
+        'organization_id',
+        'event_id',
+        'last_login_at',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -24,9 +27,15 @@ class Admin extends Model
         'remember_token',
     ];
 
+    protected $casts = [
+        'last_login_at' => 'datetime',
+    ];
+
     public function setPasswordAttribute($value)
     {
-        $this->attributes['password'] = Hash::make($value);
+        if ($value) {
+            $this->attributes['password'] = Hash::make($value);
+        }
     }
 
     public function checkPassword(string $password): bool
