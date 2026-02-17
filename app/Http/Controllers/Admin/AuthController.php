@@ -94,10 +94,11 @@ class AuthController extends Controller
             }
             
             // Check if user is active
-            if (!$orgUser->is_active) {
+            if (!$orgUser->isActive()) {
                 Log::warning('SSO login attempt by inactive user', [
                     'user_id' => $orgUser->id,
-                    'email' => $orgUser->email
+                    'email' => $orgUser->email,
+                    'status' => $orgUser->status
                 ]);
                 
                 return redirect()->route('admin.login')
