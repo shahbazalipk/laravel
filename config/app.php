@@ -56,18 +56,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Organization Portal URL
-    |--------------------------------------------------------------------------
-    |
-    | This URL is used for SSO authentication with the main organization portal.
-    | The event subdomain will validate SSO tokens against this URL.
-    |
-    */
-
-    'org_portal_url' => env('ORG_PORTAL_URL', 'https://app.glimzo.ai'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
