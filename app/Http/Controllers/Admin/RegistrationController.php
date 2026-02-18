@@ -287,7 +287,21 @@ class RegistrationController extends Controller
             'postal_code' => 'nullable|string|max:20',
             'country' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            // Delete old profile picture if exists
+            if ($registration->profile_picture) {
+                \Storage::disk('public')->delete($registration->profile_picture);
+            }
+            
+            $file = $request->file('profile_picture');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('registrations/profiles', $filename, 'public');
+            $validated['profile_picture'] = $path;
+        }
 
         $registration->update($validated);
 

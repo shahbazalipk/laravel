@@ -162,7 +162,7 @@
 
                         <!-- Settings -->
                         <div class="dropdown relative">
-                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/files*') || request()->is('admin/memberships*') ? 'bg-indigo-800' : '' }}">
+                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/files*') || request()->is('admin/memberships*') || request()->is('admin/event-urls*') || request()->is('admin/badge-designs*') || request()->is('admin/gallery*') ? 'bg-indigo-800' : '' }}">
                                 Settings
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -170,6 +170,9 @@
                             </button>
                             <div class="dropdown-menu hidden absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Event Settings</a>
+                                <a href="{{ route('admin.event-urls.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">URLs</a>
+                                <a href="{{ route('admin.badge-designs.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Badge Designs</a>
+                                <a href="{{ route('admin.gallery.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Gallery</a>
                                 <a href="{{ route('admin.files.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">File Manager</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Ads Management</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Email Templates</a>
@@ -260,6 +263,9 @@
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Settings</p>
                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Event Settings</a>
+                <a href="{{ route('admin.event-urls.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">URLs</a>
+                <a href="{{ route('admin.badge-designs.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Badge Designs</a>
+                <a href="{{ route('admin.gallery.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Gallery</a>
                 <a href="{{ route('admin.files.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">File Manager</a>
                 
                 <div class="border-t border-indigo-700 my-2"></div>

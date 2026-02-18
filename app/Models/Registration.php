@@ -23,6 +23,7 @@ class Registration extends Model
         'first_name',
         'last_name',
         'email',
+        'profile_picture',
         'phone',
         'mobile_phone',
         'job_title',
@@ -101,6 +102,11 @@ class Registration extends Model
     ];
 
     // Relationships
+    public function event()
+    {
+        return $this->belongsTo(Event::class);
+    }
+
     public function registrationCategory()
     {
         return $this->belongsTo(RegistrationCategory::class);

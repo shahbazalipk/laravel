@@ -59,9 +59,9 @@
                         id="registration_type"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('registration_type') border-red-500 @enderror"
                         required>
-                    <option value="individual" {{ old('registration_type') == 'individual' ? 'selected' : '' }}>Individual</option>
-                    <option value="exhibitor" {{ old('registration_type') == 'exhibitor' ? 'selected' : '' }}>Exhibitor</option>
-                    <option value="group" {{ old('registration_type') == 'group' ? 'selected' : '' }}>Group</option>
+                    <option value="individual" {{ old('registration_type', $registration->registration_type) == 'individual' ? 'selected' : '' }}>Individual</option>
+                    <option value="exhibitor" {{ old('registration_type', $registration->registration_type) == 'exhibitor' ? 'selected' : '' }}>Exhibitor</option>
+                    <option value="group" {{ old('registration_type', $registration->registration_type) == 'group' ? 'selected' : '' }}>Group</option>
                 </select>
                 @error('registration_type')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -150,7 +150,7 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     <option value="">Select exhibitor</option>
                     @foreach($exhibitors as $exhibitor)
-                        <option value="{{ $exhibitor->id }}" {{ old('exhibitor_id') == $exhibitor->id ? 'selected' : '' }}>
+                        <option value="{{ $exhibitor->id }}" {{ old('exhibitor_id', $registration->exhibitor_id) == $exhibitor->id ? 'selected' : '' }}>
                             {{ $exhibitor->company_name }}
                         </option>
                     @endforeach
@@ -166,7 +166,7 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     <option value="">Select group</option>
                     @foreach($groups as $group)
-                        <option value="{{ $group->id }}" {{ old('group_id') == $group->id ? 'selected' : '' }}>
+                        <option value="{{ $group->id }}" {{ old('group_id', $registration->group_id) == $group->id ? 'selected' : '' }}>
                             {{ $group->group_name }}
                         </option>
                     @endforeach
@@ -176,6 +176,29 @@
 
         <!-- Personal Information -->
         <h3 class="text-lg font-semibold text-gray-800 mb-4 mt-8">Personal Information</h3>
+        
+        <!-- Profile Picture -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+            @if($registration->profile_picture)
+                <div class="mb-4">
+                    <img src="{{ asset('storage/' . $registration->profile_picture) }}" 
+                         alt="Current profile picture" 
+                         class="w-32 h-32 rounded-full object-cover border-4 border-gray-200">
+                    <p class="text-xs text-gray-500 mt-2">Current profile picture</p>
+                </div>
+            @endif
+            <input type="file" 
+                   name="profile_picture" 
+                   id="profile_picture" 
+                   accept="image/*"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('profile_picture') border-red-500 @enderror">
+            @error('profile_picture')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            <p class="mt-1 text-xs text-gray-500">Upload a new profile picture (JPEG, PNG, JPG - Max 2MB)</p>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div>
                 <label for="salutation" class="block text-sm font-medium text-gray-700 mb-2">
@@ -185,11 +208,11 @@
                         id="salutation"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     <option value="">Select</option>
-                    <option value="Mr" {{ old('salutation') == 'Mr' ? 'selected' : '' }}>Mr</option>
-                    <option value="Mrs" {{ old('salutation') == 'Mrs' ? 'selected' : '' }}>Mrs</option>
-                    <option value="Ms" {{ old('salutation') == 'Ms' ? 'selected' : '' }}>Ms</option>
-                    <option value="Dr" {{ old('salutation') == 'Dr' ? 'selected' : '' }}>Dr</option>
-                    <option value="Prof" {{ old('salutation') == 'Prof' ? 'selected' : '' }}>Prof</option>
+                    <option value="Mr" {{ old('salutation', $registration->salutation) == 'Mr' ? 'selected' : '' }}>Mr</option>
+                    <option value="Mrs" {{ old('salutation', $registration->salutation) == 'Mrs' ? 'selected' : '' }}>Mrs</option>
+                    <option value="Ms" {{ old('salutation', $registration->salutation) == 'Ms' ? 'selected' : '' }}>Ms</option>
+                    <option value="Dr" {{ old('salutation', $registration->salutation) == 'Dr' ? 'selected' : '' }}>Dr</option>
+                    <option value="Prof" {{ old('salutation', $registration->salutation) == 'Prof' ? 'selected' : '' }}>Prof</option>
                 </select>
             </div>
 
@@ -200,7 +223,7 @@
                 <input type="text" 
                        name="first_name" 
                        id="first_name" 
-                       value="{{ old('first_name') }}"
+                       value="{{ old('first_name', $registration->first_name) }}"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('first_name') border-red-500 @enderror"
                        required>
                 @error('first_name')
@@ -215,7 +238,7 @@
                 <input type="text" 
                        name="last_name" 
                        id="last_name" 
-                       value="{{ old('last_name') }}"
+                       value="{{ old('last_name', $registration->last_name) }}"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('last_name') border-red-500 @enderror"
                        required>
                 @error('last_name')
@@ -232,7 +255,7 @@
                 <input type="email" 
                        name="email" 
                        id="email" 
-                       value="{{ old('email') }}"
+                       value="{{ old('email', $registration->email) }}"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('email') border-red-500 @enderror"
                        required>
                 @error('email')
@@ -247,7 +270,7 @@
                 <input type="tel" 
                        name="phone" 
                        id="phone" 
-                       value="{{ old('phone') }}"
+                       value="{{ old('phone', $registration->phone) }}"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('phone') border-red-500 @enderror"
                        required>
                 @error('phone')
@@ -264,7 +287,7 @@
                 <input type="text" 
                        name="job_title" 
                        id="job_title" 
-                       value="{{ old('job_title') }}"
+                       value="{{ old('job_title', $registration->job_title) }}"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
             </div>
 
@@ -275,7 +298,7 @@
                 <input type="text" 
                        name="department" 
                        id="department" 
-                       value="{{ old('department') }}"
+                       value="{{ old('department', $registration->department) }}"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
             </div>
         </div>
@@ -290,7 +313,7 @@
                 <input type="text" 
                        name="company_name" 
                        id="company_name" 
-                       value="{{ old('company_name') }}"
+                       value="{{ old('company_name', $registration->company_name) }}"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('company_name') border-red-500 @enderror"
                        required>
                 @error('company_name')
@@ -307,7 +330,7 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     <option value="">Select industry</option>
                     @foreach($industries as $industry)
-                        <option value="{{ $industry->id }}" {{ old('industry_id') == $industry->id ? 'selected' : '' }}>
+                        <option value="{{ $industry->id }}" {{ old('industry_id', $registration->industry_id) == $industry->id ? 'selected' : '' }}>
                             {{ $industry->name }}
                         </option>
                     @endforeach
@@ -324,7 +347,7 @@
                       id="notes" 
                       rows="3"
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      placeholder="Add any internal notes about this registration">{{ old('notes') }}</textarea>
+                      placeholder="Add any internal notes about this registration">{{ old('notes', $registration->notes) }}</textarea>
         </div>
 
         <!-- Form Actions -->
@@ -335,7 +358,7 @@
             </a>
             <button type="submit" 
                     class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                Create Registration
+                Update Registration
             </button>
         </div>
     </form>

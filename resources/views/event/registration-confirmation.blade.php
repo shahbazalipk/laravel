@@ -8,19 +8,74 @@
 </head>
 <body class="bg-gray-50">
     <div class="min-h-screen py-12">
-        <div class="max-w-3xl mx-auto px-4">
+        <div class="max-w-4xl mx-auto px-4">
+            <!-- Event Header with Branding -->
+            <div class="bg-white shadow-lg rounded-lg mb-6 overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6 text-white">
+                    <h1 class="text-3xl font-bold">{{ $event->title }}</h1>
+                    <p class="mt-2 text-indigo-100">{{ $event->seo_description ?? 'Join us for an amazing event experience' }}</p>
+                </div>
+                
+                <div class="px-8 py-6 bg-gray-50 border-b border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Event Dates -->
+                        <div class="flex items-start">
+                            <svg class="w-6 h-6 text-indigo-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Event Date</p>
+                                <p class="text-sm text-gray-900 font-semibold">
+                                    {{ $event->start_date->format('M d, Y') }}
+                                    @if($event->end_date && !$event->start_date->isSameDay($event->end_date))
+                                        - {{ $event->end_date->format('M d, Y') }}
+                                    @endif
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $event->start_date->format('g:i A') }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="flex items-start">
+                            <svg class="w-6 h-6 text-indigo-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Location</p>
+                                <p class="text-sm text-gray-900 font-semibold">{{ $event->location }}</p>
+                                @if($event->country)
+                                    <p class="text-xs text-gray-500 mt-1">{{ $event->country }}</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Event Type -->
+                        <div class="flex items-start">
+                            <svg class="w-6 h-6 text-indigo-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Event Format</p>
+                                <p class="text-sm text-gray-900 font-semibold capitalize">{{ $event->format ?? $event->event_mode }}</p>
+                                @if($event->type)
+                                    <p class="text-xs text-gray-500 mt-1 capitalize">{{ $event->type }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Success Header -->
             <div class="text-center mb-8">
-                @if($event->logo)
-                    <img src="{{ asset('storage/' . $event->logo) }}" alt="{{ $event->title }}" class="h-16 mx-auto mb-4">
-                @endif
                 <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
                     <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                 </div>
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Registration Confirmed!</h1>
-                <p class="text-lg text-gray-600">Thank you for registering for {{ $event->title }}</p>
+                <p class="text-lg text-gray-600">Thank you for registering</p>
             </div>
 
             <!-- Registration Details Card -->
@@ -75,12 +130,13 @@
                 </div>
 
                 <!-- Price Information -->
+                @if($registration->total_amount > 0)
                 <div class="border-t pt-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Payment Information</h3>
                     <div class="space-y-2">
                         <div class="flex justify-between">
                             <span class="text-gray-600">Base Price:</span>
-                            <span class="font-medium">{{ number_format($registration->base_amount, 2) }} {{ $registration->currency }}</span>
+                            <span class="font-medium">{{ number_format($registration->base_price, 2) }} {{ $registration->currency }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">VAT:</span>
@@ -99,6 +155,17 @@
                         </div>
                     </div>
                 </div>
+                @else
+                <div class="border-t pt-6">
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <svg class="w-12 h-12 text-green-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-lg font-semibold text-green-800">Free Registration</p>
+                        <p class="text-sm text-green-600 mt-1">No payment required</p>
+                    </div>
+                </div>
+                @endif
             </div>
 
             <!-- Email Verification Notice -->
@@ -256,9 +323,9 @@
                     </svg>
                     Print Confirmation
                 </button>
-                @if($event->website)
+                @if($event->website_url)
                 <div>
-                    <a href="{{ $event->website }}" class="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    <a href="{{ $event->website_url }}" target="_blank" class="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                         </svg>
@@ -266,6 +333,47 @@
                     </a>
                 </div>
                 @endif
+            </div>
+
+            <!-- Event Contact Information Footer -->
+            <div class="mt-8 bg-white shadow-lg rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Need Help?</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @if($event->manager_name)
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 mb-2">Event Manager</p>
+                            <p class="text-sm text-gray-900 font-semibold">{{ $event->manager_name }}</p>
+                        </div>
+                    @endif
+
+                    @if($event->manager_email)
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 mb-2">Contact Email</p>
+                            <a href="mailto:{{ $event->manager_email }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+                                {{ $event->manager_email }}
+                            </a>
+                        </div>
+                    @endif
+
+                    @if($event->manager_phone)
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 mb-2">Contact Phone</p>
+                            <a href="tel:{{ $event->manager_phone }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+                                {{ $event->manager_phone }}
+                            </a>
+                        </div>
+                    @endif
+
+                    @if($event->website_url)
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 mb-2">Event Website</p>
+                            <a href="{{ $event->website_url }}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+                                Visit Website →
+                            </a>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>

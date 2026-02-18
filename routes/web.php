@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ExhibitorController;
 use App\Http\Controllers\Admin\GroupTypeController;
 use App\Http\Controllers\Admin\GroupController;
 use App\Http\Controllers\Admin\EventSettingsController;
+use App\Http\Controllers\Admin\EventUrlController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AgendaManagementController;
 use App\Http\Controllers\Admin\TrackController;
@@ -47,6 +48,17 @@ Route::prefix('register')->name('registration.')->group(function () {
     Route::post('/validate-step', [\App\Http\Controllers\RegistrationController::class, 'validateStep'])->name('validate-step');
     Route::get('/confirmation/{hash}', [\App\Http\Controllers\RegistrationController::class, 'confirmation'])->name('confirmation');
     Route::get('/verify-email/{token}', [\App\Http\Controllers\RegistrationController::class, 'verifyEmail'])->name('verify-email');
+});
+
+// Online Registration Routes (separate file)
+Route::prefix('online')->group(base_path('routes/online.php'));
+
+// Badge Printing Routes
+Route::prefix('badge')->name('badge.')->group(function () {
+    Route::get('/{slug}', [\App\Http\Controllers\BadgePrintingController::class, 'show'])->name('show');
+    Route::post('/{slug}/search', [\App\Http\Controllers\BadgePrintingController::class, 'search'])->name('search');
+    Route::post('/{slug}/search-face', [\App\Http\Controllers\BadgePrintingController::class, 'searchByFace'])->name('search-face');
+    Route::post('/{slug}/print/{hash}', [\App\Http\Controllers\BadgePrintingController::class, 'print'])->name('print');
 });
 
 // Admin authentication routes
@@ -139,6 +151,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('event-settings.edit');
         Route::put('event-settings', [EventSettingsController::class, 'update'])
             ->name('event-settings.update');
+        
+        // Event URLs
+        Route::resource('event-urls', EventUrlController::class);
+        
+        // Badge Designs
+        Route::resource('badge-designs', \App\Http\Controllers\Admin\BadgeDesignController::class);
+        
+        // Gallery
+        Route::resource('gallery', \App\Http\Controllers\Admin\GalleryController::class);
         
         Route::resource('memberships', MembershipController::class);
         Route::post('memberships/{membership}/toggle', [MembershipController::class, 'toggleActive'])

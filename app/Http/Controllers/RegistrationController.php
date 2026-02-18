@@ -21,7 +21,7 @@ class RegistrationController extends Controller
     /**
      * Show registration form
      */
-    public function showForm()
+    public function showForm($slug = null)
     {
         $event = Event::getCurrentEvent();
         
@@ -29,39 +29,44 @@ class RegistrationController extends Controller
             return view('event.registration-closed', compact('event'));
         }
 
-        // Get active categories
-        $categories = RegistrationCategory::where('is_active', true)
-            ->where('visible', true)
-            ->where(function ($query) {
-                $query->whereNull('valid_from')
-                    ->orWhere('valid_from', '<=', now());
-            })
-            ->where(function ($query) {
-                $query->whereNull('valid_to')
-                    ->orWhere('valid_to', '>=', now());
-            })
-            ->orderBy('sort_order')
-            ->get();
-
-        // Get exhibitors and groups for dropdowns
-        $exhibitors = Exhibitor::active()->ordered()->get(['id', 'company_name']);
-        $groups = Group::where('is_active', true)->orderBy('group_name')->get(['id', 'group_name']);
+        // Check if accessing via custom URL
+        $eventUrl = null;
+        $allowedCategories = null;
         
-        // Get industries and business activities
+        if ($slug) {
+            $eventUrl = \App\Models\EventUrl::where('slug', $slug)
+                ->where('is_active', true)
+                ->first();
+            
+            if (!$eventUrl) {
+                abort(404, 'Registration URL not found or inactive');
+            }
+            
+            // Get allowed categories for this URL
+            if (!empty($eventUrl->enabled_categories)) {
+                $allowedCategories = $eventUrl->enabled_categories;
+            }
+        }
+
+        // Get active categories
+        $categoriesQuery = RegistrationCategory::where('is_active', true)
+            ->where('visible', true);
+        
+        // Filter by allowed categories if URL specifies them
+        if ($allowedCategories) {
+            $categoriesQuery->whereIn('id', $allowedCategories);
+        }
+        
+        $categories = $categoriesQuery->orderBy('sort_order')->get();
+
+        // Get industries for dropdown
         $industries = Industry::active()->ordered()->get();
-        $businessActivities = BusinessActivity::active()->ordered()->get();
 
-        // Restore form data from session if exists
-        $formData = Session::get('registration_form_data', []);
-
-        return view('event.register', compact(
+        return view('online.register', compact(
             'event',
             'categories',
-            'exhibitors',
-            'groups',
             'industries',
-            'businessActivities',
-            'formData'
+            'eventUrl'
         ));
     }
 
@@ -147,43 +152,96 @@ class RegistrationController extends Controller
         }
 
         // Validate all data
-        $validated = $request->validate($this->getAllValidationRules($request->all()));
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'profile_picture_data' => 'nullable|string',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:50',
+            'job_title' => 'nullable|string|max:255',
+            'company_name' => 'required|string|max:255',
+            'industry_id' => 'required|exists:industries,id',
+            'registration_category_id' => 'required|exists:registration_categories,id',
+            'terms_accepted' => 'required|accepted',
+        ]);
+
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            $file = $request->file('profile_picture');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('registrations/profiles', $filename, 'public');
+            $validated['profile_picture'] = $path;
+        } elseif ($request->filled('profile_picture_data')) {
+            // Handle base64 image from camera
+            $imageData = $request->input('profile_picture_data');
+            $imageData = str_replace('data:image/png;base64,', '', $imageData);
+            $imageData = str_replace(' ', '+', $imageData);
+            $imageData = base64_decode($imageData);
+            
+            $filename = time() . '_' . uniqid() . '.png';
+            $path = 'registrations/profiles/' . $filename;
+            \Storage::disk('public')->put($path, $imageData);
+            $validated['profile_picture'] = $path;
+        }
 
         // Get category and validate
         $category = RegistrationCategory::findOrFail($validated['registration_category_id']);
-        $categoryErrors = $this->service->validateCategory($category, $validated);
         
-        if (!empty($categoryErrors)) {
-            return back()->withErrors($categoryErrors)->withInput();
-        }
-
         // Calculate pricing
         $pricing = $this->service->calculatePrice($category, $event);
+        
+        // Determine payment status based on total amount
+        $paymentStatus = 'pending';
+        $paymentDate = null;
+        $registrationStatusId = null;
+        
+        if ($pricing['total_amount'] == 0) {
+            // Free registration - auto confirm
+            $paymentStatus = 'paid';
+            $paymentDate = now();
+            
+            // Find "Confirmed" or "Approved" status
+            $confirmedStatus = \App\Models\RegistrationStatus::whereIn('name', ['Confirmed', 'Approved', 'Active'])
+                ->first();
+            
+            if ($confirmedStatus) {
+                $registrationStatusId = $confirmedStatus->id;
+            }
+        }
         
         // Prepare registration data
         $registrationData = array_merge($validated, [
             'event_id' => $event->id,
             'org_id' => $event->org_id,
+            'registration_type' => 'individual',
+            'registration_status_id' => $registrationStatusId,
             'base_price' => $pricing['base_price'],
             'tax_amount' => $pricing['tax_amount'],
             'total_amount' => $pricing['total_amount'],
             'currency' => $pricing['currency'],
+            'payment_status' => $paymentStatus,
+            'payment_date' => $paymentDate,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'registration_source' => 'web',
+            'registration_source' => 'online',
+            'terms_accepted_at' => now(),
         ]);
 
         // Create registration
         $registration = $this->service->createRegistration($registrationData);
 
-        // Clear session data
-        Session::forget('registration_form_data');
-
         // TODO: Send confirmation email
-        // TODO: Redirect to payment if required
 
-        return redirect()->route('registration.confirmation', $registration->hash)
-            ->with('success', 'Registration submitted successfully!');
+        // Redirect based on payment status
+        if ($pricing['total_amount'] == 0) {
+            return redirect()->route('registration.confirmation', $registration->hash)
+                ->with('success', 'Registration confirmed successfully! Your registration is complete.');
+        } else {
+            // TODO: Redirect to payment gateway
+            return redirect()->route('registration.confirmation', $registration->hash)
+                ->with('success', 'Registration submitted successfully! Please complete payment to confirm your registration.');
+        }
     }
 
     /**
@@ -191,9 +249,18 @@ class RegistrationController extends Controller
      */
     public function confirmation($hash)
     {
-        $registration = \App\Models\Registration::where('hash', $hash)->firstOrFail();
+        $hashService = app(\App\Services\HashService::class);
+        $registration = $hashService->resolveHash($hash);
         
-        return view('event.registration-confirmation', compact('registration'));
+        if (!$registration || !($registration instanceof \App\Models\Registration)) {
+            abort(404, 'Registration not found');
+        }
+        
+        // Load event relationship
+        $registration->load('event');
+        $event = $registration->event;
+        
+        return view('event.registration-confirmation', compact('registration', 'event'));
     }
 
     /**
@@ -218,25 +285,31 @@ class RegistrationController extends Controller
     private function getValidationRules(int $step, array $data): array
     {
         switch ($step) {
-            case 1: // Category Selection
+            case 1: // Email & Profile Picture (First Step)
+                return [
+                    'email' => 'required|email|max:255',
+                    'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                    'profile_picture_data' => 'nullable|string', // Base64 from camera
+                ];
+
+            case 2: // Category Selection
                 return [
                     'registration_category_id' => 'required|exists:registration_categories,id',
                     'category_password' => 'nullable|string',
                 ];
 
-            case 2: // Registration Type
+            case 3: // Registration Type
                 return [
                     'registration_type' => 'required|in:individual,exhibitor,group',
                     'exhibitor_id' => 'required_if:registration_type,exhibitor|nullable|exists:exhibitors,id',
                     'group_id' => 'required_if:registration_type,group|nullable|exists:event_groups,id',
                 ];
 
-            case 3: // Personal Information
+            case 4: // Personal Information
                 return [
                     'salutation' => 'nullable|string|max:10',
                     'first_name' => 'required|string|max:255',
                     'last_name' => 'required|string|max:255',
-                    'email' => 'required|email|max:255',
                     'phone' => 'required|string|max:50',
                     'mobile_phone' => 'nullable|string|max:50',
                     'job_title' => 'nullable|string|max:255',
@@ -245,7 +318,7 @@ class RegistrationController extends Controller
                     'membership_id' => 'nullable|string|max:255',
                 ];
 
-            case 4: // Company Information
+            case 5: // Company Information
                 return [
                     'company_name' => 'required|string|max:255',
                     'industry_id' => 'required|exists:industries,id',
@@ -260,7 +333,7 @@ class RegistrationController extends Controller
                     'tax_registration_number' => 'nullable|string|max:100',
                 ];
 
-            case 5: // Additional Information
+            case 6: // Additional Information
                 return [
                     'dietary_requirements' => 'nullable|string',
                     'special_needs' => 'nullable|string',
@@ -282,7 +355,7 @@ class RegistrationController extends Controller
     private function getAllValidationRules(array $data): array
     {
         $rules = [];
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 6; $i++) {
             $rules = array_merge($rules, $this->getValidationRules($i, $data));
         }
         return $rules;

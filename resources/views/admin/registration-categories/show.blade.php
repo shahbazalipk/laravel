@@ -182,7 +182,7 @@
                             <span class="text-sm text-gray-600">{{ $type->pivot->created_at ? $type->pivot->created_at->format('M d, Y H:i') : '-' }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <form action="{{ route('admin.registration-categories.types.detach', [$registrationCategory, $type]) }}" 
+                            <form action="{{ route('admin.registration-categories.types.detach', [$registrationCategory, $type->hash ?? $type->id]) }}" 
                                   method="POST" 
                                   onsubmit="return confirm('Are you sure you want to detach this category type?');"
                                   class="inline">

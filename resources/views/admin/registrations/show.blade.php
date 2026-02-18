@@ -65,6 +65,43 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Sidebar with Profile Picture -->
+    <div class="lg:col-span-1">
+        @if($registration->profile_picture)
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Profile Picture</h2>
+            <div class="flex justify-center">
+                <img src="{{ asset('storage/' . $registration->profile_picture) }}" 
+                     alt="{{ $registration->full_name }}" 
+                     class="w-48 h-48 rounded-full object-cover border-4 border-gray-200">
+            </div>
+        </div>
+        @endif
+        
+        <!-- QR Code and Badge -->
+        @if($registration->qr_code)
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Badge QR Code</h2>
+            <div class="flex justify-center">
+                <img src="data:image/png;base64,{{ $registration->qr_code }}" 
+                     alt="QR Code" 
+                     class="w-32 h-32">
+            </div>
+            @if($registration->badge_number)
+                <p class="text-center text-sm text-gray-600 mt-2">Badge: {{ $registration->badge_number }}</p>
+            @endif
+            @if(!$registration->badge_printed)
+            <form action="{{ route('admin.registrations.print-badge', $registration) }}" method="POST" class="mt-4">
+                @csrf
+                <button type="submit" class="w-full px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition">
+                    Mark as Printed
+                </button>
+            </form>
+            @endif
+        </div>
+        @endif
+    </div>
+
     <!-- Main Content -->
     <div class="lg:col-span-2 space-y-6">
         <!-- Personal Information -->
@@ -226,23 +263,6 @@
 
     <!-- Sidebar -->
     <div class="space-y-6">
-        <!-- QR Code -->
-        @if($registration->qr_code)
-        <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Badge QR Code</h3>
-            <img src="data:image/png;base64,{{ $registration->qr_code }}" alt="QR Code" class="mx-auto mb-3">
-            <p class="text-sm text-gray-600">{{ $registration->badge_number }}</p>
-            @if(!$registration->badge_printed)
-            <form action="{{ route('admin.registrations.print-badge', $registration) }}" method="POST" class="mt-4">
-                @csrf
-                <button type="submit" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-                    Mark as Printed
-                </button>
-            </form>
-            @endif
-        </div>
-        @endif
-
         <!-- Registration Details -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Registration Details</h3>
