@@ -567,7 +567,8 @@
         }
 
         function printBadgeDirectly(hash) {
-            fetch(`/badge/{{ $badgeUrl->slug }}/print/${hash}`, {
+            const printUrl = '{{ route('badge.print', ['slug' => $badgeUrl->slug, 'hash' => '__HASH__']) }}'.replace('__HASH__', hash);
+            fetch(printUrl, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
