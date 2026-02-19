@@ -84,7 +84,7 @@
 
                         <!-- Exhibitors -->
                         <div class="dropdown relative">
-                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/exhibitors*') ? 'bg-indigo-800' : '' }}">
+                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/exhibitors*') || request()->is('admin/exhibitor-products*') || request()->is('admin/exhibitor-jobs*') ? 'bg-indigo-800' : '' }}">
                                 Exhibitors
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -92,8 +92,9 @@
                             </button>
                             <div class="dropdown-menu hidden absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                                 <a href="{{ route('admin.exhibitors.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">List</a>
+                                <a href="{{ route('admin.exhibitor-products.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Products</a>
+                                <a href="{{ route('admin.exhibitor-jobs.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Jobs</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Leads</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Products</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Floor Plans</a>
                             </div>
                         </div>
@@ -255,6 +256,8 @@
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Exhibitors</p>
                 <a href="{{ route('admin.exhibitors.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">List</a>
+                <a href="{{ route('admin.exhibitor-products.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Products</a>
+                <a href="{{ route('admin.exhibitor-jobs.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Jobs</a>
                 
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Agenda</p>

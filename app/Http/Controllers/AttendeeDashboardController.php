@@ -127,6 +127,23 @@ class AttendeeDashboardController extends Controller
         return view('attendee.sessions', compact('registration', 'sessions', 'tracks'));
     }
 
+    public function sessionDetail(Session $session)
+    {
+        $registration = $this->getRegistration();
+
+        $session->load([
+            'track',
+            'location',
+            'speakers',
+            'lectures' => function($query) {
+                $query->with(['speaker', 'location'])->orderBy('start_time');
+            }
+        ]);
+
+        return view('attendee.session-detail', compact('registration', 'session'));
+    }
+
+
     public function agenda()
     {
         $registration = $this->getRegistration();

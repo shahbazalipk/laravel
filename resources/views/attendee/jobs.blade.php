@@ -135,15 +135,24 @@
                     </span>
                 </div>
                 
-                @if($job->application_email)
-                    <a href="mailto:{{ $job->application_email }}?subject=Application for {{ $job->title }}" 
-                       class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center gap-2">
+                <div class="flex gap-2">
+                    <button onclick="showJobDetails({{ $job->id }})" 
+                            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        Apply Now
-                    </a>
-                @endif
+                        View Details
+                    </button>
+                    @if($job->application_email)
+                        <a href="mailto:{{ $job->application_email }}?subject=Application for {{ $job->title }}" 
+                           class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            Apply Now
+                        </a>
+                    @endif
+                </div>
             </div>
         </div>
     @empty
@@ -156,6 +165,186 @@
         </div>
     @endforelse
 </div>
+
+<!-- Job Details Modal -->
+<div id="jobModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <h2 id="modalJobTitle" class="text-2xl font-bold text-gray-900"></h2>
+            <button onclick="closeJobModal()" class="text-gray-400 hover:text-gray-600 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <!-- Company Info -->
+            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
+                <div id="modalCompanyLogo"></div>
+                <div>
+                    <a id="modalCompanyLink" href="#" class="text-lg font-semibold text-indigo-600 hover:text-indigo-700"></a>
+                    <div class="flex flex-wrap gap-2 mt-2" id="modalJobBadges"></div>
+                </div>
+            </div>
+            
+            <!-- Job Details -->
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Job Description</h3>
+                    <p id="modalJobDescription" class="text-gray-700 whitespace-pre-line"></p>
+                </div>
+                
+                <div id="modalRequirementsSection" class="hidden">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Requirements</h3>
+                    <p id="modalJobRequirements" class="text-gray-700 whitespace-pre-line"></p>
+                </div>
+                
+                <div id="modalResponsibilitiesSection" class="hidden">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Responsibilities</h3>
+                    <p id="modalJobResponsibilities" class="text-gray-700 whitespace-pre-line"></p>
+                </div>
+                
+                <!-- Additional Info -->
+                <div class="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div id="modalDeadlineSection" class="hidden">
+                        <p class="text-sm text-gray-500 mb-1">Application Deadline</p>
+                        <p id="modalDeadline" class="text-sm font-semibold text-gray-900"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Views / Applications</p>
+                        <p id="modalStats" class="text-sm font-semibold text-gray-900"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="mt-6 pt-6 border-t border-gray-200 flex gap-3">
+                <button onclick="closeJobModal()" 
+                        class="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    Close
+                </button>
+                <a id="modalApplyButton" href="#" 
+                   class="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-center flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    Apply Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const jobsData = @json($jobs->items());
+
+function showJobDetails(jobId) {
+    const job = jobsData.find(j => j.id === jobId);
+    if (!job) return;
+    
+    // Set title
+    document.getElementById('modalJobTitle').textContent = job.title;
+    
+    // Set company info
+    const companyLogo = document.getElementById('modalCompanyLogo');
+    if (job.exhibitor.logo) {
+        companyLogo.innerHTML = `<img src="/storage/${job.exhibitor.logo}" alt="${job.exhibitor.company_name}" class="w-16 h-16 object-contain">`;
+    } else {
+        companyLogo.innerHTML = '';
+    }
+    
+    const companyLink = document.getElementById('modalCompanyLink');
+    companyLink.textContent = job.exhibitor.company_name;
+    companyLink.href = `/attendee/exhibitors/${job.exhibitor.hashed_id}`;
+    
+    // Set badges
+    let badges = '';
+    if (job.job_type) {
+        badges += `<span class="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-lg">${job.job_type}</span>`;
+    }
+    if (job.experience_level) {
+        badges += `<span class="px-3 py-1 bg-purple-50 text-purple-700 text-sm rounded-lg">${job.experience_level}</span>`;
+    }
+    if (job.location) {
+        badges += `<span class="px-3 py-1 bg-gray-50 text-gray-700 text-sm rounded-lg">${job.location}</span>`;
+    }
+    if (job.salary_range) {
+        badges += `<span class="px-3 py-1 bg-green-50 text-green-700 text-sm rounded-lg">${job.salary_range}</span>`;
+    }
+    document.getElementById('modalJobBadges').innerHTML = badges;
+    
+    // Set description
+    document.getElementById('modalJobDescription').textContent = job.description || 'No description available.';
+    
+    // Set requirements
+    const reqSection = document.getElementById('modalRequirementsSection');
+    if (job.requirements) {
+        reqSection.classList.remove('hidden');
+        document.getElementById('modalJobRequirements').textContent = job.requirements;
+    } else {
+        reqSection.classList.add('hidden');
+    }
+    
+    // Set responsibilities
+    const respSection = document.getElementById('modalResponsibilitiesSection');
+    if (job.responsibilities) {
+        respSection.classList.remove('hidden');
+        document.getElementById('modalJobResponsibilities').textContent = job.responsibilities;
+    } else {
+        respSection.classList.add('hidden');
+    }
+    
+    // Set deadline
+    const deadlineSection = document.getElementById('modalDeadlineSection');
+    if (job.deadline) {
+        deadlineSection.classList.remove('hidden');
+        const date = new Date(job.deadline);
+        document.getElementById('modalDeadline').textContent = date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    } else {
+        deadlineSection.classList.add('hidden');
+    }
+    
+    // Set stats
+    document.getElementById('modalStats').textContent = `${job.views_count} views / ${job.applications_count} applications`;
+    
+    // Set apply button
+    const applyButton = document.getElementById('modalApplyButton');
+    if (job.application_email) {
+        applyButton.href = `mailto:${job.application_email}?subject=Application for ${encodeURIComponent(job.title)}`;
+        applyButton.classList.remove('hidden');
+    } else {
+        applyButton.classList.add('hidden');
+    }
+    
+    // Show modal
+    document.getElementById('jobModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeJobModal() {
+    document.getElementById('jobModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeJobModal();
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('jobModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeJobModal();
+    }
+});
+</script>
 
 <!-- Pagination -->
 @if($jobs->hasPages())

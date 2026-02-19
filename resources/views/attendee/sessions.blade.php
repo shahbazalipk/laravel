@@ -54,7 +54,10 @@
                     <!-- Content -->
                     <div class="flex-1">
                         <div class="flex flex-wrap items-start justify-between gap-4 mb-2">
-                            <h3 class="text-lg font-bold text-gray-900">{{ $session->title }}</h3>
+                            <a href="{{ route('attendee.sessions.show', $session) }}" 
+                               class="text-lg font-bold text-gray-900 hover:text-indigo-600 transition">
+                                {{ $session->title }}
+                            </a>
                             @if($session->track)
                                 <span class="px-3 py-1 text-xs font-semibold rounded-full"
                                       style="background-color: {{ $session->track->color }}20; color: {{ $session->track->color }}">
@@ -67,7 +70,7 @@
                             <p class="text-sm text-gray-600 mb-3">{{ Str::limit($session->description, 200) }}</p>
                         @endif
 
-                        <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+                        <div class="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
                             @if($session->location)
                                 <div class="flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,6 +88,20 @@
                                     {{ $session->speakers->pluck('full_name')->join(', ') }}
                                 </div>
                             @endif
+                        </div>
+                        
+                        <div class="flex items-center gap-3">
+                            <a href="{{ route('attendee.sessions.show', $session) }}" 
+                               class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                                View Details →
+                            </a>
+                            <button onclick="toggleFavorite('App\\Models\\Session', {{ $session->id }}, this)" 
+                                    class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition flex items-center gap-1 text-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                                Favorite
+                            </button>
                         </div>
                     </div>
                 </div>

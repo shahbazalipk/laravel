@@ -56,6 +56,7 @@ Route::prefix('attendee')->name('attendee.')->group(function () {
         Route::get('/speakers', [\App\Http\Controllers\AttendeeDashboardController::class, 'speakers'])->name('speakers');
         Route::get('/speakers/{speaker}', [\App\Http\Controllers\AttendeeDashboardController::class, 'speakerDetail'])->name('speakers.show');
         Route::get('/sessions', [\App\Http\Controllers\AttendeeDashboardController::class, 'sessions'])->name('sessions');
+        Route::get('/sessions/{session}', [\App\Http\Controllers\AttendeeDashboardController::class, 'sessionDetail'])->name('sessions.show');
         Route::get('/agenda', [\App\Http\Controllers\AttendeeDashboardController::class, 'agenda'])->name('agenda');
         Route::get('/attendees', [\App\Http\Controllers\AttendeeDashboardController::class, 'attendees'])->name('attendees');
         Route::get('/attendees/{registration}', [\App\Http\Controllers\AttendeeDashboardController::class, 'attendeeDetail'])->name('attendees.show');
@@ -197,10 +198,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('exhibitors.toggle-featured');
         
         // Exhibitor Jobs
+        Route::get('exhibitor-jobs', [\App\Http\Controllers\Admin\ExhibitorJobController::class, 'index'])->name('exhibitor-jobs.index');
         Route::resource('exhibitor-jobs', \App\Http\Controllers\Admin\ExhibitorJobController::class)->only(['store', 'update', 'destroy']);
+        Route::post('exhibitor-jobs/{exhibitorJob}/toggle-active', [\App\Http\Controllers\Admin\ExhibitorJobController::class, 'toggleActive'])->name('exhibitor-jobs.toggle-active');
         
         // Exhibitor Products
+        Route::get('exhibitor-products', [\App\Http\Controllers\Admin\ExhibitorProductController::class, 'index'])->name('exhibitor-products.index');
         Route::resource('exhibitor-products', \App\Http\Controllers\Admin\ExhibitorProductController::class)->only(['store', 'update', 'destroy']);
+        Route::post('exhibitor-products/{exhibitorProduct}/toggle-active', [\App\Http\Controllers\Admin\ExhibitorProductController::class, 'toggleActive'])->name('exhibitor-products.toggle-active');
         
         // Sponsors
         Route::resource('sponsors', SponsorController::class);

@@ -32,12 +32,17 @@ class SpeakerController extends Controller
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'bio' => 'nullable|string',
-            'profile_image' => 'nullable|string|max:255',
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
             'company' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',
         ]);
+
+        // Handle file upload
+        if ($request->hasFile('profile_image')) {
+            $validated['profile_image'] = $request->file('profile_image')->store('speakers', 'public');
+        }
 
         $speaker = $this->speakerService->createSpeaker($validated);
 
@@ -62,12 +67,21 @@ class SpeakerController extends Controller
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'bio' => 'nullable|string',
-            'profile_image' => 'nullable|string|max:255',
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
             'company' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',
         ]);
+
+        // Handle file upload
+        if ($request->hasFile('profile_image')) {
+            // Delete old image if exists
+            if ($speaker->profile_image && \Storage::disk('public')->exists($speaker->profile_image)) {
+                \Storage::disk('public')->delete($speaker->profile_image);
+            }
+            $validated['profile_image'] = $request->file('profile_image')->store('speakers', 'public');
+        }
 
         $this->speakerService->updateSpeaker($speaker, $validated);
 

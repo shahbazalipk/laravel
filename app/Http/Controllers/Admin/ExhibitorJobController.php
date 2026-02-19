@@ -33,6 +33,39 @@ class ExhibitorJobController extends Controller
             ->with('success', 'Job opening created successfully');
     }
 
+    public function index(Request $request)
+    {
+        $query = ExhibitorJob::with('exhibitor');
+
+        // Filter by status
+        $status = $request->get('status', 'all');
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        $jobs = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        // Get counts for filter badges
+        $totalCount = ExhibitorJob::count();
+        $activeCount = ExhibitorJob::where('is_active', true)->count();
+        $inactiveCount = ExhibitorJob::where('is_active', false)->count();
+
+        return view('admin.exhibitor-jobs.index', compact('jobs', 'status', 'totalCount', 'activeCount', 'inactiveCount'));
+    }
+
+    public function toggleActive(ExhibitorJob $exhibitorJob)
+    {
+        $exhibitorJob->update([
+            'is_active' => !$exhibitorJob->is_active
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Job status updated successfully');
+    }
+
+
     public function update(Request $request, ExhibitorJob $exhibitorJob)
     {
         $validated = $request->validate([

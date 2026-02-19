@@ -165,7 +165,7 @@
                             </button>
                             
                             <!-- Clone Button -->
-                            <form action="{{ route('admin.email-campaigns.email-templates.clone', $template) }}" 
+                            <form action="{{ route('admin.email-campaigns.email-templates.clone', ['emailTemplate' => $template]) }}" 
                                   method="POST" 
                                   class="inline">
                                 @csrf

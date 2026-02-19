@@ -13,7 +13,7 @@
             </a>
             <div class="flex items-center">
                 @if($speaker->profile_image)
-                    <img src="{{ $speaker->profile_image }}" alt="{{ $speaker->full_name }}" class="w-16 h-16 rounded-full mr-4">
+                    <img src="{{ asset('storage/' . $speaker->profile_image) }}" alt="{{ $speaker->full_name }}" class="w-16 h-16 rounded-full object-cover mr-4">
                 @else
                     <div class="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
                         <span class="text-indigo-600 font-semibold text-xl">{{ substr($speaker->full_name, 0, 2) }}</span>

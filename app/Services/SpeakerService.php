@@ -69,9 +69,41 @@ class SpeakerService
      */
     public function getSchedule(Speaker $speaker): Collection
     {
-        return $speaker->lectures()
+        $schedule = collect();
+
+        // Get sessions where speaker is assigned
+        $sessions = $speaker->sessions()
+            ->with(['location', 'track'])
+            ->orderBy('start_time')
+            ->get();
+
+        foreach ($sessions as $session) {
+            $schedule->push([
+                'type' => 'Session',
+                'title' => $session->title,
+                'start_time' => $session->start_time,
+                'end_time' => $session->end_time,
+                'location' => $session->location ? $session->location->name : null,
+            ]);
+        }
+
+        // Get lectures where speaker is assigned
+        $lectures = $speaker->lectures()
             ->with(['session', 'location'])
             ->orderBy('start_time')
             ->get();
+
+        foreach ($lectures as $lecture) {
+            $schedule->push([
+                'type' => 'Lecture',
+                'title' => $lecture->topic . ($lecture->session ? ' (in ' . $lecture->session->title . ')' : ''),
+                'start_time' => $lecture->start_time,
+                'end_time' => $lecture->end_time,
+                'location' => $lecture->location ? $lecture->location->name : null,
+            ]);
+        }
+
+        // Sort by start time
+        return $schedule->sortBy('start_time')->values();
     }
 }

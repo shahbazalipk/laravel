@@ -40,6 +40,39 @@ class ExhibitorProductController extends Controller
             ->with('success', 'Product created successfully');
     }
 
+    public function index(Request $request)
+    {
+        $query = ExhibitorProduct::with('exhibitor');
+
+        // Filter by status
+        $status = $request->get('status', 'all');
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        $products = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        // Get counts for filter badges
+        $totalCount = ExhibitorProduct::count();
+        $activeCount = ExhibitorProduct::where('is_active', true)->count();
+        $inactiveCount = ExhibitorProduct::where('is_active', false)->count();
+
+        return view('admin.exhibitor-products.index', compact('products', 'status', 'totalCount', 'activeCount', 'inactiveCount'));
+    }
+
+    public function toggleActive(ExhibitorProduct $exhibitorProduct)
+    {
+        $exhibitorProduct->update([
+            'is_active' => !$exhibitorProduct->is_active
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Product status updated successfully');
+    }
+
+
     public function update(Request $request, ExhibitorProduct $exhibitorProduct)
     {
         $validated = $request->validate([

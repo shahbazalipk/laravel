@@ -18,7 +18,7 @@
 </div>
 
 <div class="bg-white rounded-lg shadow-sm p-6">
-    <form action="{{ route('admin.speakers.update', $speaker) }}" method="POST">
+    <form action="{{ route('admin.speakers.update', $speaker) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -72,10 +72,28 @@
             </div>
 
             <div>
-                <label for="profile_image" class="block text-sm font-medium text-gray-700 mb-2">Profile Image URL</label>
-                <input type="text" name="profile_image" id="profile_image" value="{{ old('profile_image', $speaker->profile_image) }}"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('profile_image') border-red-500 @enderror">
+                <label for="profile_image" class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                
+                @if($speaker->profile_image)
+                    <div class="mb-3">
+                        <p class="text-sm text-gray-600 mb-2">Current Photo:</p>
+                        <img src="{{ asset('storage/' . $speaker->profile_image) }}" 
+                             alt="{{ $speaker->full_name }}"
+                             class="w-32 h-32 object-cover rounded-lg border border-gray-300">
+                    </div>
+                @endif
+                
+                <input type="file" name="profile_image" id="profile_image" accept="image/*"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('profile_image') border-red-500 @enderror"
+                       onchange="previewImage(event)">
                 @error('profile_image')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                <p class="mt-1 text-xs text-gray-400">Upload new profile photo to replace current one (JPG, PNG, max 2MB)</p>
+                
+                <!-- Image Preview -->
+                <div id="imagePreview" class="mt-3 hidden">
+                    <p class="text-sm text-gray-600 mb-2">New Photo Preview:</p>
+                    <img id="preview" src="" alt="Preview" class="w-32 h-32 object-cover rounded-lg border border-gray-300">
+                </div>
             </div>
         </div>
 
@@ -85,4 +103,18 @@
         </div>
     </form>
 </div>
+
+<script>
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview').src = e.target.result;
+            document.getElementById('imagePreview').classList.remove('hidden');
+        }
+        reader.readAsDataURL(file);
+    }
+}
+</script>
 @endsection
