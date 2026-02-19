@@ -239,6 +239,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('marketing-assets', \App\Http\Controllers\Admin\MarketingAssetController::class);
         Route::post('marketing-assets/{marketingAsset}/duplicate', [\App\Http\Controllers\Admin\MarketingAssetController::class, 'duplicate'])->name('marketing-assets.duplicate');
         
+        // Ads Management
+        Route::resource('ads', \App\Http\Controllers\Admin\AdController::class);
+        Route::post('ads/{ad}/toggle-active', [\App\Http\Controllers\Admin\AdController::class, 'toggleActive'])->name('ads.toggle-active');
+        
         // Gallery Settings
         Route::prefix('gallery-settings')->name('gallery-settings.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'index'])->name('index');

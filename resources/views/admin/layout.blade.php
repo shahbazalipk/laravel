@@ -26,9 +26,16 @@
             <div class="flex justify-between items-center h-16">
                 <!-- Logo/Brand -->
                 <div class="flex items-center space-x-8">
-                    <a href="{{ route('admin.dashboard') }}" class="flex-shrink-0 hover:opacity-80 transition">
-                        <h1 class="text-xl font-bold">Event Manager</h1>
-                        <p class="text-xs text-indigo-300">Admin Panel</p>
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 hover:opacity-80 transition">
+                        @if(config('event.logo'))
+                            <img src="{{ asset('storage/' . config('event.logo')) }}" 
+                                 alt="{{ config('event.name', 'Event') }}"
+                                 class="h-10 w-auto">
+                        @endif
+                        <div class="flex-shrink-0">
+                            <h1 class="text-xl font-bold">{{ config('event.name', 'Event Manager') }}</h1>
+                            <p class="text-xs text-indigo-300">Admin Panel</p>
+                        </div>
                     </a>
 
                     <!-- Desktop Menu -->
@@ -175,10 +182,9 @@
                                 <a href="{{ route('admin.badge-designs.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Badge Designs</a>
                                 <a href="{{ route('admin.gallery.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Gallery</a>
                                 <a href="{{ route('admin.marketing-assets.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Marketing Assets</a>
+                                <a href="{{ route('admin.ads.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Ads Management</a>
+                                <a href="{{ route('admin.email-campaigns.email-templates.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Email Templates</a>
                                 <a href="{{ route('admin.files.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">File Manager</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Ads Management</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Email Templates</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Promo Codes</a>
                                 <a href="{{ route('admin.memberships.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Memberships</a>
                             </div>
                         </div>
@@ -271,6 +277,8 @@
                 <a href="{{ route('admin.badge-designs.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Badge Designs</a>
                 <a href="{{ route('admin.gallery.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Gallery</a>
                 <a href="{{ route('admin.marketing-assets.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Marketing Assets</a>
+                <a href="{{ route('admin.ads.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Ads Management</a>
+                <a href="{{ route('admin.email-campaigns.email-templates.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Email Templates</a>
                 <a href="{{ route('admin.files.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">File Manager</a>
                 
                 <div class="border-t border-indigo-700 my-2"></div>
