@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'event.admin' => \App\Http\Middleware\EventAdmin::class,
+            'attendee.auth' => \App\Http\Middleware\AttendeeAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

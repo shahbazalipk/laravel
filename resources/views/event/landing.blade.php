@@ -37,7 +37,7 @@
                         <span class="text-xl font-bold text-primary">{{ $event->title }}</span>
                     @endif
                 </div>
-                <div class="hidden md:flex space-x-8">
+                <div class="hidden md:flex space-x-8 items-center">
                     <a href="#about" class="text-gray-700 hover:text-primary transition">About</a>
                     @if($agendaItems->isNotEmpty())
                         <a href="#agenda" class="text-gray-700 hover:text-primary transition">Agenda</a>
@@ -48,6 +48,9 @@
                     @if($sponsors->isNotEmpty())
                         <a href="#sponsors" class="text-gray-700 hover:text-primary transition">Sponsors</a>
                     @endif
+                    <a href="{{ route('attendee.login') }}" class="text-gray-700 hover:text-primary transition font-medium">
+                        Attendee Login
+                    </a>
                     <a href="#register" class="bg-primary text-white px-6 py-2 rounded-lg hover:opacity-90 transition">Register Now</a>
                 </div>
                 <button class="md:hidden text-gray-700">
@@ -96,6 +99,11 @@
                             View Agenda
                         </a>
                     @endif
+                </div>
+                <div class="mt-6">
+                    <a href="{{ route('attendee.login') }}" class="text-white/90 hover:text-white text-sm font-medium underline">
+                        Already registered? Login to your account
+                    </a>
                 </div>
             </div>
         </div>

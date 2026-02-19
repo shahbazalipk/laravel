@@ -40,6 +40,33 @@ use App\Http\Controllers\UnsubscribeController;
 // Base URL shows event landing page
 Route::get('/', [EventController::class, 'landing'])->name('event.landing');
 
+// Attendee Authentication Routes
+Route::prefix('attendee')->name('attendee.')->group(function () {
+    Route::get('/login', [\App\Http\Controllers\AttendeeAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\AttendeeAuthController::class, 'login'])->name('login.post');
+    Route::post('/logout', [\App\Http\Controllers\AttendeeAuthController::class, 'logout'])->name('logout');
+    
+    // Protected attendee routes
+    Route::middleware(['attendee.auth'])->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\AttendeeDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/exhibitors', [\App\Http\Controllers\AttendeeDashboardController::class, 'exhibitors'])->name('exhibitors');
+        Route::get('/exhibitors/{exhibitor}', [\App\Http\Controllers\AttendeeDashboardController::class, 'exhibitorDetail'])->name('exhibitors.show');
+        Route::get('/speakers', [\App\Http\Controllers\AttendeeDashboardController::class, 'speakers'])->name('speakers');
+        Route::get('/speakers/{speaker}', [\App\Http\Controllers\AttendeeDashboardController::class, 'speakerDetail'])->name('speakers.show');
+        Route::get('/sessions', [\App\Http\Controllers\AttendeeDashboardController::class, 'sessions'])->name('sessions');
+        Route::get('/agenda', [\App\Http\Controllers\AttendeeDashboardController::class, 'agenda'])->name('agenda');
+        Route::get('/attendees', [\App\Http\Controllers\AttendeeDashboardController::class, 'attendees'])->name('attendees');
+        Route::get('/attendees/{registration}', [\App\Http\Controllers\AttendeeDashboardController::class, 'attendeeDetail'])->name('attendees.show');
+        Route::get('/sponsors', [\App\Http\Controllers\AttendeeDashboardController::class, 'sponsors'])->name('sponsors');
+        Route::get('/partners', [\App\Http\Controllers\AttendeeDashboardController::class, 'partners'])->name('partners');
+        Route::get('/gallery', [\App\Http\Controllers\AttendeeDashboardController::class, 'gallery'])->name('gallery');
+        Route::get('/gallery/{gallery}', [\App\Http\Controllers\AttendeeDashboardController::class, 'galleryPhoto'])->name('gallery.photo');
+        Route::get('/favorites', [\App\Http\Controllers\FavoritesController::class, 'index'])->name('favorites');
+        Route::post('/favorites/toggle', [\App\Http\Controllers\FavoritesController::class, 'toggle'])->name('favorites.toggle');
+        Route::get('/profile', [\App\Http\Controllers\AttendeeDashboardController::class, 'profile'])->name('profile');
+    });
+});
+
 // Public Registration Routes
 Route::prefix('register')->name('registration.')->group(function () {
     Route::get('/', [\App\Http\Controllers\RegistrationController::class, 'showForm'])->name('form');
