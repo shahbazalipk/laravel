@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Registration;
 use App\Models\Exhibitor;
+use App\Models\ExhibitorJob;
+use App\Models\ExhibitorProduct;
 use App\Models\Speaker;
 use App\Models\Session;
 use App\Models\Lecture;
@@ -65,7 +67,19 @@ class AttendeeDashboardController extends Controller
     public function exhibitorDetail(Exhibitor $exhibitor)
     {
         $registration = $this->getRegistration();
-        $exhibitor->load(['exhibitorType', 'industry', 'boothType', 'businessActivities', 'productTypes']);
+        $exhibitor->load([
+            'exhibitorType', 
+            'industry', 
+            'boothType', 
+            'businessActivities', 
+            'productTypes',
+            'jobs' => function($query) {
+                $query->where('is_active', true)->orderBy('created_at', 'desc');
+            },
+            'products' => function($query) {
+                $query->where('is_active', true)->orderBy('order')->orderBy('created_at', 'desc');
+            }
+        ]);
 
         return view('attendee.exhibitor-detail', compact('registration', 'exhibitor'));
     }
@@ -236,9 +250,27 @@ class AttendeeDashboardController extends Controller
         $eventId = config('event.event_id');
         $orgId = config('event.org_id');
 
+        // Get all active albums
+        $albums = \App\Models\GalleryAlbum::where('event_id', $eventId)
+            ->where('org_id', $orgId)
+            ->where('is_active', true)
+            ->withCount('photos')
+            ->ordered()
+            ->get();
+
+        $selectedAlbum = $request->get('album');
+        $currentAlbum = null;
+
         $query = \App\Models\Gallery::where('event_id', $eventId)
             ->where('org_id', $orgId)
-            ->where('is_active', true);
+            ->where('is_active', true)
+            ->with('album');
+
+        // Filter by album if selected
+        if ($selectedAlbum) {
+            $query->where('gallery_album_id', $selectedAlbum);
+            $currentAlbum = \App\Models\GalleryAlbum::with('galleryForm')->find($selectedAlbum);
+        }
 
         // Filter options
         if ($request->filled('featured')) {
@@ -246,6 +278,9 @@ class AttendeeDashboardController extends Controller
         }
 
         $photos = $query->ordered()->paginate(24);
+        
+        // Load album relationship for each photo if not already loaded
+        $photos->load('album.galleryForm');
 
         $featuredCount = \App\Models\Gallery::where('event_id', $eventId)
             ->where('org_id', $orgId)
@@ -253,7 +288,7 @@ class AttendeeDashboardController extends Controller
             ->where('is_featured', true)
             ->count();
 
-        return view('attendee.gallery', compact('registration', 'photos', 'featuredCount'));
+        return view('attendee.gallery', compact('registration', 'photos', 'albums', 'selectedAlbum', 'currentAlbum', 'featuredCount'));
     }
 
     public function galleryPhoto(\App\Models\Gallery $gallery)
@@ -263,12 +298,136 @@ class AttendeeDashboardController extends Controller
         return view('attendee.gallery-photo', compact('registration', 'gallery'));
     }
 
+    public function downloadPhoto(Request $request, \App\Models\Gallery $gallery)
+    {
+        $registration = $this->getRegistration();
+        
+        // Check if album has download enabled
+        if ($gallery->album && !$gallery->album->enable_download) {
+            return response()->json(['error' => 'Downloads are not enabled for this album'], 403);
+        }
+
+        // If form is required, validate form submission
+        if ($request->has('form_data')) {
+            $formData = $request->input('form_data');
+            
+            // Save form submission
+            \App\Models\GalleryFormSubmission::create([
+                'event_id' => config('event.event_id'),
+                'org_id' => config('event.org_id'),
+                'gallery_form_id' => $gallery->album->gallery_form_id ?? null,
+                'gallery_id' => $gallery->id,
+                'registration_id' => $registration->id,
+                'data' => $formData,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
+
+        // Return download URL
+        return response()->json([
+            'success' => true,
+            'download_url' => route('attendee.gallery.download-file', $gallery)
+        ]);
+    }
+
+    public function downloadFile(\App\Models\Gallery $gallery)
+    {
+        $registration = $this->getRegistration();
+        
+        $filePath = storage_path('app/public/' . $gallery->image_path);
+        
+        if (!file_exists($filePath)) {
+            abort(404, 'File not found');
+        }
+
+        return response()->download($filePath, basename($gallery->image_path));
+    }
+
     public function profile()
     {
         $registration = $this->getRegistration();
         
         return view('attendee.profile', compact('registration'));
     }
+
+    public function jobs(Request $request)
+    {
+        $registration = $this->getRegistration();
+
+        $query = ExhibitorJob::with('exhibitor')
+            ->where('is_active', true)
+            ->orderBy('created_at', 'desc');
+
+        // Filter by job type
+        if ($request->filled('job_type')) {
+            $query->where('job_type', $request->job_type);
+        }
+
+        // Filter by experience level
+        if ($request->filled('experience_level')) {
+            $query->where('experience_level', $request->experience_level);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        $jobs = $query->paginate(12);
+
+        return view('attendee.jobs', compact('registration', 'jobs'));
+    }
+
+    public function products(Request $request)
+    {
+        $registration = $this->getRegistration();
+
+        $query = ExhibitorProduct::with('exhibitor')
+            ->where('is_active', true)
+            ->orderBy('is_featured', 'desc')
+            ->orderBy('order')
+            ->orderBy('created_at', 'desc');
+
+        // Filter by category
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        // Filter featured
+        if ($request->filled('featured') && $request->featured == '1') {
+            $query->where('is_featured', true);
+        }
+
+        // Filter new
+        if ($request->filled('new') && $request->new == '1') {
+            $query->where('is_new', true);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->paginate(12);
+        $categories = ExhibitorProduct::where('is_active', true)
+            ->whereNotNull('category')
+            ->distinct()
+            ->pluck('category');
+
+        return view('attendee.products', compact('registration', 'products', 'categories'));
+    }
+
 
     private function getRegistration()
     {

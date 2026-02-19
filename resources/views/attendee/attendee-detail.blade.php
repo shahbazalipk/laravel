@@ -52,6 +52,54 @@
                 </div>
             @endif
 
+            <!-- Connection Button -->
+            @php
+                $connectionStatus = \App\Models\AttendeeConnection::getConnectionStatus($currentRegistration->id, $registration->id);
+            @endphp
+            
+            <div class="mb-4">
+                @if(!$connectionStatus)
+                    <button onclick="sendConnectionRequest({{ $registration->id }})" 
+                            id="connect-btn"
+                            class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                        </svg>
+                        Connect
+                    </button>
+                @elseif($connectionStatus->status === 'pending')
+                    @if($connectionStatus->sender_id === $currentRegistration->id)
+                        <button onclick="cancelConnectionRequest({{ $connectionStatus->id }})" 
+                                id="connect-btn"
+                                class="w-full px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white font-semibold rounded-lg transition">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Request Pending
+                        </button>
+                    @else
+                        <div class="space-y-2">
+                            <button onclick="acceptConnectionRequest({{ $connectionStatus->id }})" 
+                                    class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                                Accept Request
+                            </button>
+                            <button onclick="rejectConnectionRequest({{ $connectionStatus->id }})" 
+                                    class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
+                                Reject
+                            </button>
+                        </div>
+                    @endif
+                @elseif($connectionStatus->status === 'accepted')
+                    <a href="{{ route('attendee.messages.show', $registration) }}" 
+                       class="w-full block px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-center">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        Send Message
+                    </a>
+                @endif
+            </div>
+
             <!-- Contact Info -->
             <div class="space-y-3 pt-4 border-t border-gray-200">
                 @if($registration->email)
@@ -239,3 +287,89 @@
     </div>
 </div>
 @endsection
+
+
+<script>
+function sendConnectionRequest(receiverId) {
+    const btn = document.getElementById('connect-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    
+    fetch('{{ route('attendee.connections.send') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ receiver_id: receiverId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to send connection request');
+            btn.disabled = false;
+            btn.textContent = 'Connect';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to send connection request');
+        btn.disabled = false;
+        btn.textContent = 'Connect';
+    });
+}
+
+function cancelConnectionRequest(connectionId) {
+    if (!confirm('Cancel connection request?')) return;
+    
+    fetch(`/attendee/connections/${connectionId}/cancel`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function acceptConnectionRequest(connectionId) {
+    fetch(`/attendee/connections/${connectionId}/accept`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function rejectConnectionRequest(connectionId) {
+    if (!confirm('Reject this connection request?')) return;
+    
+    fetch(`/attendee/connections/${connectionId}/reject`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>

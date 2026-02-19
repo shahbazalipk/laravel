@@ -143,7 +143,13 @@ class ExhibitorController extends Controller
             'boothType',
             'businessActivities',
             'productTypes',
-            'tags'
+            'tags',
+            'jobs' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            },
+            'products' => function($query) {
+                $query->orderBy('order')->orderBy('created_at', 'desc');
+            }
         ]);
 
         return view('admin.exhibitors.show', compact('exhibitor'));

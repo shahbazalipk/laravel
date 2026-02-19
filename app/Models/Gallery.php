@@ -13,9 +13,15 @@ class Gallery extends Model
     protected $fillable = [
         'event_id',
         'org_id',
+        'gallery_album_id',
         'title',
         'description',
         'image_path',
+        'edit_settings',
+        'apply_watermark',
+        'watermark_position',
+        'watermark_opacity',
+        'frame_style',
         'order',
         'is_featured',
         'is_active',
@@ -24,12 +30,20 @@ class Gallery extends Model
     protected $casts = [
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
+        'apply_watermark' => 'boolean',
         'order' => 'integer',
+        'watermark_opacity' => 'integer',
+        'edit_settings' => 'array',
     ];
 
     public function event()
     {
         return $this->belongsTo(Event::class);
+    }
+
+    public function album()
+    {
+        return $this->belongsTo(GalleryAlbum::class, 'gallery_album_id');
     }
 
     public function scopeActive($query)

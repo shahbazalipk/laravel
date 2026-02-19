@@ -110,6 +110,16 @@ class Exhibitor extends Model
         return $this->belongsToMany(ExhibitorTag::class, 'exhibitor_tag');
     }
 
+    public function jobs()
+    {
+        return $this->hasMany(ExhibitorJob::class);
+    }
+
+    public function products()
+    {
+        return $this->hasMany(ExhibitorProduct::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

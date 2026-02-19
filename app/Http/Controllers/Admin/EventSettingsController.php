@@ -65,7 +65,14 @@ class EventSettingsController extends Controller
             'terms_url' => 'nullable|url|max:500',
             'map_url' => 'nullable|url|max:500',
             
-            // Media
+            // Media Files
+            'logo_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'header_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'portal_background_file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'main_floor_plan_file' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf|max:10240',
+            'social_media_share_banner_file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            
+            // Media URLs (legacy)
             'placeholder_type' => 'nullable|string|max:50',
             'placeholder_url' => 'nullable|string|max:1000',
             'logo' => 'nullable|string|max:500',
@@ -115,6 +122,47 @@ class EventSettingsController extends Controller
             'seo_description' => 'nullable|string',
             'seo_keywords' => 'nullable|string',
         ]);
+
+        // Handle file uploads
+        if ($request->hasFile('logo_file')) {
+            if ($event->logo) {
+                \Storage::disk('public')->delete($event->logo);
+            }
+            $path = $request->file('logo_file')->store('event/logos', 'public');
+            $validated['logo'] = $path;
+        }
+
+        if ($request->hasFile('header_image_file')) {
+            if ($event->header_image) {
+                \Storage::disk('public')->delete($event->header_image);
+            }
+            $path = $request->file('header_image_file')->store('event/headers', 'public');
+            $validated['header_image'] = $path;
+        }
+
+        if ($request->hasFile('portal_background_file')) {
+            if ($event->portal_background) {
+                \Storage::disk('public')->delete($event->portal_background);
+            }
+            $path = $request->file('portal_background_file')->store('event/backgrounds', 'public');
+            $validated['portal_background'] = $path;
+        }
+
+        if ($request->hasFile('main_floor_plan_file')) {
+            if ($event->main_floor_plan) {
+                \Storage::disk('public')->delete($event->main_floor_plan);
+            }
+            $path = $request->file('main_floor_plan_file')->store('event/floorplans', 'public');
+            $validated['main_floor_plan'] = $path;
+        }
+
+        if ($request->hasFile('social_media_share_banner_file')) {
+            if ($event->social_media_share_banner) {
+                \Storage::disk('public')->delete($event->social_media_share_banner);
+            }
+            $path = $request->file('social_media_share_banner_file')->store('event/social', 'public');
+            $validated['social_media_share_banner'] = $path;
+        }
 
         $this->service->updateEventSettings($event, $validated);
 

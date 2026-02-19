@@ -51,6 +51,8 @@ Route::prefix('attendee')->name('attendee.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AttendeeDashboardController::class, 'index'])->name('dashboard');
         Route::get('/exhibitors', [\App\Http\Controllers\AttendeeDashboardController::class, 'exhibitors'])->name('exhibitors');
         Route::get('/exhibitors/{exhibitor}', [\App\Http\Controllers\AttendeeDashboardController::class, 'exhibitorDetail'])->name('exhibitors.show');
+        Route::get('/jobs', [\App\Http\Controllers\AttendeeDashboardController::class, 'jobs'])->name('jobs');
+        Route::get('/products', [\App\Http\Controllers\AttendeeDashboardController::class, 'products'])->name('products');
         Route::get('/speakers', [\App\Http\Controllers\AttendeeDashboardController::class, 'speakers'])->name('speakers');
         Route::get('/speakers/{speaker}', [\App\Http\Controllers\AttendeeDashboardController::class, 'speakerDetail'])->name('speakers.show');
         Route::get('/sessions', [\App\Http\Controllers\AttendeeDashboardController::class, 'sessions'])->name('sessions');
@@ -61,9 +63,40 @@ Route::prefix('attendee')->name('attendee.')->group(function () {
         Route::get('/partners', [\App\Http\Controllers\AttendeeDashboardController::class, 'partners'])->name('partners');
         Route::get('/gallery', [\App\Http\Controllers\AttendeeDashboardController::class, 'gallery'])->name('gallery');
         Route::get('/gallery/{gallery}', [\App\Http\Controllers\AttendeeDashboardController::class, 'galleryPhoto'])->name('gallery.photo');
+        Route::post('/gallery/{gallery}/download', [\App\Http\Controllers\AttendeeDashboardController::class, 'downloadPhoto'])->name('gallery.download');
+        Route::get('/gallery/{gallery}/download-file', [\App\Http\Controllers\AttendeeDashboardController::class, 'downloadFile'])->name('gallery.download-file');
         Route::get('/favorites', [\App\Http\Controllers\FavoritesController::class, 'index'])->name('favorites');
         Route::post('/favorites/toggle', [\App\Http\Controllers\FavoritesController::class, 'toggle'])->name('favorites.toggle');
         Route::get('/profile', [\App\Http\Controllers\AttendeeDashboardController::class, 'profile'])->name('profile');
+        
+        // Event Wall Routes
+        Route::get('/event-wall', [\App\Http\Controllers\EventWallController::class, 'index'])->name('event-wall');
+        Route::post('/event-wall', [\App\Http\Controllers\EventWallController::class, 'store'])->name('event-wall.store');
+        Route::delete('/event-wall/{post}', [\App\Http\Controllers\EventWallController::class, 'destroy'])->name('event-wall.destroy');
+        Route::post('/event-wall/{post}/like', [\App\Http\Controllers\EventWallController::class, 'toggleLike'])->name('event-wall.like');
+        Route::post('/event-wall/{post}/comments', [\App\Http\Controllers\EventWallController::class, 'storeComment'])->name('event-wall.comments.store');
+        Route::delete('/event-wall/comments/{comment}', [\App\Http\Controllers\EventWallController::class, 'destroyComment'])->name('event-wall.comments.destroy');
+        Route::post('/event-wall/comments/{comment}/like', [\App\Http\Controllers\EventWallController::class, 'toggleCommentLike'])->name('event-wall.comments.like');
+        
+        // Connection Routes
+        Route::get('/connections', [\App\Http\Controllers\AttendeeConnectionController::class, 'index'])->name('connections');
+        Route::post('/connections/send', [\App\Http\Controllers\AttendeeConnectionController::class, 'sendRequest'])->name('connections.send');
+        Route::post('/connections/{connection}/accept', [\App\Http\Controllers\AttendeeConnectionController::class, 'acceptRequest'])->name('connections.accept');
+        Route::post('/connections/{connection}/reject', [\App\Http\Controllers\AttendeeConnectionController::class, 'rejectRequest'])->name('connections.reject');
+        Route::delete('/connections/{connection}/cancel', [\App\Http\Controllers\AttendeeConnectionController::class, 'cancelRequest'])->name('connections.cancel');
+        Route::delete('/connections/{connection}', [\App\Http\Controllers\AttendeeConnectionController::class, 'removeConnection'])->name('connections.remove');
+        
+        // Messaging Routes
+        Route::get('/messages', [\App\Http\Controllers\AttendeeMessageController::class, 'index'])->name('messages');
+        Route::get('/messages/{attendee}', [\App\Http\Controllers\AttendeeMessageController::class, 'show'])->name('messages.show');
+        Route::post('/messages/{attendee}/send', [\App\Http\Controllers\AttendeeMessageController::class, 'send'])->name('messages.send');
+        Route::get('/messages/{attendee}/get', [\App\Http\Controllers\AttendeeMessageController::class, 'getMessages'])->name('messages.get');
+        Route::get('/messages-unread-count', [\App\Http\Controllers\AttendeeMessageController::class, 'getUnreadCount'])->name('messages.unread-count');
+        
+        // Marketing Assets (Attendee View)
+        Route::get('/marketing-hub', [\App\Http\Controllers\AttendeeMarketingController::class, 'index'])->name('marketing-hub');
+        Route::get('/marketing-hub/{asset}/download', [\App\Http\Controllers\AttendeeMarketingController::class, 'download'])->name('marketing-hub.download');
+        Route::post('/marketing-hub/{asset}/share', [\App\Http\Controllers\AttendeeMarketingController::class, 'trackShare'])->name('marketing-hub.share');
     });
 });
 
@@ -163,6 +196,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('exhibitors/{exhibitor}/toggle-featured', [ExhibitorController::class, 'toggleFeatured'])
             ->name('exhibitors.toggle-featured');
         
+        // Exhibitor Jobs
+        Route::resource('exhibitor-jobs', \App\Http\Controllers\Admin\ExhibitorJobController::class)->only(['store', 'update', 'destroy']);
+        
+        // Exhibitor Products
+        Route::resource('exhibitor-products', \App\Http\Controllers\Admin\ExhibitorProductController::class)->only(['store', 'update', 'destroy']);
+        
         // Sponsors
         Route::resource('sponsors', SponsorController::class);
         Route::post('sponsors/{sponsor}/toggle', [SponsorController::class, 'toggleActive'])
@@ -185,8 +224,34 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Badge Designs
         Route::resource('badge-designs', \App\Http\Controllers\Admin\BadgeDesignController::class);
         
-        // Gallery
+        // Gallery Albums & Photos
+        Route::resource('gallery-albums', \App\Http\Controllers\Admin\GalleryAlbumController::class);
         Route::resource('gallery', \App\Http\Controllers\Admin\GalleryController::class);
+        Route::get('gallery-batch-editor', [\App\Http\Controllers\Admin\GalleryController::class, 'batchEditor'])->name('gallery.batch-editor');
+        Route::post('gallery-batch-update', [\App\Http\Controllers\Admin\GalleryController::class, 'batchUpdate'])->name('gallery.batch-update');
+        
+        // Marketing Assets
+        Route::resource('marketing-assets', \App\Http\Controllers\Admin\MarketingAssetController::class);
+        Route::post('marketing-assets/{marketingAsset}/duplicate', [\App\Http\Controllers\Admin\MarketingAssetController::class, 'duplicate'])->name('marketing-assets.duplicate');
+        
+        // Gallery Settings
+        Route::prefix('gallery-settings')->name('gallery-settings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'index'])->name('index');
+            Route::get('/store', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'store'])->name('store');
+            Route::post('/store', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'updateStore'])->name('store.update');
+            Route::get('/photo-sizes', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'photoSizes'])->name('photo-sizes');
+            Route::post('/photo-sizes', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'updatePhotoSizes'])->name('photo-sizes.update');
+            Route::get('/presets', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'presets'])->name('presets');
+            Route::post('/presets', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'updatePresets'])->name('presets.update');
+            Route::get('/branding', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'branding'])->name('branding');
+            Route::post('/branding', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'updateBranding'])->name('branding.update');
+            Route::get('/forms', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'forms'])->name('forms');
+            Route::post('/forms', [\App\Http\Controllers\Admin\GallerySettingsController::class, 'updateForms'])->name('forms.update');
+        });
+        
+        // Gallery Forms
+        Route::resource('gallery-forms', \App\Http\Controllers\Admin\GalleryFormController::class)->except(['index', 'show']);
+        Route::post('gallery-forms/{galleryForm}/set-default', [\App\Http\Controllers\Admin\GalleryFormController::class, 'setDefault'])->name('gallery-forms.set-default');
         
         Route::resource('memberships', MembershipController::class);
         Route::post('memberships/{membership}/toggle', [MembershipController::class, 'toggleActive'])

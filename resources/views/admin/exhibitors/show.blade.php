@@ -546,4 +546,373 @@
 
     </div>
 </div>
+
+<!-- Jobs Section -->
+<div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-900">Job Openings</h2>
+        <button onclick="openJobModal()" 
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+            + Add Job
+        </button>
+    </div>
+    
+    <div id="jobs-list" class="space-y-4">
+        @forelse($exhibitor->jobs as $job)
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-1">{{ $job->title }}</h3>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            @if($job->job_type)
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">{{ $job->job_type }}</span>
+                            @endif
+                            @if($job->experience_level)
+                                <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">{{ $job->experience_level }}</span>
+                            @endif
+                            @if($job->location)
+                                <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">{{ $job->location }}</span>
+                            @endif
+                            @if(!$job->is_active)
+                                <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">Inactive</span>
+                            @endif
+                        </div>
+                        <p class="text-sm text-gray-600 line-clamp-2">{{ Str::limit($job->description, 150) }}</p>
+                        <div class="flex gap-4 mt-2 text-xs text-gray-500">
+                            <span>👁 {{ $job->views_count }} views</span>
+                            <span>📝 {{ $job->applications_count }} applications</span>
+                            @if($job->deadline)
+                                <span>📅 Deadline: {{ $job->deadline->format('M d, Y') }}</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="flex gap-2 ml-4">
+                        <button onclick="editJob({{ $job->id }})" 
+                                class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded">
+                            Edit
+                        </button>
+                        <form action="{{ route('admin.exhibitor-jobs.destroy', $job) }}" 
+                              method="POST" 
+                              onsubmit="return confirm('Delete this job?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" 
+                                    class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <p class="text-gray-500 text-center py-8">No job openings yet</p>
+        @endforelse
+    </div>
+</div>
+
+<!-- Products Section -->
+<div class="bg-white rounded-lg shadow-sm p-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-900">Products & Services</h2>
+        <button onclick="openProductModal()" 
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+            + Add Product
+        </button>
+    </div>
+    
+    <div id="products-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @forelse($exhibitor->products as $product)
+            <div class="border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-300 transition">
+                @if($product->image)
+                    <img src="{{ asset('storage/' . $product->image) }}" 
+                         alt="{{ $product->name }}"
+                         class="w-full h-48 object-cover">
+                @else
+                    <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
+                        <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                    </div>
+                @endif
+                <div class="p-4">
+                    <div class="flex items-start justify-between mb-2">
+                        <h3 class="font-semibold text-gray-900">{{ $product->name }}</h3>
+                        @if($product->is_featured)
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">Featured</span>
+                        @endif
+                    </div>
+                    @if($product->price_text)
+                        <p class="text-indigo-600 font-semibold text-sm mb-2">{{ $product->price_text }}</p>
+                    @elseif($product->price)
+                        <p class="text-indigo-600 font-semibold text-sm mb-2">${{ number_format($product->price, 2) }}</p>
+                    @endif
+                    <p class="text-sm text-gray-600 line-clamp-2 mb-3">{{ Str::limit($product->description, 100) }}</p>
+                    <div class="flex gap-2 text-xs text-gray-500 mb-3">
+                        <span>👁 {{ $product->views_count }}</span>
+                        <span>💬 {{ $product->inquiries_count }}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editProduct({{ $product->id }})" 
+                                class="flex-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded">
+                            Edit
+                        </button>
+                        <form action="{{ route('admin.exhibitor-products.destroy', $product) }}" 
+                              method="POST" 
+                              onsubmit="return confirm('Delete this product?')"
+                              class="flex-1">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" 
+                                    class="w-full px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="col-span-full text-gray-500 text-center py-8">No products yet</div>
+        @endforelse
+    </div>
+</div>
+
+<!-- Job Modal -->
+<div id="job-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900" id="job-modal-title">Add Job Opening</h3>
+                <button onclick="closeJobModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="job-form" action="{{ route('admin.exhibitor-jobs.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="exhibitor_id" value="{{ $exhibitor->id }}">
+                <input type="hidden" name="_method" value="POST" id="job-method">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                        <input type="text" name="title" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
+                            <select name="job_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="">Select Type</option>
+                                <option value="Full-time">Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Contract">Contract</option>
+                                <option value="Internship">Internship</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Experience Level</label>
+                            <select name="experience_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="">Select Level</option>
+                                <option value="Entry">Entry Level</option>
+                                <option value="Mid">Mid Level</option>
+                                <option value="Senior">Senior Level</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                            <input type="text" name="location"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
+                            <input type="text" name="salary_range" placeholder="e.g., $50k - $70k"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                        <textarea name="description" rows="4" required
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Requirements</label>
+                        <textarea name="requirements" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Application Email</label>
+                        <input type="email" name="application_email"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Application Deadline</label>
+                        <input type="date" name="deadline"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="is_active" value="1" checked
+                                   class="rounded border-gray-300 text-indigo-600">
+                            <span class="ml-2 text-sm text-gray-700">Active</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeJobModal()" 
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                        Save Job
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Product Modal -->
+<div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900" id="product-modal-title">Add Product</h3>
+                <button onclick="closeProductModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="product-form" action="{{ route('admin.exhibitor-products.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="exhibitor_id" value="{{ $exhibitor->id }}">
+                <input type="hidden" name="_method" value="POST" id="product-method">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                        <input type="text" name="name" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <input type="text" name="category"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                        <textarea name="description" rows="4" required
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
+                        <input type="file" name="image" accept="image/*"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                            <input type="number" name="price" step="0.01"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Price Text</label>
+                            <input type="text" name="price_text" placeholder="e.g., Starting from $99"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Features</label>
+                        <textarea name="features" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="is_featured" value="1"
+                                   class="rounded border-gray-300 text-indigo-600">
+                            <span class="ml-2 text-sm text-gray-700">Featured</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="is_new" value="1"
+                                   class="rounded border-gray-300 text-indigo-600">
+                            <span class="ml-2 text-sm text-gray-700">New Product</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="is_active" value="1" checked
+                                   class="rounded border-gray-300 text-indigo-600">
+                            <span class="ml-2 text-sm text-gray-700">Active</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeProductModal()" 
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                        Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openJobModal() {
+    document.getElementById('job-modal').classList.remove('hidden');
+    document.getElementById('job-form').reset();
+    document.getElementById('job-form').action = '{{ route('admin.exhibitor-jobs.store') }}';
+    document.getElementById('job-method').value = 'POST';
+    document.getElementById('job-modal-title').textContent = 'Add Job Opening';
+}
+
+function closeJobModal() {
+    document.getElementById('job-modal').classList.add('hidden');
+}
+
+function editJob(jobId) {
+    // Implement edit functionality
+    alert('Edit job ' + jobId);
+}
+
+function openProductModal() {
+    document.getElementById('product-modal').classList.remove('hidden');
+    document.getElementById('product-form').reset();
+    document.getElementById('product-form').action = '{{ route('admin.exhibitor-products.store') }}';
+    document.getElementById('product-method').value = 'POST';
+    document.getElementById('product-modal-title').textContent = 'Add Product';
+}
+
+function closeProductModal() {
+    document.getElementById('product-modal').classList.add('hidden');
+}
+
+function editProduct(productId) {
+    // Implement edit functionality
+    alert('Edit product ' + productId);
+}
+</script>
 @endsection
