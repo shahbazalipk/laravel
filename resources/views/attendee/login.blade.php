@@ -91,11 +91,18 @@
                 </div>
             </div>
 
-            <!-- Admin Link -->
-            <div class="mt-6 text-center">
-                <a href="{{ route('admin.login') }}" class="text-sm text-gray-500 hover:text-gray-700">
-                    Admin Login
-                </a>
+            <!-- Back to Event & Admin Links -->
+            <div class="mt-6 text-center space-y-2">
+                <div>
+                    <a href="{{ route('event.landing', $event->slug) }}" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                        ← Back to Event Page
+                    </a>
+                </div>
+                <div>
+                    <a href="{{ route('admin.login') }}" class="text-sm text-gray-500 hover:text-gray-700">
+                        Admin Login
+                    </a>
+                </div>
             </div>
         </div>
     </div>
