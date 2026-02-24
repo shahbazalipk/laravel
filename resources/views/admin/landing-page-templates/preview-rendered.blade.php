@@ -3,8 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $template->name }} - Preview</title>
+    
+    @php
+        $event = \App\Models\Event::getCurrentEvent();
+    @endphp
+    
+    <!-- Primary Meta Tags -->
+    <title>{{ $event->seo_title ?? $event->event_name ?? $template->name }}</title>
+    <meta name="title" content="{{ $event->seo_title ?? $event->event_name ?? $template->name }}">
+    <meta name="description" content="{{ $event->seo_description ?? $event->description ?? 'Join us for an amazing event experience.' }}">
+    @if($event->seo_keywords)
+        <meta name="keywords" content="{{ $event->seo_keywords }}">
+    @endif
+    <meta name="author" content="{{ $event->organizer_name ?? config('app.name') }}">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://{{ $event->subdomain ?? 'event' }}.glimzo.ai">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://{{ $event->subdomain ?? 'event' }}.glimzo.ai">
+    <meta property="og:title" content="{{ $event->seo_title ?? $event->event_name ?? $template->name }}">
+    <meta property="og:description" content="{{ $event->seo_description ?? $event->description ?? 'Join us for an amazing event experience.' }}">
+    @if($event->social_media_share_banner)
+        <meta property="og:image" content="{{ asset('storage/' . $event->social_media_share_banner) }}">
+    @elseif($event->logo)
+        <meta property="og:image" content="{{ asset('storage/' . $event->logo) }}">
+    @endif
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="{{ $event->event_name ?? config('app.name') }}">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://{{ $event->subdomain ?? 'event' }}.glimzo.ai">
+    <meta property="twitter:title" content="{{ $event->seo_title ?? $event->event_name ?? $template->name }}">
+    <meta property="twitter:description" content="{{ $event->seo_description ?? $event->description ?? 'Join us for an amazing event experience.' }}">
+    @if($event->social_media_share_banner)
+        <meta property="twitter:image" content="{{ asset('storage/' . $event->social_media_share_banner) }}">
+    @elseif($event->logo)
+        <meta property="twitter:image" content="{{ asset('storage/' . $event->logo) }}">
+    @endif
+    @if($event->twitter_mention)
+        <meta name="twitter:site" content="{{ $event->twitter_mention }}">
+        <meta name="twitter:creator" content="{{ $event->twitter_mention }}">
+    @endif
+    
+    <!-- LinkedIn -->
+    <meta property="og:image:alt" content="{{ $event->event_name ?? $template->name }} - Event Banner">
+    
+    <!-- Additional Meta Tags -->
+    <meta name="theme-color" content="#6366f1">
+    <meta name="msapplication-TileColor" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Structured Data / Schema.org -->
+    @if($event->start_date)
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": "{{ $event->event_name ?? $template->name }}",
+        "description": "{{ $event->seo_description ?? $event->description ?? 'Join us for an amazing event experience.' }}",
+        "startDate": "{{ $event->start_date->toIso8601String() }}",
+        @if($event->end_date)
+        "endDate": "{{ $event->end_date->toIso8601String() }}",
+        @endif
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "{{ $event->event_type === 'virtual' ? 'https://schema.org/OnlineEventAttendanceMode' : 'https://schema.org/OfflineEventAttendanceMode' }}",
+        @if($event->venue_name || $event->address)
+        "location": {
+            "@type": "Place",
+            "name": "{{ $event->venue_name ?? 'Event Venue' }}",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "{{ $event->address ?? '' }}",
+                "addressLocality": "{{ $event->city ?? '' }}",
+                "addressRegion": "{{ $event->state ?? '' }}",
+                "postalCode": "{{ $event->zip_code ?? '' }}",
+                "addressCountry": "{{ $event->country ?? '' }}"
+            }
+        },
+        @endif
+        "image": [
+            @if($event->social_media_share_banner)
+                "{{ asset('storage/' . $event->social_media_share_banner) }}"
+            @elseif($event->logo)
+                "{{ asset('storage/' . $event->logo) }}"
+            @endif
+        ],
+        @if($event->organizer_name)
+        "organizer": {
+            "@type": "Organization",
+            "name": "{{ $event->organizer_name }}",
+            "url": "https://{{ $event->subdomain ?? 'event' }}.glimzo.ai"
+        },
+        @endif
+        "offers": {
+            "@type": "Offer",
+            "url": "https://{{ $event->subdomain ?? 'event' }}.glimzo.ai",
+            "availability": "https://schema.org/InStock",
+            "validFrom": "{{ now()->toIso8601String() }}"
+        }
+    }
+    </script>
+    @endif
+    
+    <!-- Favicon -->
+    @if($event->logo)
+        <link rel="icon" type="image/png" href="{{ asset('storage/' . $event->logo) }}">
+        <link rel="apple-touch-icon" href="{{ asset('storage/' . $event->logo) }}">
+    @endif
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

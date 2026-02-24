@@ -111,10 +111,7 @@ class Event extends Model
         
         if ($eventId && $orgId) {
             $event = self::where('id', $eventId)
-                ->where(function($query) use ($orgId) {
-                    $query->where('organization_id', $orgId)
-                          ->orWhere('org_id', $orgId);
-                })
+                ->where('organization_id', $orgId)
                 ->first();
                 
             if ($event) {
@@ -124,10 +121,7 @@ class Event extends Model
         
         // Last fallback: get first event for this organization
         if ($orgId) {
-            $event = self::where(function($query) use ($orgId) {
-                $query->where('organization_id', $orgId)
-                      ->orWhere('org_id', $orgId);
-            })->first();
+            $event = self::where('organization_id', $orgId)->first();
             
             if ($event) {
                 return $event;
