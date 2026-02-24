@@ -17,6 +17,8 @@ class EventController extends Controller
     public function landing()
     {
         $event = $this->eventService->getCurrentEvent();
+        
+        // Get all dynamic data
         $tracks = \App\Models\Track::orderBy('sort_order')->orderBy('name')->get();
         $agendaItems = $this->agendaService->getAllAgendaItems();
         
@@ -31,6 +33,51 @@ class EventController extends Controller
             ->orderBy('sort_order')
             ->get();
         
-        return view('event.landing', compact('event', 'tracks', 'agendaItems', 'speakers', 'sponsors'));
+        // Get active partners
+        $partners = \App\Models\Partner::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+        
+        // Get registration categories
+        $registrationCategories = \App\Models\RegistrationCategory::orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+        
+        // Get exhibitors
+        $exhibitors = \App\Models\Exhibitor::where('is_active', true)
+            ->orderBy('company_name')
+            ->get();
+        
+        // Get sessions
+        $sessions = \App\Models\Session::with(['speaker', 'track', 'location'])
+            ->orderBy('start_time')
+            ->get();
+        
+        // Check if event has a custom template
+        if ($event->landing_page_template_id && $event->landingPageTemplate) {
+            return view('event.landing-template', compact(
+                'event', 
+                'tracks', 
+                'agendaItems', 
+                'speakers', 
+                'sponsors', 
+                'partners',
+                'registrationCategories',
+                'exhibitors',
+                'sessions'
+            ));
+        }
+        
+        return view('event.landing', compact(
+            'event', 
+            'tracks', 
+            'agendaItems', 
+            'speakers', 
+            'sponsors',
+            'partners',
+            'registrationCategories',
+            'exhibitors',
+            'sessions'
+        ));
     }
 }

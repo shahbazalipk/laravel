@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             CategoryTypeSeeder::class,
             RegistrationCategorySeeder::class,
             EmailTemplateSeeder::class,
+            LandingPageTemplateSeeder::class, // Landing page templates
             // EventDataSeeder::class, // Skipped - needs agenda system update
             // FileSeeder::class, // Skipped - optional
             // SponsorSeeder::class, // Skipped - optional

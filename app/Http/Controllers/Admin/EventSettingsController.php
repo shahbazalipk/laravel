@@ -21,7 +21,9 @@ class EventSettingsController extends Controller
                 ->with('error', 'Event not found');
         }
 
-        return view('admin.event-settings.edit', compact('event'));
+        $templates = \App\Models\LandingPageTemplate::where('is_active', true)->get();
+
+        return view('admin.event-settings.edit', compact('event', 'templates'));
     }
 
     public function update(Request $request)
@@ -47,6 +49,9 @@ class EventSettingsController extends Controller
             
             // Description
             'description' => 'nullable|string',
+            
+            // Landing Page Template
+            'landing_page_template_id' => 'nullable|exists:landing_page_templates,id',
             
             // Financial
             'vat_percentage' => 'nullable|numeric|min:0|max:100',
@@ -121,7 +126,19 @@ class EventSettingsController extends Controller
             'seo_title' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string',
             'seo_keywords' => 'nullable|string',
+            
+            // LLM Integration
+            'llm_enabled' => 'nullable|boolean',
+            'llm_provider' => 'nullable|string|in:openai,anthropic,google,azure',
+            'llm_model' => 'nullable|string|max:255',
+            'llm_api_key' => 'nullable|string',
+            'llm_settings' => 'nullable|array',
+            'llm_settings.temperature' => 'nullable|numeric|min:0|max:2',
+            'llm_settings.max_tokens' => 'nullable|integer|min:100|max:8000',
         ]);
+
+        // Handle checkbox - if not present, set to false
+        $validated['llm_enabled'] = $request->has('llm_enabled') ? true : false;
 
         // Handle file uploads
         if ($request->hasFile('logo_file')) {
@@ -163,6 +180,22 @@ class EventSettingsController extends Controller
             $path = $request->file('social_media_share_banner_file')->store('event/social', 'public');
             $validated['social_media_share_banner'] = $path;
         }
+
+        // Encrypt API key if provided
+        if (!empty($validated['llm_api_key']) && $validated['llm_api_key'] !== '••••••••••••••••') {
+            $validated['llm_api_key'] = encrypt($validated['llm_api_key']);
+        } else {
+            unset($validated['llm_api_key']); // Don't update if placeholder
+        }
+
+        \Log::info('Updating event settings', [
+            'event_id' => $event->id,
+            'llm_enabled' => $validated['llm_enabled'] ?? null,
+            'llm_provider' => $validated['llm_provider'] ?? null,
+            'llm_model' => $validated['llm_model'] ?? null,
+            'has_llm_api_key' => isset($validated['llm_api_key']),
+            'llm_settings' => $validated['llm_settings'] ?? null,
+        ]);
 
         $this->service->updateEventSettings($event, $validated);
 

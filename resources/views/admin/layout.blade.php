@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Dashboard') - Event Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -178,6 +179,7 @@
                             </button>
                             <div class="dropdown-menu hidden absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Event Settings</a>
+                                <a href="{{ route('admin.landing-page-templates.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Landing Page Templates</a>
                                 <a href="{{ route('admin.event-urls.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">URLs</a>
                                 <a href="{{ route('admin.badge-designs.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Badge Designs</a>
                                 <a href="{{ route('admin.gallery.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Gallery</a>
@@ -273,6 +275,7 @@
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Settings</p>
                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Event Settings</a>
+                <a href="{{ route('admin.landing-page-templates.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Landing Page Templates</a>
                 <a href="{{ route('admin.event-urls.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">URLs</a>
                 <a href="{{ route('admin.badge-designs.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Badge Designs</a>
                 <a href="{{ route('admin.gallery.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Gallery</a>

@@ -223,6 +223,25 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('event-settings', [EventSettingsController::class, 'update'])
             ->name('event-settings.update');
         
+        // Landing Page Templates
+        Route::resource('landing-page-templates', \App\Http\Controllers\Admin\LandingPageTemplateController::class);
+        Route::post('landing-page-templates/{landingPageTemplate}/toggle-active', [\App\Http\Controllers\Admin\LandingPageTemplateController::class, 'toggleActive'])
+            ->name('landing-page-templates.toggle-active');
+        Route::get('landing-page-templates/{landingPageTemplate}/preview', [\App\Http\Controllers\Admin\LandingPageTemplateController::class, 'preview'])
+            ->name('landing-page-templates.preview');
+        Route::post('landing-page-templates/{landingPageTemplate}/ai-edit', [\App\Http\Controllers\Admin\LandingPageTemplateController::class, 'aiEdit'])
+            ->name('landing-page-templates.ai-edit');
+        
+        // LLM Integration
+        Route::post('llm/test-connection', [\App\Http\Controllers\Admin\LLMController::class, 'testConnection'])
+            ->name('llm.test-connection');
+        Route::post('llm/generate-template', [\App\Http\Controllers\Admin\LLMController::class, 'generateTemplate'])
+            ->name('llm.generate-template');
+        Route::post('llm/improve-template', [\App\Http\Controllers\Admin\LLMController::class, 'improveTemplate'])
+            ->name('llm.improve-template');
+        Route::post('llm/generate-seo', [\App\Http\Controllers\Admin\LLMController::class, 'generateSEO'])
+            ->name('llm.generate-seo');
+        
         // Event URLs
         Route::resource('event-urls', EventUrlController::class);
         

@@ -15,6 +15,9 @@
             <button type="button" onclick="switchTab('basic')" id="tab-basic" class="tab-button whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm border-indigo-500 text-indigo-600">
                 Basic Information
             </button>
+            <button type="button" onclick="switchTab('template')" id="tab-template" class="tab-button whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Landing Page Template
+            </button>
             <button type="button" onclick="switchTab('dates')" id="tab-dates" class="tab-button whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 Dates & Times
             </button>
@@ -42,6 +45,9 @@
             <button type="button" onclick="switchTab('seo')" id="tab-seo" class="tab-button whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 SEO & Captcha
             </button>
+            <button type="button" onclick="switchTab('llm')" id="tab-llm" class="tab-button whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                AI Integration
+            </button>
         </nav>
     </div>
 </div>
@@ -56,6 +62,11 @@
         <!-- Basic Information Tab -->
         <div id="content-basic" class="tab-content">
             @include('admin.event-settings._basic')
+        </div>
+
+        <!-- Landing Page Template Tab -->
+        <div id="content-template" class="tab-content hidden">
+            @include('admin.event-settings._template')
         </div>
 
         <!-- Dates & Times Tab -->
@@ -103,6 +114,11 @@
         <div id="content-seo" class="tab-content hidden">
             @include('admin.event-settings._seo')
             @include('admin.event-settings._captcha')
+        </div>
+
+        <!-- AI Integration Tab -->
+        <div id="content-llm" class="tab-content hidden">
+            @include('admin.event-settings._llm')
         </div>
     </div>
 

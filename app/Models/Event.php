@@ -65,14 +65,32 @@ class Event extends Model
         'smtp_host',
         'smtp_port',
         'smtp_username',
-        'smtp_pas'];
+        'smtp_password',
+        // Landing Page Template
+        'landing_page_template_id',
+        'template_settings',
+        // LLM Integration
+        'llm_provider',
+        'llm_model',
+        'llm_api_key',
+        'llm_settings',
+        'llm_enabled',
+    ];
 
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'online_reg_close' => 'datetime',
         'languages' => 'array',
+        'template_settings' => 'array',
+        'llm_settings' => 'array',
+        'llm_enabled' => 'boolean',
     ];
+    
+    public function landingPageTemplate()
+    {
+        return $this->belongsTo(LandingPageTemplate::class);
+    }
     
     public static function getCurrentEvent()
     {
