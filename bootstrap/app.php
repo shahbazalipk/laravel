@@ -11,6 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Register global middleware
+        $middleware->web(append: [
+            \App\Http\Middleware\ResolveEventFromSubdomain::class,
+        ]);
+        
+        // Register middleware aliases
         $middleware->alias([
             'event.admin' => \App\Http\Middleware\EventAdmin::class,
             'attendee.auth' => \App\Http\Middleware\AttendeeAuth::class,

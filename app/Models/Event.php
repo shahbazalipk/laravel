@@ -94,22 +94,47 @@ class Event extends Model
     
     public static function getCurrentEvent()
     {
-        // For single-event focus, get the event by configured ID
-        // If not found, return the first event for this organization
-        $event = self::where('id', config('event.event_id'))
-            ->where('organization_id', config('event.org_id'))
-            ->first();
+        // Try to get from container first (set by middleware)
+        if (app()->has('current.event')) {
+            return app('current.event');
+        }
+        
+        // Try to get from session (set by middleware)
+        $eventId = session('event_id');
+        if ($eventId) {
+            return self::find($eventId);
+        }
+        
+        // Fallback to config (for local development)
+        $eventId = config('event.event_id');
+        $orgId = config('event.org_id');
+        
+        if ($eventId && $orgId) {
+            $event = self::where('id', $eventId)
+                ->where(function($query) use ($orgId) {
+                    $query->where('organization_id', $orgId)
+                          ->orWhere('org_id', $orgId);
+                })
+                ->first();
+                
+            if ($event) {
+                return $event;
+            }
+        }
+        
+        // Last fallback: get first event for this organization
+        if ($orgId) {
+            $event = self::where(function($query) use ($orgId) {
+                $query->where('organization_id', $orgId)
+                      ->orWhere('org_id', $orgId);
+            })->first();
             
-        if (!$event) {
-            // Fallback: get first event for this organization
-            $event = self::where('organization_id', config('event.org_id'))->first();
+            if ($event) {
+                return $event;
+            }
         }
         
-        if (!$event) {
-            // Last fallback: get any event (for development)
-            $event = self::first();
-        }
-        
-        return $event;
+        // Ultimate fallback: get any event (for development)
+        return self::first();
     }
 }
