@@ -213,7 +213,7 @@ class RegistrationController extends Controller
         // Prepare registration data
         $registrationData = array_merge($validated, [
             'event_id' => $event->id,
-            'org_id' => $event->org_id,
+            'org_id' => $event->organization_id,
             'registration_type' => 'individual',
             'registration_status_id' => $registrationStatusId,
             'base_price' => $pricing['base_price'],
