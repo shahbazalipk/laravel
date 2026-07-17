@@ -10,9 +10,13 @@ use RuntimeException;
 
 class EventAccessAuthService
 {
+    public function __construct(
+        private EventContextService $eventContext
+    ) {}
+
     public function authenticate(string $email, string $password): ?OrganizationAdminUser
     {
-        [$eventId, $organizationId] = $this->requiredEventContext();
+        [$eventId, $organizationId] = $this->eventContext->requiredContext();
 
         $user = OrganizationAdminUser::query()
             ->where('email', $email)
@@ -31,10 +35,11 @@ class EventAccessAuthService
         return $user;
     }
 
-    public function authenticateViaSsoToken(string $token): ?OrganizationAdminUser
+    /**
+     * @return array{user:OrganizationAdminUser,event_id:int,organization_id:int}|null
+     */
+    public function authenticateViaSsoToken(string $token): ?array
     {
-        [$eventId, $organizationId] = $this->requiredEventContext();
-
         $portalUrl = rtrim((string) config('event.org_portal_url'), '/');
 
         if ($portalUrl === '') {
@@ -56,12 +61,10 @@ class EventAccessAuthService
         }
 
         $userData = $payload['user'] ?? [];
+        $eventId = (int) ($userData['event_id'] ?? 0);
+        $organizationId = (int) ($userData['organization_id'] ?? 0);
 
-        if ((int) ($userData['event_id'] ?? 0) !== (int) $eventId) {
-            return null;
-        }
-
-        if ((int) ($userData['organization_id'] ?? 0) !== (int) $organizationId) {
+        if (!$eventId || !$organizationId) {
             return null;
         }
 
@@ -75,31 +78,18 @@ class EventAccessAuthService
             return null;
         }
 
-        return $user;
+        return [
+            'user' => $user,
+            'event_id' => $eventId,
+            'organization_id' => $organizationId,
+        ];
     }
 
-    public function userIsAssignedToEvent(int $userId, ?int $eventId = null): bool
+    public function userIsAssignedToEvent(int $userId, int $eventId): bool
     {
-        [$resolvedEventId] = $this->requiredEventContext();
-
         return DB::table('event_user')
-            ->where('event_id', $eventId ?? $resolvedEventId)
+            ->where('event_id', $eventId)
             ->where('organization_user_id', $userId)
             ->exists();
-    }
-
-    /**
-     * @return array{0:int,1:int}
-     */
-    private function requiredEventContext(): array
-    {
-        $eventId = config('event.event_id');
-        $organizationId = config('event.org_id');
-
-        if (!$eventId || !$organizationId) {
-            throw new RuntimeException('EVENT_ID and ORG_ID must be configured in .env');
-        }
-
-        return [(int) $eventId, (int) $organizationId];
     }
 }

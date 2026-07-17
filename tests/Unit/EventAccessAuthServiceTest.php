@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\EventAccessAuthService;
+use App\Services\EventContextService;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -10,11 +11,6 @@ class EventAccessAuthServiceTest extends TestCase
 {
     public function test_user_is_assigned_to_event_checks_event_user_pivot(): void
     {
-        config([
-            'event.event_id' => 30,
-            'event.org_id' => 8,
-        ]);
-
         DB::shouldReceive('table')
             ->once()
             ->with('event_user')
@@ -34,8 +30,8 @@ class EventAccessAuthServiceTest extends TestCase
             ->once()
             ->andReturnTrue();
 
-        $service = new EventAccessAuthService();
+        $service = new EventAccessAuthService(new EventContextService());
 
-        $this->assertTrue($service->userIsAssignedToEvent(14));
+        $this->assertTrue($service->userIsAssignedToEvent(14, 30));
     }
 }

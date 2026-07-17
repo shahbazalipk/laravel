@@ -11,6 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\SetEventContext::class,
+        ]);
+
         $middleware->alias([
             'event.admin' => \App\Http\Middleware\EventAdmin::class,
         ]);
