@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class EventUrl extends Model
 {
@@ -19,6 +20,7 @@ class EventUrl extends Model
         'enable_barcode_scanner',
         'enable_manual_input',
         'description',
+        'custom_html',
     ];
 
     protected $casts = [
@@ -36,6 +38,16 @@ class EventUrl extends Model
     public function event()
     {
         return $this->belongsTo(Event::class);
+    }
+
+    public function sponsors(): BelongsToMany
+    {
+        return $this->belongsToMany(Sponsor::class, 'event_url_sponsor');
+    }
+
+    public function partners(): BelongsToMany
+    {
+        return $this->belongsToMany(Partner::class, 'event_url_partner');
     }
 
     /**

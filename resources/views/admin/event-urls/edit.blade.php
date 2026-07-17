@@ -109,6 +109,90 @@
             @enderror
         </div>
 
+        <section class="mt-8 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-5 sm:p-6" data-testid="event-url-page-content">
+            <div class="mb-5">
+                <p class="text-xs font-bold uppercase tracking-wider text-indigo-600">Online registration page</p>
+                <h2 class="mt-1 text-lg font-semibold text-gray-900">Sponsors, partners and custom content</h2>
+                <p class="mt-1 text-sm text-gray-600">Choose the organizations and extra content shown beneath the registration wizard.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800">Sponsors</label>
+                    <p class="mb-3 mt-1 text-xs text-gray-500">Only active sponsors marked visible online are available.</p>
+                    <div class="max-h-64 space-y-2 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3" data-testid="event-url-sponsors">
+                        @forelse($sponsors as $sponsor)
+                            <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-transparent p-2 transition hover:border-indigo-100 hover:bg-indigo-50">
+                                <input type="checkbox"
+                                       name="sponsor_ids[]"
+                                       value="{{ $sponsor->id }}"
+                                       {{ in_array($sponsor->id, old('sponsor_ids', $eventUrl->sponsors->modelKeys())) ? 'checked' : '' }}
+                                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                @if($sponsor->logo_thumbnail_url)
+                                    <img src="{{ $sponsor->logo_thumbnail_url }}" alt="" class="h-9 w-12 rounded bg-white object-contain">
+                                @endif
+                                <span class="min-w-0">
+                                    <span class="block truncate text-sm font-medium text-gray-800">{{ $sponsor->name }}</span>
+                                    <span class="block text-xs text-gray-500">{{ $sponsor->sponsorship_label ?: ucfirst((string) $sponsor->type) }}</span>
+                                </span>
+                            </label>
+                        @empty
+                            <p class="p-3 text-sm text-gray-500">No online sponsors are available.</p>
+                        @endforelse
+                    </div>
+                    @error('sponsor_ids.*')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800">Partners</label>
+                    <p class="mb-3 mt-1 text-xs text-gray-500">Only active partners marked visible online are available.</p>
+                    <div class="max-h-64 space-y-2 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3" data-testid="event-url-partners">
+                        @forelse($partners as $partner)
+                            <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-transparent p-2 transition hover:border-indigo-100 hover:bg-indigo-50">
+                                <input type="checkbox"
+                                       name="partner_ids[]"
+                                       value="{{ $partner->id }}"
+                                       {{ in_array($partner->id, old('partner_ids', $eventUrl->partners->modelKeys())) ? 'checked' : '' }}
+                                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                @if($partner->logo_thumbnail_url)
+                                    <img src="{{ $partner->logo_thumbnail_url }}" alt="" class="h-9 w-12 rounded bg-white object-contain">
+                                @endif
+                                <span class="min-w-0">
+                                    <span class="block truncate text-sm font-medium text-gray-800">{{ $partner->name }}</span>
+                                    <span class="block text-xs text-gray-500">{{ $partner->sponsorship_label ?: ucfirst((string) $partner->type) }}</span>
+                                </span>
+                            </label>
+                        @empty
+                            <p class="p-3 text-sm text-gray-500">No online partners are available.</p>
+                        @endforelse
+                    </div>
+                    @error('partner_ids.*')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <label for="custom_html" class="block text-sm font-semibold text-gray-800">Extra custom HTML</label>
+                <p class="mb-2 mt-1 text-xs text-gray-500">
+                    Add headings, paragraphs, links, lists or images. Scripts, event handlers and unsafe markup are removed automatically.
+                </p>
+                <textarea name="custom_html"
+                          id="custom_html"
+                          rows="9"
+                          maxlength="20000"
+                          spellcheck="false"
+                          data-testid="event-url-custom-html"
+                          placeholder="<h2>Before you register</h2>&#10;<p>Add useful information here.</p>"
+                          class="w-full rounded-xl border-gray-300 bg-white font-mono text-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('custom_html', $eventUrl->custom_html) }}</textarea>
+                @error('custom_html')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+        </section>
+
         <!-- Badge Printing Options (only for badge type) -->
         <div id="badge-options" class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg" style="display: {{ old('type', $eventUrl->type) === 'badge' ? 'block' : 'none' }};">
             <h3 class="text-sm font-semibold text-gray-800 mb-4">Badge Printing Options</h3>

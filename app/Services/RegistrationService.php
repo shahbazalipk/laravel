@@ -153,10 +153,16 @@ class RegistrationService
             $registration->qr_code = $this->generateQRCode($registration);
             $registration->save();
 
-            // Generate email verification token if required
+            // Generate email verification token if required and not already verified
             $event = Event::getCurrentEvent();
-            if ($event && $event->email_verification_required) {
+            if ($event && $event->email_verification_required && empty($data['email_verified'])) {
                 $registration->email_verification_token = Str::random(64);
+                $registration->email_verified = false;
+                $registration->save();
+            } elseif (!empty($data['email_verified'])) {
+                $registration->email_verified = true;
+                $registration->email_verified_at = $data['email_verified_at'] ?? now();
+                $registration->email_verification_token = null;
                 $registration->save();
             }
 

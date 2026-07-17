@@ -15,6 +15,8 @@ use App\Models\BusinessActivity;
 use App\Payments\Services\RecordRegistrationPayment;
 use App\Payments\Services\RegistrationPaymentTotals;
 use App\Services\PurgeRegistration;
+use App\Registration\Enums\RegistrationWizardStep;
+use App\Registration\Services\AdminRegistrationListingService;
 use App\Services\RegistrationService;
 use App\Services\RegistrationStatusService;
 use Illuminate\Http\Request;
@@ -23,8 +25,10 @@ class RegistrationController extends Controller
 {
     protected $registrationService;
 
-    public function __construct(RegistrationService $registrationService)
-    {
+    public function __construct(
+        RegistrationService $registrationService,
+        private AdminRegistrationListingService $listingService
+    ) {
         $this->registrationService = $registrationService;
     }
 
@@ -34,6 +38,8 @@ class RegistrationController extends Controller
     public function index(Request $request)
     {
         $filters = [
+            'stage' => $request->input('stage', 'all'),
+            'abandoned_step' => $request->input('abandoned_step'),
             'category_id' => $request->category_id,
             'status_id' => $request->status_id,
             'payment_status' => $request->payment_status,
@@ -42,7 +48,7 @@ class RegistrationController extends Controller
             'search' => $request->search,
         ];
 
-        $registrations = $this->registrationService->getAllRegistrations($filters);
+        $registrations = $this->listingService->paginate($filters);
         
         $categories = RegistrationCategory::where('is_active', true)
             ->orderBy('name')
@@ -52,14 +58,16 @@ class RegistrationController extends Controller
             ->orderBy('name')
             ->get();
 
-        $statistics = $this->registrationService->getStatistics();
+        $statistics = $this->listingService->statistics($filters);
+        $registrationSteps = RegistrationWizardStep::ordered();
 
         return view('admin.registrations.index', compact(
             'registrations',
             'categories',
             'statuses',
             'statistics',
-            'filters'
+            'filters',
+            'registrationSteps'
         ));
     }
 

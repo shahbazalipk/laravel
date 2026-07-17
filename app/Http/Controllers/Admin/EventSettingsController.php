@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\EventSettingsService;
+use DateTimeZone;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class EventSettingsController extends Controller
 {
@@ -22,8 +24,9 @@ class EventSettingsController extends Controller
         }
 
         $templates = \App\Models\LandingPageTemplate::where('is_active', true)->get();
+        $timezones = $this->groupedTimezones($event->timezone);
 
-        return view('admin.event-settings.edit', compact('event', 'templates'));
+        return view('admin.event-settings.edit', compact('event', 'templates', 'timezones'));
     }
 
     public function update(Request $request)
@@ -101,7 +104,7 @@ class EventSettingsController extends Controller
             'country' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
             'city' => 'nullable|string|max:100',
-            'timezone' => 'nullable|string|max:100',
+            'timezone' => ['nullable', 'string', 'max:100', Rule::in(DateTimeZone::listIdentifiers())],
             
             // Social Media
             'twitter_mention' => 'nullable|string|max:255',
@@ -201,5 +204,29 @@ class EventSettingsController extends Controller
 
         return redirect()->route('admin.event-settings.edit')
             ->with('success', 'Event settings updated successfully');
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private function groupedTimezones(?string $currentTimezone = null): array
+    {
+        $grouped = [];
+
+        foreach (DateTimeZone::listIdentifiers() as $timezone) {
+            $region = str_contains($timezone, '/')
+                ? str_replace('_', ' ', explode('/', $timezone, 2)[0])
+                : 'Other';
+
+            $grouped[$region][] = $timezone;
+        }
+
+        ksort($grouped);
+
+        if ($currentTimezone && ! in_array($currentTimezone, DateTimeZone::listIdentifiers(), true)) {
+            $grouped = ['Current' => [$currentTimezone]] + $grouped;
+        }
+
+        return $grouped;
     }
 }

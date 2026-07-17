@@ -41,5 +41,25 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('email-sending', function ($job) {
             return Limit::perMinute(100)->by('email-sending');
         });
+
+        RateLimiter::for('registration-draft', function ($request) {
+            return Limit::perMinute(20)->by($request->ip());
+        });
+
+        RateLimiter::for('registration-otp-send', function ($request) {
+            return Limit::perMinute(5)->by(strtolower((string) $request->cookie('registration_resume_token')).'|'.$request->ip());
+        });
+
+        RateLimiter::for('registration-otp-verify', function ($request) {
+            return Limit::perMinute(10)->by(strtolower((string) $request->cookie('registration_resume_token')).'|'.$request->ip());
+        });
+
+        RateLimiter::for('registration-complete', function ($request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
+        RateLimiter::for('registration-resume', function ($request) {
+            return Limit::perMinute(30)->by($request->ip());
+        });
     }
 }

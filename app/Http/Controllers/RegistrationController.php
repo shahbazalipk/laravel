@@ -259,8 +259,23 @@ class RegistrationController extends Controller
         // Load event relationship
         $registration->load('event');
         $event = $registration->event;
+        $draft = \App\Registration\Models\RegistrationDraft::query()
+            ->with('eventUrl')
+            ->where('registration_id', $registration->id)
+            ->latest('id')
+            ->first();
+        $onlineRegistrationSlug = $draft?->eventUrl?->slug
+            ?? \App\Models\EventUrl::query()
+                ->where('event_id', $event->id)
+                ->where('type', 'online')
+                ->where('is_active', true)
+                ->value('slug');
         
-        return view('event.registration-confirmation', compact('registration', 'event'));
+        return view('event.registration-confirmation', compact(
+            'registration',
+            'event',
+            'onlineRegistrationSlug'
+        ));
     }
 
     /**

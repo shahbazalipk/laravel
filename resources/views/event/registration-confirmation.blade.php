@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @php
+        $isPaymentPending = $registration->payment_status === 'pending';
+    @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration Confirmed - {{ $event->title }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>{{ $isPaymentPending ? 'Payment Pending' : 'Registration Confirmed' }} - {{ $event->title }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50">
     <div class="min-h-screen py-12">
@@ -68,15 +71,45 @@
             </div>
 
             <!-- Success Header -->
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
-                    <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                </div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Registration Confirmed!</h1>
-                <p class="text-lg text-gray-600">Thank you for registering</p>
+            <div class="text-center mb-8" data-testid="registration-result">
+                @if($isPaymentPending)
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-amber-100 rounded-full mb-4">
+                        <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold text-amber-900 mb-2" data-testid="payment-pending-heading">Payment Pending</h1>
+                    <p class="text-lg font-medium text-amber-800">Your registration was received, but your attendance is not confirmed yet.</p>
+                @else
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+                        <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Registration Confirmed!</h1>
+                    <p class="text-lg text-gray-600">Thank you for registering</p>
+                @endif
             </div>
+
+            @if($isPaymentPending)
+                <div class="mb-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-5 shadow-sm sm:p-6"
+                     role="alert"
+                     data-testid="payment-pending-alert">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm font-bold uppercase tracking-wide text-amber-700">Action required</p>
+                            <h2 class="mt-1 text-xl font-bold text-amber-950">Complete payment to confirm your registration</h2>
+                            <p class="mt-1 text-sm text-amber-800">Your place is not confirmed until the event team receives and approves payment.</p>
+                        </div>
+                        <div class="shrink-0 rounded-lg bg-white px-5 py-3 text-left ring-1 ring-amber-200 sm:text-right">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Amount due</p>
+                            <p class="mt-1 text-2xl font-bold text-amber-950">
+                                {{ number_format($registration->total_amount, 2) }} {{ $registration->currency }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Registration Details Card -->
             <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
@@ -85,13 +118,13 @@
                 <!-- Registration Number -->
                 <div class="mb-6 p-4 bg-indigo-50 border-2 border-indigo-200 rounded-lg">
                     <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-1">Registration Number</p>
+                        <p class="text-sm text-gray-600 mb-1">{{ $isPaymentPending ? 'Registration Reference (payment pending)' : 'Registration Number' }}</p>
                         <p class="text-2xl font-bold text-indigo-600">{{ $registration->registration_number }}</p>
                     </div>
                 </div>
 
                 <!-- QR Code -->
-                @if($registration->qr_code)
+                @if($registration->qr_code && !$isPaymentPending)
                 <div class="mb-6 text-center">
                     <p class="text-sm text-gray-600 mb-3">Your Badge QR Code</p>
                     <div class="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
@@ -181,7 +214,7 @@
                         <h3 class="text-sm font-medium text-yellow-800">Email Verification Required</h3>
                         <div class="mt-2 text-sm text-yellow-700">
                             <p>We've sent a verification email to <strong>{{ $registration->email }}</strong>.</p>
-                            <p class="mt-1">Please check your inbox and click the verification link to complete your registration.</p>
+                            <p class="mt-1">Please check your inbox and click the verification link to continue your registration.</p>
                         </div>
                     </div>
                 </div>
@@ -200,8 +233,7 @@
                     <div class="ml-3">
                         <h3 class="text-sm font-medium text-blue-800">Verification Code</h3>
                         <div class="mt-2 text-sm text-blue-700">
-                            <p>Your verification code: <strong class="text-lg">{{ $registration->verification_code }}</strong></p>
-                            <p class="mt-1">Please keep this code safe. You may need it for check-in.</p>
+                            <p>A verification code was generated for check-in. It will be provided by the event team when needed.</p>
                         </div>
                     </div>
                 </div>
@@ -254,7 +286,9 @@
                         <svg class="w-5 h-5 text-indigo-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
-                        <span class="text-gray-700">Check your email for confirmation and event details</span>
+                        <span class="text-gray-700">
+                            {{ $isPaymentPending ? 'Check your email for payment and event details' : 'Check your email for confirmation and event details' }}
+                        </span>
                     </li>
                     <li class="flex items-start">
                         <svg class="w-5 h-5 text-indigo-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,65 +350,35 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="text-center space-y-3">
-                <button onclick="window.print()" class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+            <div class="no-print flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center" data-testid="confirmation-actions">
+                @if($onlineRegistrationSlug)
+                    <a href="{{ route('online.registration.new', ['slug' => $onlineRegistrationSlug]) }}"
+                       class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                       data-testid="start-new-registration">
+                        <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Start new registration
+                    </a>
+                @endif
+                <button onclick="window.print()" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                     </svg>
-                    Print Confirmation
+                        {{ $isPaymentPending ? 'Print Registration Details' : 'Print Confirmation' }}
                 </button>
                 @if($event->website_url)
-                <div>
-                    <a href="{{ $event->website_url }}" target="_blank" class="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    <a href="{{ $event->website_url }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                         </svg>
                         Visit Event Website
                     </a>
-                </div>
                 @endif
             </div>
 
             <!-- Event Contact Information Footer -->
-            <div class="mt-8 bg-white shadow-lg rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Need Help?</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    @if($event->manager_name)
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 mb-2">Event Manager</p>
-                            <p class="text-sm text-gray-900 font-semibold">{{ $event->manager_name }}</p>
-                        </div>
-                    @endif
-
-                    @if($event->manager_email)
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 mb-2">Contact Email</p>
-                            <a href="mailto:{{ $event->manager_email }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
-                                {{ $event->manager_email }}
-                            </a>
-                        </div>
-                    @endif
-
-                    @if($event->manager_phone)
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 mb-2">Contact Phone</p>
-                            <a href="tel:{{ $event->manager_phone }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
-                                {{ $event->manager_phone }}
-                            </a>
-                        </div>
-                    @endif
-
-                    @if($event->website_url)
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 mb-2">Event Website</p>
-                            <a href="{{ $event->website_url }}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
-                                Visit Website →
-                            </a>
-                        </div>
-                    @endif
-                </div>
-            </div>
+            @include('online.partials.contact-footer')
         </div>
     </div>
 

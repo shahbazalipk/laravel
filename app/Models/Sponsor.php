@@ -6,6 +6,7 @@ use App\Traits\HasEventScope;
 use App\Traits\HasHashedRoutes;
 use App\Traits\HasSponsorshipFeatures;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Sponsor extends Model
@@ -42,4 +43,9 @@ class Sponsor extends Model
         'visible_onsite' => 'boolean',
         'sort_order' => 'integer',
     ];
+
+    public function eventUrls(): BelongsToMany
+    {
+        return $this->belongsToMany(EventUrl::class, 'event_url_sponsor');
+    }
 }

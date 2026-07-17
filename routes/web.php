@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\GroupController;
 use App\Http\Controllers\Admin\EventSettingsController;
 use App\Http\Controllers\Admin\EventUrlController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
+use App\Http\Controllers\Admin\RegistrationDraftController;
 use App\Http\Controllers\Admin\RegistrationPaymentController;
 use App\Http\Controllers\Admin\AgendaManagementController;
 use App\Http\Controllers\Admin\TrackController;
@@ -313,6 +314,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Registrations Management
         Route::resource('registrations', AdminRegistrationController::class);
+        Route::get('registration-drafts/{draft}', [RegistrationDraftController::class, 'show'])
+            ->name('registration-drafts.show');
         Route::patch('registrations/{registration}/status', [AdminRegistrationController::class, 'updateStatus'])
             ->name('registrations.status.update');
         Route::post('registrations/{registration}/payments', [RegistrationPaymentController::class, 'store'])

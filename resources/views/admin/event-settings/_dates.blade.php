@@ -47,12 +47,22 @@
         <label for="timezone" class="block text-sm font-medium text-gray-700 mb-2">
             Timezone
         </label>
-        <input type="text" 
-               name="timezone" 
-               id="timezone" 
-               value="{{ old('timezone', $event->timezone) }}"
-               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('timezone') border-red-500 @enderror"
-               placeholder="e.g., Asia/Dubai">
+        <select name="timezone"
+                id="timezone"
+                data-testid="event-timezone-select"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('timezone') border-red-500 @enderror">
+            <option value="">Select timezone</option>
+            @foreach($timezones as $region => $regionTimezones)
+                <optgroup label="{{ $region }}">
+                    @foreach($regionTimezones as $timezone)
+                        <option value="{{ $timezone }}" {{ old('timezone', $event->timezone) === $timezone ? 'selected' : '' }}>
+                            {{ str_replace('_', ' ', $timezone) }}
+                        </option>
+                    @endforeach
+                </optgroup>
+            @endforeach
+        </select>
+        <p class="mt-1 text-xs text-gray-500">Used for event dates, registration deadlines, and attendee-facing times.</p>
         @error('timezone')
             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
         @enderror
