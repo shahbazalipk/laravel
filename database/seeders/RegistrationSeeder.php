@@ -17,7 +17,7 @@ class RegistrationSeeder extends Seeder
      */
     public function run(): void
     {
-        $registrationService = new RegistrationService();
+        $registrationService = app(RegistrationService::class);
         $event = Event::getCurrentEvent();
         
         // Get first available category

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\PurgeRegistrationRequest;
+use App\Http\Requests\Admin\UpdateRegistrationStatusRequest;
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
 use App\Models\RegistrationStatus;
@@ -10,7 +12,11 @@ use App\Models\Exhibitor;
 use App\Models\Group;
 use App\Models\Industry;
 use App\Models\BusinessActivity;
+use App\Payments\Services\RecordRegistrationPayment;
+use App\Payments\Services\RegistrationPaymentTotals;
+use App\Services\PurgeRegistration;
 use App\Services\RegistrationService;
+use App\Services\RegistrationStatusService;
 use Illuminate\Http\Request;
 
 class RegistrationController extends Controller
@@ -203,18 +209,57 @@ class RegistrationController extends Controller
     /**
      * Display the specified registration
      */
-    public function show(Registration $registration)
-    {
+    public function show(
+        Registration $registration,
+        RegistrationStatusService $statusService,
+        RegistrationPaymentTotals $paymentTotals
+    ) {
         $registration->load([
             'registrationCategory',
             'registrationStatus',
             'exhibitor',
             'group',
             'industry',
-            'businessActivity'
+            'businessActivity',
+            'paymentEntries',
+            'event',
         ]);
 
-        return view('admin.registrations.show', compact('registration'));
+        $statuses = $statusService->getActiveStatuses();
+        if (
+            $registration->registrationStatus
+            && !$statuses->contains('id', $registration->registration_status_id)
+        ) {
+            $statuses = $statuses->prepend($registration->registrationStatus);
+        }
+
+        $paymentSummary = $paymentTotals->calculate($registration, $registration->paymentEntries);
+        $paymentRecorder = app(RecordRegistrationPayment::class);
+        $refundableByPayment = $registration->paymentEntries
+            ->mapWithKeys(fn ($entry) => [
+                $entry->id => $paymentRecorder->refundableAmountForPayment($registration, $entry),
+            ]);
+
+        return view('admin.registrations.show', compact(
+            'registration',
+            'statuses',
+            'paymentSummary',
+            'refundableByPayment'
+        ));
+    }
+
+    /**
+     * Update only the registration status from the detail page.
+     */
+    public function updateStatus(
+        UpdateRegistrationStatusRequest $request,
+        Registration $registration
+    ) {
+        $this->registrationService->updateStatus($registration, $request->status());
+
+        return redirect()
+            ->route('admin.registrations.show', $registration)
+            ->with('success', 'Registration status updated successfully.');
     }
 
     /**
@@ -303,7 +348,22 @@ class RegistrationController extends Controller
             $validated['profile_picture'] = $path;
         }
 
+        $category = RegistrationCategory::findOrFail($validated['registration_category_id']);
+        $categoryChanged = (int) $registration->registration_category_id !== (int) $category->id;
+
+        // Keep ledger-backed totals in sync when the category (and price) changes.
+        if ($categoryChanged) {
+            $validated = array_merge(
+                $validated,
+                $this->registrationService->pricingAttributesForCategory($category)
+            );
+        }
+
         $registration->update($validated);
+
+        if ($categoryChanged) {
+            app(RecordRegistrationPayment::class)->syncRegistrationSummary($registration->fresh());
+        }
 
         return redirect()
             ->route('admin.registrations.show', $registration)
@@ -313,13 +373,18 @@ class RegistrationController extends Controller
     /**
      * Remove the specified registration
      */
-    public function destroy(Registration $registration)
+    public function destroy(
+        PurgeRegistrationRequest $request,
+        Registration $registration,
+        PurgeRegistration $purgeRegistration
+    )
     {
-        $registration->delete();
+        $registrationNumber = $registration->registration_number;
+        $purgeRegistration->execute($registration);
 
         return redirect()
             ->route('admin.registrations.index')
-            ->with('success', 'Registration deleted successfully.');
+            ->with('success', "Registration {$registrationNumber} and all related records were permanently deleted.");
     }
 
     /**

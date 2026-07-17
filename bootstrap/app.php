@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,10 +12,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [
-            \App\Http\Middleware\SetEventContext::class,
-        ]);
-        
+        // Event context must be applied after StartSession and before
+        // SubstituteBindings so hashed route model binding can resolve.
+        $middleware->web(
+            append: [
+                \App\Http\Middleware\SetEventContext::class,
+                SubstituteBindings::class,
+            ],
+            remove: [
+                SubstituteBindings::class,
+            ],
+        );
+
         // Register middleware aliases
         $middleware->alias([
             'event.admin' => \App\Http\Middleware\EventAdmin::class,

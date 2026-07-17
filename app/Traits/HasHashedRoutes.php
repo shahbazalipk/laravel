@@ -14,15 +14,19 @@ trait HasHashedRoutes
         });
 
         static::deleting(function ($model) {
-            \App\Models\HashMapping::where('model_type', get_class($model))
-                ->where('model_id', $model->id)
-                ->delete();
+            // Keep hashes for soft-deleted records so restored models stay addressable.
+            if (method_exists($model, 'isForceDeleting') && !$model->isForceDeleting()) {
+                return;
+            }
+
+            app(HashService::class)->deleteHash($model);
         });
     }
 
     public function getHashAttribute(): ?string
     {
         $hashService = app(HashService::class);
+
         return $hashService->getHash($this);
     }
 
@@ -38,7 +42,8 @@ trait HasHashedRoutes
 
     public function resolveRouteBinding($value, $field = null)
     {
-        $hashService = app(HashService::class);
-        return $hashService->resolveHash($value);
+        $resolved = app(HashService::class)->resolveHash((string) $value, static::class);
+
+        return $resolved instanceof static ? $resolved : null;
     }
 }

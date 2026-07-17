@@ -137,6 +137,11 @@ class Registration extends Model
         return $this->belongsTo(BusinessActivity::class);
     }
 
+    public function paymentEntries()
+    {
+        return $this->hasMany(\App\Payments\Models\RegistrationPaymentEntry::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -145,7 +150,7 @@ class Registration extends Model
 
     public function scopePaid($query)
     {
-        return $query->where('payment_status', 'paid');
+        return $query->whereIn('payment_status', ['paid', 'overpaid']);
     }
 
     public function scopePending($query)
@@ -191,6 +196,8 @@ class Registration extends Model
 
     public function getCanCheckInAttribute()
     {
-        return $this->payment_status === 'paid' && $this->is_verified && !$this->checked_in;
+        return in_array($this->payment_status, ['paid', 'overpaid'], true)
+            && $this->is_verified
+            && !$this->checked_in;
     }
 }

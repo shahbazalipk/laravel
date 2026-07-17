@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
+use App\Models\RegistrationStatus;
 use App\Models\Event;
 use App\Models\Membership;
 use Illuminate\Support\Str;
@@ -12,6 +13,10 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class RegistrationService
 {
+    public function __construct(
+        private AuditService $auditService
+    ) {}
+
     /**
      * Calculate price with tax based on event settings
      */
@@ -38,6 +43,22 @@ class RegistrationService
             'vat_percentage' => $vatPercentage,
             'tax_inclusive' => $event->tax_inclusive,
             'currency' => $category->currency ?? $event->currency ?? 'AED',
+        ];
+    }
+
+    /**
+     * Recalculate and apply category pricing onto registration attributes.
+     */
+    public function pricingAttributesForCategory(RegistrationCategory $category, ?Event $event = null): array
+    {
+        $event ??= Event::getCurrentEvent();
+        $pricing = $this->calculatePrice($category, $event);
+
+        return [
+            'base_price' => $pricing['base_price'],
+            'tax_amount' => $pricing['tax_amount'],
+            'total_amount' => $pricing['total_amount'],
+            'currency' => $pricing['currency'],
         ];
     }
 
@@ -282,6 +303,37 @@ class RegistrationService
         }
 
         $registration->save();
+    }
+
+    /**
+     * Assign a registration status while preserving payment/check-in independence.
+     */
+    public function updateStatus(Registration $registration, RegistrationStatus $status): Registration
+    {
+        $oldStatusId = $registration->registration_status_id;
+        $oldStatusName = $registration->registrationStatus?->name;
+
+        if ((int) $oldStatusId === (int) $status->id) {
+            return $registration;
+        }
+
+        $registration->registration_status_id = $status->id;
+        $registration->save();
+
+        $this->auditService->log(
+            'updated',
+            $registration,
+            [
+                'old_status_id' => $oldStatusId,
+                'old_status_name' => $oldStatusName,
+                'new_status_id' => $status->id,
+                'new_status_name' => $status->name,
+            ],
+            "Updated registration status for {$registration->registration_number} from ".
+            ($oldStatusName ?: 'None')." to {$status->name}"
+        );
+
+        return $registration->fresh(['registrationStatus']);
     }
 
     /**

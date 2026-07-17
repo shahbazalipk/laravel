@@ -3,18 +3,21 @@
 @section('title', 'Registration Statuses')
 
 @section('content')
-<div class="mb-6 flex justify-between items-center">
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Registration Statuses</h1>
         <p class="text-gray-600 mt-1">Manage registration status types for your event</p>
     </div>
-    <a href="{{ route('admin.registration-statuses.create') }}" 
-       class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center transition">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
-        Add New Status
-    </a>
+    <div class="flex flex-col gap-2 sm:flex-row">
+        @include('admin.components.parameter-bulk-import', ['parameter' => 'registration-statuses'])
+        <a href="{{ route('admin.registration-statuses.create') }}"
+           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Add New Status
+        </a>
+    </div>
 </div>
 
 @if($statuses->isEmpty())

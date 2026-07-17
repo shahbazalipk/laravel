@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\GroupController;
 use App\Http\Controllers\Admin\EventSettingsController;
 use App\Http\Controllers\Admin\EventUrlController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
+use App\Http\Controllers\Admin\RegistrationPaymentController;
 use App\Http\Controllers\Admin\AgendaManagementController;
 use App\Http\Controllers\Admin\TrackController;
 use App\Http\Controllers\Admin\LocationController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\Admin\EmailCampaignController;
 use App\Http\Controllers\Admin\RecipientUploadController;
 use App\Http\Controllers\Admin\EmailWebhookController;
 use App\Http\Controllers\Admin\EmailProviderConfigController;
+use App\Http\Controllers\Admin\ParameterBulkImportController;
 use App\Http\Controllers\UnsubscribeController;
 
 // Base URL shows event landing page
@@ -135,6 +137,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('agenda', AgendaController::class);
         
         // Parameters
+        Route::post('parameters/{parameter}/bulk-import', ParameterBulkImportController::class)
+            ->whereIn('parameter', array_keys(config('parameter_imports')))
+            ->name('parameters.bulk-import');
+
         Route::resource('registration-statuses', RegistrationStatusController::class);
         Route::post('registration-statuses/{registrationStatus}/toggle', [RegistrationStatusController::class, 'toggleActive'])
             ->name('registration-statuses.toggle');
@@ -307,6 +313,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Registrations Management
         Route::resource('registrations', AdminRegistrationController::class);
+        Route::patch('registrations/{registration}/status', [AdminRegistrationController::class, 'updateStatus'])
+            ->name('registrations.status.update');
+        Route::post('registrations/{registration}/payments', [RegistrationPaymentController::class, 'store'])
+            ->name('registrations.payments.store');
+        Route::post('registrations/{registration}/payments/{payment}/refund', [RegistrationPaymentController::class, 'refund'])
+            ->name('registrations.payments.refund');
+        Route::post('registrations/{registration}/payments/{payment}/reverse', [RegistrationPaymentController::class, 'reverse'])
+            ->name('registrations.payments.reverse');
         
         // Check-in
         Route::get('registrations-checkin', [AdminRegistrationController::class, 'showCheckin'])

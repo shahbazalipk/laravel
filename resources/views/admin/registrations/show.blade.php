@@ -3,9 +3,16 @@
 @section('title', 'Registration Details')
 
 @section('content')
+@php
+    use App\Payments\Enums\RegistrationPaymentSummaryStatus;
+    $headerPaymentStatus = $paymentSummary['summary_status'] instanceof RegistrationPaymentSummaryStatus
+        ? $paymentSummary['summary_status']
+        : RegistrationPaymentSummaryStatus::tryFrom($registration->payment_status) ?? RegistrationPaymentSummaryStatus::Pending;
+@endphp
+
 <!-- Header with Back Button -->
 <div class="mb-6">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
         <div class="flex items-center">
             <a href="{{ route('admin.registrations.index') }}" 
                class="text-gray-600 hover:text-gray-900 mr-4">
@@ -18,11 +25,18 @@
                 <p class="text-gray-600 mt-1">{{ $registration->registration_number }}</p>
             </div>
         </div>
-        <div class="flex space-x-2">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.registrations.edit', $registration) }}" 
                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                 Edit Registration
             </a>
+            <button type="button"
+                    id="delete-registration"
+                    onclick="document.getElementById('deleteRegistrationModal').classList.remove('hidden')"
+                    class="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
+                    data-testid="open-delete-registration-modal">
+                Delete Registration
+            </button>
             @if(!$registration->checked_in)
             <form action="{{ route('admin.registrations.check-in', $registration) }}" method="POST" class="inline">
                 @csrf
@@ -35,14 +49,27 @@
     </div>
 </div>
 
+@if($errors->any())
+    <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" data-testid="flash-errors">
+        <ul class="list-disc pl-4 space-y-1">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <!-- Status Badges -->
-<div class="mb-6 flex space-x-3">
-    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-        {{ $registration->payment_status === 'paid' ? 'bg-green-100 text-green-800' : '' }}
-        {{ $registration->payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-        {{ $registration->payment_status === 'failed' ? 'bg-red-100 text-red-800' : '' }}
-        {{ $registration->payment_status === 'refunded' ? 'bg-gray-100 text-gray-800' : '' }}">
-        Payment: {{ ucfirst($registration->payment_status) }}
+<div class="mb-6 flex flex-wrap gap-2">
+    @if($registration->registrationStatus)
+        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+              style="background-color: {{ $registration->registrationStatus->color }}20; color: {{ $registration->registrationStatus->color }};">
+            Status: {{ $registration->registrationStatus->name }}
+        </span>
+    @endif
+
+    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $headerPaymentStatus->badgeClasses() }}">
+        Payment: {{ $headerPaymentStatus->label() }}
     </span>
     
     @if($registration->checked_in)
@@ -65,45 +92,8 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Sidebar with Profile Picture -->
-    <div class="lg:col-span-1">
-        @if($registration->profile_picture)
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Profile Picture</h2>
-            <div class="flex justify-center">
-                <img src="{{ asset('storage/' . $registration->profile_picture) }}" 
-                     alt="{{ $registration->full_name }}" 
-                     class="w-48 h-48 rounded-full object-cover border-4 border-gray-200">
-            </div>
-        </div>
-        @endif
-        
-        <!-- QR Code and Badge -->
-        @if($registration->qr_code)
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Badge QR Code</h2>
-            <div class="flex justify-center">
-                <img src="data:image/png;base64,{{ $registration->qr_code }}" 
-                     alt="QR Code" 
-                     class="w-32 h-32">
-            </div>
-            @if($registration->badge_number)
-                <p class="text-center text-sm text-gray-600 mt-2">Badge: {{ $registration->badge_number }}</p>
-            @endif
-            @if(!$registration->badge_printed)
-            <form action="{{ route('admin.registrations.print-badge', $registration) }}" method="POST" class="mt-4">
-                @csrf
-                <button type="submit" class="w-full px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition">
-                    Mark as Printed
-                </button>
-            </form>
-            @endif
-        </div>
-        @endif
-    </div>
-
     <!-- Main Content -->
-    <div class="lg:col-span-2 space-y-6">
+    <div class="lg:col-span-2 space-y-6 order-2 lg:order-1">
         <!-- Personal Information -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4">Personal Information</h2>
@@ -259,10 +249,45 @@
             </div>
         </div>
         @endif
+
+        @include('admin.registrations.partials.payment-history')
     </div>
 
     <!-- Sidebar -->
-    <div class="space-y-6">
+    <div class="lg:col-span-1 space-y-6 order-1 lg:order-2">
+        @if($registration->profile_picture)
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Profile Picture</h2>
+            <div class="flex justify-center">
+                <img src="{{ asset('storage/' . $registration->profile_picture) }}"
+                     alt="{{ $registration->full_name }}"
+                     class="w-48 h-48 rounded-full object-cover border-4 border-gray-200">
+            </div>
+        </div>
+        @endif
+
+        @if($registration->qr_code)
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Badge QR Code</h2>
+            <div class="flex justify-center">
+                <img src="data:image/png;base64,{{ $registration->qr_code }}"
+                     alt="QR Code"
+                     class="w-32 h-32">
+            </div>
+            @if($registration->badge_number)
+                <p class="text-center text-sm text-gray-600 mt-2">Badge: {{ $registration->badge_number }}</p>
+            @endif
+            @if(!$registration->badge_printed)
+            <form action="{{ route('admin.registrations.print-badge', $registration) }}" method="POST" class="mt-4">
+                @csrf
+                <button type="submit" class="w-full px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition">
+                    Mark as Printed
+                </button>
+            </form>
+            @endif
+        </div>
+        @endif
+
         <!-- Registration Details -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Registration Details</h3>
@@ -294,74 +319,10 @@
             </div>
         </div>
 
-        <!-- Payment Information -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Payment Information</h3>
-            
-            <!-- Price Breakdown -->
-            <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">Price Breakdown</h4>
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">Base Price:</span>
-                        <span class="font-medium text-gray-900">{{ number_format($registration->base_price, 2) }} {{ $registration->currency }}</span>
-                    </div>
-                    
-                    @if($registration->tax_amount > 0)
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">
-                            Tax ({{ $registration->registrationCategory->vat_percentage ?? $registration->event->vat_percentage ?? 0 }}%):
-                        </span>
-                        <span class="font-medium text-gray-900">{{ number_format($registration->tax_amount, 2) }} {{ $registration->currency }}</span>
-                    </div>
-                    @endif
-                    
-                    <div class="border-t border-gray-300 pt-2 mt-2"></div>
-                    
-                    <div class="flex justify-between text-base font-bold">
-                        <span class="text-gray-900">Total Amount:</span>
-                        <span class="text-indigo-600">{{ number_format($registration->total_amount, 2) }} {{ $registration->currency }}</span>
-                    </div>
-                </div>
-            </div>
+        @include('admin.registrations.partials.status-management')
 
-            <!-- Payment Details -->
-            <div class="space-y-3">
-                <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">Payment Status:</span>
-                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        {{ $registration->payment_status === 'paid' ? 'bg-green-100 text-green-800' : '' }}
-                        {{ $registration->payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                        {{ $registration->payment_status === 'failed' ? 'bg-red-100 text-red-800' : '' }}
-                        {{ $registration->payment_status === 'refunded' ? 'bg-gray-100 text-gray-800' : '' }}">
-                        {{ ucfirst($registration->payment_status) }}
-                    </span>
-                </div>
+        @include('admin.registrations.partials.payment-summary')
 
-                @if($registration->payment_method)
-                <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">Payment Method:</span>
-                    <span class="font-medium text-gray-900">{{ $registration->payment_method }}</span>
-                </div>
-                @endif
-
-                @if($registration->payment_reference)
-                <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">Payment Reference:</span>
-                    <span class="font-medium text-gray-900">{{ $registration->payment_reference }}</span>
-                </div>
-                @endif
-
-                @if($registration->payment_date)
-                <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">Payment Date:</span>
-                    <span class="font-medium text-gray-900">{{ $registration->payment_date->format('M d, Y H:i') }}</span>
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Check-in Information -->
         @if($registration->checked_in)
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Check-In</h3>
@@ -379,6 +340,93 @@
             </div>
         </div>
         @endif
+    </div>
+</div>
+
+@include('admin.registrations.partials.payment-modals')
+
+<div id="deleteRegistrationModal"
+     class="{{ $errors->has('confirmation') ? '' : 'hidden' }} fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm sm:p-6"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="delete-registration-title"
+     data-testid="delete-registration-modal">
+    <div class="flex min-h-full items-start justify-center pt-6 sm:items-center sm:pt-0">
+        <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+            <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path>
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h2 id="delete-registration-title" class="text-lg font-semibold text-slate-900">
+                            Permanently delete registration?
+                        </h2>
+                        <p class="mt-1 text-sm leading-6 text-slate-500">
+                            This action cannot be undone.
+                        </p>
+                    </div>
+                    <button type="button"
+                            onclick="document.getElementById('deleteRegistrationModal').classList.add('hidden')"
+                            class="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                            aria-label="Close delete dialog">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <form action="{{ route('admin.registrations.destroy', $registration) }}"
+                  method="POST"
+                  class="space-y-5 px-5 py-5 sm:px-6"
+                  data-testid="delete-registration-form">
+                @csrf
+                @method('DELETE')
+
+                <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+                    <p class="text-sm font-semibold text-red-900">The following data will be removed:</p>
+                    <ul class="mt-2 space-y-1.5 text-sm text-red-800">
+                        <li>• Registration profile and uploaded documents</li>
+                        <li>• {{ $registration->paymentEntries->count() }} payment ledger {{ \Illuminate\Support\Str::plural('entry', $registration->paymentEntries->count()) }}</li>
+                        <li>• Attendee connections, messages, favorites, and wall activity</li>
+                        <li>• Hashed links and check-in information</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <label for="delete_confirmation" class="block text-sm font-medium text-slate-700">
+                        Enter <span class="font-mono font-semibold text-slate-950">{{ $registration->registration_number }}</span> to confirm
+                    </label>
+                    <input id="delete_confirmation"
+                           name="confirmation"
+                           type="text"
+                           value="{{ old('confirmation') }}"
+                           autocomplete="off"
+                           required
+                           class="mt-2 w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 {{ $errors->has('confirmation') ? 'border-red-400 focus:border-red-500 focus:ring-red-200' : 'border-slate-300 focus:border-red-500 focus:ring-red-200' }}"
+                           data-testid="delete-registration-confirmation">
+                    @error('confirmation')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                    <button type="button"
+                            onclick="document.getElementById('deleteRegistrationModal').classList.add('hidden')"
+                            class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            data-testid="delete-registration-submit">
+                        Permanently Delete
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 @endsection
