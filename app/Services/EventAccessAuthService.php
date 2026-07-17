@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\OrganizationAdminUser;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -11,7 +12,8 @@ use RuntimeException;
 class EventAccessAuthService
 {
     public function __construct(
-        private EventContextService $eventContext
+        private EventContextService $eventContext,
+        private OrgPortalUrlService $orgPortalUrl
     ) {}
 
     public function authenticate(string $email, string $password): ?OrganizationAdminUser
@@ -40,15 +42,17 @@ class EventAccessAuthService
      */
     public function authenticateViaSsoToken(string $token): ?array
     {
-        $portalUrl = rtrim((string) config('event.org_portal_url'), '/');
+        $portalUrl = $this->orgPortalUrl->baseUrl();
 
-        if ($portalUrl === '') {
-            throw new RuntimeException('ORG_PORTAL_URL must be configured for SSO login.');
+        try {
+            $response = Http::timeout(10)->post("{$portalUrl}/api/validate-sso-token", [
+                'token' => $token,
+            ]);
+        } catch (ConnectionException) {
+            throw new RuntimeException(
+                'Unable to reach the organization portal for SSO login. Please try again in a moment.'
+            );
         }
-
-        $response = Http::timeout(10)->post("{$portalUrl}/api/validate-sso-token", [
-            'token' => $token,
-        ]);
 
         if (!$response->successful()) {
             return null;

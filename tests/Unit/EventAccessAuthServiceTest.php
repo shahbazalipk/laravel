@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Services\EventAccessAuthService;
 use App\Services\EventContextService;
+use App\Services\OrgPortalUrlService;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -30,7 +31,10 @@ class EventAccessAuthServiceTest extends TestCase
             ->once()
             ->andReturnTrue();
 
-        $service = new EventAccessAuthService(new EventContextService());
+        $service = new EventAccessAuthService(
+            new EventContextService(),
+            new OrgPortalUrlService()
+        );
 
         $this->assertTrue($service->userIsAssignedToEvent(14, 30));
     }
