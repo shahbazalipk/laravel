@@ -2,26 +2,16 @@
 
 namespace Database\Seeders;
 
-use App\Models\Admin;
 use Illuminate\Database\Seeder;
 
 class AdminSeeder extends Seeder
 {
+    /**
+     * Event admin access is managed through organization_admin_users
+     * and event_user assignments in the shared organization portal database.
+     */
     public function run(): void
     {
-        // Check if admin already exists
-        $existingAdmin = Admin::where('email', 'admin@event.com')->first();
-        
-        if (!$existingAdmin) {
-            Admin::create([
-                'name' => 'Event Administrator',
-                'email' => 'admin@event.com',
-                'password' => 'password', // Will be hashed by the model
-            ]);
-            
-            echo "Admin user created: admin@event.com / password\n";
-        } else {
-            echo "Admin user already exists\n";
-        }
+        $this->command?->info('Skipped local admin seeding. Event admins authenticate via organization portal users assigned to this event.');
     }
 }

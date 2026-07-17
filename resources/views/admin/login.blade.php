@@ -23,6 +23,12 @@
                     {{ session('success') }}
                 </div>
             @endif
+
+            @if(session('error'))
+                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+                    {{ session('error') }}
+                </div>
+            @endif
             
             @if($errors->any())
                 <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
@@ -57,11 +63,10 @@
                         Sign in
                     </button>
                 </div>
-                
-                <div class="text-center text-sm text-gray-600">
-                    <p>Demo credentials:</p>
-                    <p class="font-mono text-xs mt-1">admin@event.com / password</p>
-                </div>
+
+                <p class="text-center text-sm text-gray-500">
+                    Use the credentials assigned to you for this event in the organization portal.
+                </p>
             </form>
             
             <div class="text-center">

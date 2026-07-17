@@ -11,9 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Register global middleware
         $middleware->web(append: [
-            \App\Http\Middleware\ResolveEventFromSubdomain::class,
+            \App\Http\Middleware\SetEventContext::class,
         ]);
         
         // Register middleware aliases
