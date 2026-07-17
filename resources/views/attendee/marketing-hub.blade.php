@@ -142,6 +142,13 @@
 </div>
 
 <script>
+const storageUrlTemplate = @json(\Illuminate\Support\Facades\Storage::disk('public')->url('__PATH__'));
+function storagePublicUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return storageUrlTemplate.replace('__PATH__', path);
+}
+
 function viewAsset(assetId) {
     const asset = @json($assets->items()).find(a => a.id === assetId) || @json($featured).find(a => a.id === assetId);
     if (!asset) return;
@@ -161,7 +168,7 @@ function viewAsset(assetId) {
             </div>
             
             ${asset.image_path ? `
-                <img src="/storage/${asset.image_path}" 
+                <img src="${storagePublicUrl(asset.image_path)}" 
                      alt="${asset.title}"
                      class="w-full rounded-lg mb-4">
             ` : ''}

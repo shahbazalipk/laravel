@@ -237,6 +237,13 @@
 </div>
 
 <script>
+const storageUrlTemplate = @json(\Illuminate\Support\Facades\Storage::disk('public')->url('__PATH__'));
+function storagePublicUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return storageUrlTemplate.replace('__PATH__', path);
+}
+
 const jobsData = @json($jobs->items());
 
 function showJobDetails(jobId) {
@@ -249,7 +256,7 @@ function showJobDetails(jobId) {
     // Set company info
     const companyLogo = document.getElementById('modalCompanyLogo');
     if (job.exhibitor.logo) {
-        companyLogo.innerHTML = `<img src="/storage/${job.exhibitor.logo}" alt="${job.exhibitor.company_name}" class="w-16 h-16 object-contain">`;
+        companyLogo.innerHTML = `<img src="${storagePublicUrl(job.exhibitor.logo)}" alt="${job.exhibitor.company_name}" class="w-16 h-16 object-contain">`;
     } else {
         companyLogo.innerHTML = '';
     }
