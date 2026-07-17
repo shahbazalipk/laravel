@@ -104,8 +104,24 @@ php artisan serve
 7. Access the application
 - Public: http://localhost:8000
 - Admin: http://localhost:8000/admin/login
-  - Email: admin@event.com
-  - Password: password
+  - Sign in with an organization portal user assigned to this event in `/org/backend/teams/users`
+
+## Event Admin Authentication
+
+Event subdomain admin login uses the shared organization portal user accounts. Only users assigned to the configured event can sign in.
+
+Required `.env` values per deployment:
+
+```env
+EVENT_ID=30
+ORG_ID=8
+ORG_PORTAL_URL=https://app.glimzo.ai
+```
+
+Users must be:
+1. Created in the organization portal under Teams → Users
+2. Assigned to the event in the event create/edit form
+3. Active in the organization portal
 
 ## Project Structure
 
