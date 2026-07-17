@@ -20,7 +20,7 @@
             <div class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
                 <div id="preview" class="{{ !empty($payload['profile_picture']) ? '' : 'hidden' }}">
                     <img id="previewImage"
-                         src="{{ !empty($payload['profile_picture']) ? asset('storage/'.$payload['profile_picture']) : '' }}"
+                         src="{{ !empty($payload['profile_picture']) ? storage_public_url($payload['profile_picture']) : '' }}"
                          class="h-28 w-28 rounded-full border-4 border-white object-cover shadow"
                          alt="Preview">
                 </div>
@@ -95,6 +95,12 @@
                 </select>
             </div>
         </div>
+
+        @if($customForms->isNotEmpty())
+            <div class="space-y-5">
+                @include('online.partials.custom-registration-forms')
+            </div>
+        @endif
 
         <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-between">
             <a href="{{ $wizardStepRoute('email') }}"

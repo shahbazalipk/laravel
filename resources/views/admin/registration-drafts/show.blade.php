@@ -22,7 +22,7 @@
 
 @php
     $profilePicture = $payload['profile_picture'] ?? null;
-    $profilePictureUrl = $profilePicture ? asset('storage/'.$profilePicture) : null;
+    $profilePictureUrl = $profilePicture ? storage_public_url($profilePicture) : null;
 @endphp
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3" data-testid="draft-detail">
@@ -98,6 +98,10 @@
                 </div>
             </dl>
         </div>
+
+        @include('admin.partials.custom-form-responses', [
+            'customFormResponses' => $draft->customFormResponses,
+        ])
     </div>
 
     <div class="space-y-6">

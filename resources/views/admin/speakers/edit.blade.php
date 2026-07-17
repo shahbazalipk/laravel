@@ -77,7 +77,7 @@
                 @if($speaker->profile_image)
                     <div class="mb-3">
                         <p class="text-sm text-gray-600 mb-2">Current Photo:</p>
-                        <img src="{{ asset('storage/' . $speaker->profile_image) }}" 
+                        <img src="{{ storage_public_url($speaker->profile_image) }}" 
                              alt="{{ $speaker->full_name }}"
                              class="w-32 h-32 object-cover rounded-lg border border-gray-300">
                     </div>

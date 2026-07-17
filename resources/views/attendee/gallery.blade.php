@@ -11,7 +11,7 @@
 <!-- Album Cover (if album selected and has cover) -->
 @if($currentAlbum && $currentAlbum->cover_photo && $currentAlbum->show_cover_at_top)
 <div class="mb-6 rounded-xl overflow-hidden shadow-lg">
-    <img src="{{ asset('storage/' . $currentAlbum->cover_photo) }}" 
+    <img src="{{ storage_public_url($currentAlbum->cover_photo) }}" 
          alt="{{ $currentAlbum->name }}" 
          class="w-full h-64 object-cover">
     <div class="bg-white p-4">
@@ -123,7 +123,7 @@
                     }
                 @endphp
                 
-                <img src="{{ asset('storage/' . $photo->image_path) }}" 
+                <img src="{{ storage_public_url($photo->image_path) }}" 
                      alt="{{ $photo->title }}"
                      class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                      style="{{ $filterStyle }}">

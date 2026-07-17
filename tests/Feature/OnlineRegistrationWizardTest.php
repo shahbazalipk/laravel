@@ -2,6 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Forms\Enums\FormAudience;
+use App\Forms\Enums\FormConditionAction;
+use App\Forms\Enums\FormConditionOperator;
+use App\Forms\Enums\FormQuestionType;
+use App\Forms\Models\CustomForm;
+use App\Forms\Models\CustomFormResponse;
 use App\Models\Event;
 use App\Models\EventUrl;
 use App\Models\Industry;
@@ -13,17 +19,21 @@ use App\Models\Sponsor;
 use App\Registration\Enums\RegistrationWizardStep;
 use App\Registration\Models\RegistrationDraft;
 use App\Registration\Services\RegistrationDraftService;
-use App\Registration\Services\RegistrationOtpService;
 use App\Services\ProviderManager;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\InteractsWithCustomFormSchema;
 use Tests\TestCase;
 
 class OnlineRegistrationWizardTest extends TestCase
 {
+    use InteractsWithCustomFormSchema;
+
     private Event $event;
 
     private EventUrl $eventUrl;
@@ -48,10 +58,19 @@ class OnlineRegistrationWizardTest extends TestCase
 
         $this->dropTables();
         $this->createTables();
+        $this->createCustomFormTables();
 
         $this->event = Event::query()->create([
             'organization_id' => 1,
             'title' => 'Tech Trip',
+            'event_name' => 'TechTrip 2.0',
+            'seo_title' => 'TechTrip 2.0 | Register for PITF Adventure',
+            'seo_description' => 'Join Pakistan IT Forum Tech Trip in Nathia Gali for tech, networking, and adventure.',
+            'seo_keywords' => 'PITF, TechTrip, registration, Nathia Gali',
+            'social_media_description' => 'Register for TechTrip 2.0 — adventure meets innovation in Nathia Gali.',
+            'social_media_share_banner' => 'event/social/techtrip-share.jpg',
+            'logo' => 'event/logos/techtrip.png',
+            'twitter_mention' => '@pitftrip',
             'registration_form_active' => true,
             'email_verification_required' => false,
             'currency' => 'PKR',
@@ -145,6 +164,7 @@ class OnlineRegistrationWizardTest extends TestCase
 
     private function dropTables(): void
     {
+        $this->dropCustomFormTables();
         Schema::dropIfExists('registration_drafts');
         Schema::dropIfExists('hash_mappings');
         Schema::dropIfExists('registrations');
@@ -191,6 +211,16 @@ class OnlineRegistrationWizardTest extends TestCase
             $table->string('manager_phone')->nullable();
             $table->text('footer_information')->nullable();
             $table->string('website_url')->nullable();
+            $table->string('event_name')->nullable();
+            $table->string('seo_title')->nullable();
+            $table->text('seo_description')->nullable();
+            $table->string('seo_keywords')->nullable();
+            $table->text('social_media_description')->nullable();
+            $table->string('social_media_share_banner')->nullable();
+            $table->string('social_image')->nullable();
+            $table->string('header_image')->nullable();
+            $table->string('logo')->nullable();
+            $table->string('twitter_mention')->nullable();
             $table->timestamps();
         });
 
@@ -403,6 +433,30 @@ class OnlineRegistrationWizardTest extends TestCase
     }
 
     #[Test]
+    public function email_step_includes_complete_seo_and_social_share_meta(): void
+    {
+        $response = $this->get('/online/'.$this->slug.'/step/email');
+
+        $response->assertOk();
+        $response->assertSee('<meta name="description"', false);
+        $response->assertSee('Register for TechTrip 2.0 — adventure meets innovation in Nathia Gali.', false);
+        $response->assertSee('property="og:title"', false);
+        $response->assertSee('TechTrip 2.0 | Register for PITF Adventure', false);
+        $response->assertSee('property="og:image"', false);
+        $response->assertSee('storage/event/social/techtrip-share.jpg', false);
+        $response->assertSee('name="twitter:card"', false);
+        $response->assertSee('summary_large_image', false);
+        $response->assertSee('name="twitter:site"', false);
+        $response->assertSee('@pitftrip', false);
+        $response->assertSee('rel="canonical"', false);
+        $response->assertSee(route('online.registration.step.email', $this->slug), false);
+        $response->assertSee('application/ld+json', false);
+        $response->assertSee('"@type":"Event"', false);
+        $response->assertSee('"@type":"WebPage"', false);
+        $response->assertSee('content="index, follow', false);
+    }
+
+    #[Test]
     public function event_url_can_show_selected_sponsors_partners_and_sanitized_custom_html(): void
     {
         $sponsor = Sponsor::query()->create([
@@ -553,6 +607,152 @@ class OnlineRegistrationWizardTest extends TestCase
     }
 
     #[Test]
+    public function registration_custom_questions_store_conditional_answers_uploads_and_promote_on_completion(): void
+    {
+        Storage::fake('local');
+        $form = CustomForm::query()->create([
+            'name' => 'Travel requirements',
+            'slug' => 'travel-requirements',
+            'audience' => FormAudience::Registration,
+            'is_active' => true,
+        ]);
+        $attending = $form->questions()->create([
+            'key' => 'attending_dinner',
+            'label' => 'Will you attend dinner?',
+            'type' => FormQuestionType::Radio,
+            'is_required' => true,
+            'sort_order' => 0,
+            'is_active' => true,
+        ]);
+        foreach (['yes' => 'Yes', 'no' => 'No'] as $value => $label) {
+            $attending->options()->create([
+                'value' => $value,
+                'label' => $label,
+                'sort_order' => $value === 'yes' ? 0 : 1,
+                'is_active' => true,
+            ]);
+        }
+        $hiddenText = $form->questions()->create([
+            'key' => 'decline_reason',
+            'label' => 'Why can you not attend?',
+            'type' => FormQuestionType::Text,
+            'is_required' => true,
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $upload = $form->questions()->create([
+            'key' => 'meal_document',
+            'label' => 'Meal document',
+            'type' => FormQuestionType::Upload,
+            'is_required' => true,
+            'sort_order' => 2,
+            'is_active' => true,
+            'validation' => ['mimes' => 'pdf', 'max_kb' => 100],
+        ]);
+        $form->conditions()->create([
+            'source_question_id' => $attending->id,
+            'target_question_id' => $hiddenText->id,
+            'operator' => FormConditionOperator::Equals,
+            'compare_value' => 'no',
+            'action' => FormConditionAction::Show,
+            'sort_order' => 0,
+            'is_active' => true,
+        ]);
+        $form->conditions()->create([
+            'source_question_id' => $attending->id,
+            'target_question_id' => $upload->id,
+            'operator' => FormConditionOperator::Equals,
+            'compare_value' => 'yes',
+            'action' => FormConditionAction::Show,
+            'sort_order' => 0,
+            'is_active' => true,
+        ]);
+
+        foreach ([
+            ['Exhibitor questions', FormAudience::Exhibitor, true],
+            ['Group questions', FormAudience::Group, true],
+        ] as [$name, $audience, $active]) {
+            CustomForm::query()->create([
+                'name' => $name,
+                'slug' => str($name)->slug()->toString(),
+                'audience' => $audience,
+                'is_active' => $active,
+            ]);
+        }
+
+        [$draft, $token] = $this->startDraft('questions@example.com');
+        $this->withDraftCookie($token)
+            ->get($this->regStep('information', $draft))
+            ->assertOk()
+            ->assertSee('Travel requirements')
+            ->assertSee('data-custom-question="attending_dinner"', false)
+            ->assertDontSee('Exhibitor questions')
+            ->assertDontSee('Group questions');
+
+        $this->withDraftCookie($token)
+            ->post($this->regStep('information', $draft, 'store'), [
+                'first_name' => 'Custom',
+                'last_name' => 'Questions',
+                'phone' => '+971500000099',
+                'job_title' => 'Engineer',
+                'company_name' => 'Forms Co',
+                'industry_id' => $this->industry->id,
+                'custom_forms' => [
+                    $form->public_id => [
+                        'attending_dinner' => 'yes',
+                        'meal_document' => UploadedFile::fake()->create(
+                            'meal-document.pdf',
+                            20,
+                            'application/pdf'
+                        ),
+                    ],
+                ],
+            ])
+            ->assertRedirect($this->regStep('category', $draft))
+            ->assertSessionHasNoErrors();
+
+        $customResponse = CustomFormResponse::query()
+            ->where('custom_form_id', $form->id)
+            ->with('answers.files')
+            ->firstOrFail();
+        $this->assertSame($draft->getMorphClass(), $customResponse->respondent_type);
+        $this->assertSame($draft->id, $customResponse->respondent_id);
+        $this->assertSame(
+            ['attending_dinner', 'meal_document'],
+            $customResponse->answers->pluck('question_key')->sort()->values()->all()
+        );
+        $this->assertNull($customResponse->answers->firstWhere('question_key', 'decline_reason'));
+        $storedFile = $customResponse->answers
+            ->firstWhere('question_key', 'meal_document')
+            ?->files
+            ->first();
+        $this->assertNotNull($storedFile);
+        Storage::disk('local')->assertExists($storedFile->path);
+
+        $draft = $draft->fresh();
+        app(RegistrationDraftService::class)->savePayload($draft, [
+            ...($draft->payload ?? []),
+            'registration_category_id' => $this->freeCategory->id,
+            'pricing' => [
+                'base_price' => 0,
+                'tax_amount' => 0,
+                'total_amount' => 0,
+                'currency' => 'PKR',
+            ],
+            'terms_accepted' => true,
+        ], RegistrationWizardStep::Confirmation);
+
+        $this->withDraftCookie($token)
+            ->post('/online/'.$this->slug.'/step/confirmation', ['terms_accepted' => '1'])
+            ->assertRedirect();
+
+        $registration = Registration::query()->where('email', 'questions@example.com')->firstOrFail();
+        $customResponse->refresh();
+        $this->assertSame($registration->getMorphClass(), $customResponse->respondent_type);
+        $this->assertSame($registration->id, $customResponse->respondent_id);
+    }
+
+    #[Test]
     public function resume_link_restores_progress_via_token(): void
     {
         [$draft, $token] = $this->startDraft('resume@example.com');
@@ -597,7 +797,8 @@ class OnlineRegistrationWizardTest extends TestCase
         app()->instance('current.event', $this->event->fresh());
 
         $provider = Mockery::mock(ProviderManager::class);
-        $provider->shouldReceive('getProvider')->andReturn(new class {
+        $provider->shouldReceive('getProvider')->andReturn(new class
+        {
             public function send(...$args): string
             {
                 return 'ok';

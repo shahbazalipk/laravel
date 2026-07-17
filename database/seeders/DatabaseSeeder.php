@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             RegistrationCategorySeeder::class,
             EmailTemplateSeeder::class,
             LandingPageTemplateSeeder::class, // Landing page templates
+            SalesDemoSeeder::class, // Sales pipeline type templates (local/dev/testing only)
             // EventDataSeeder::class, // Skipped - needs agenda system update
             // FileSeeder::class, // Skipped - optional
             // SponsorSeeder::class, // Skipped - optional

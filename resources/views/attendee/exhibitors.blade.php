@@ -23,7 +23,7 @@
                class="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden group">
                 @if($exhibitor->logo)
                     <div class="h-48 bg-gray-100 flex items-center justify-center p-6">
-                        <img src="{{ asset('storage/' . $exhibitor->logo) }}" 
+                        <img src="{{ storage_public_url($exhibitor->logo) }}" 
                              alt="{{ $exhibitor->company_name }}"
                              class="max-h-full max-w-full object-contain">
                     </div>

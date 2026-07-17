@@ -140,6 +140,10 @@
             @endif
         </div>
 
+        @include('admin.partials.custom-form-responses', [
+            'customFormResponses' => $exhibitor->customFormResponses,
+        ])
+
 
         <!-- Booth Details -->
         @if($exhibitor->booth_number || $exhibitor->booth_type_id || $exhibitor->booth_size)
@@ -624,7 +628,7 @@
         @forelse($exhibitor->products as $product)
             <div class="border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-300 transition">
                 @if($product->image)
-                    <img src="{{ asset('storage/' . $product->image) }}" 
+                    <img src="{{ storage_public_url($product->image) }}" 
                          alt="{{ $product->name }}"
                          class="w-full h-48 object-cover">
                 @else

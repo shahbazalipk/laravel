@@ -2,6 +2,7 @@
 
 namespace App\Registration\Services;
 
+use App\Forms\Services\FormResponseService;
 use App\Models\Event;
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
@@ -21,7 +22,8 @@ class CompleteRegistrationFromDraft
         private RegistrationService $registrationService,
         private OnlineRegistrationContext $context,
         private RegistrationDraftService $drafts,
-        private RecordRegistrationPayment $payments
+        private RecordRegistrationPayment $payments,
+        private FormResponseService $formResponses
     ) {}
 
     public function execute(RegistrationDraft $draft, Event $event, Request $request): Registration
@@ -33,7 +35,7 @@ class CompleteRegistrationFromDraft
         $this->drafts->assertAccessible($draft, $event);
         $this->drafts->assertCanAccessStep($draft, RegistrationWizardStep::Confirmation);
 
-        if ($event->email_verification_required && !$draft->isEmailVerified()) {
+        if ($event->email_verification_required && ! $draft->isEmailVerified()) {
             throw new InvalidArgumentException('Please verify your email before completing registration.');
         }
 
@@ -50,7 +52,7 @@ class CompleteRegistrationFromDraft
         $this->context->assertCategoryAllowed($category, $event, $eventUrl);
 
         $categoryErrors = $this->registrationService->validateCategory($category, $payload);
-        if (!empty($categoryErrors)) {
+        if (! empty($categoryErrors)) {
             throw new InvalidArgumentException(reset($categoryErrors));
         }
 
@@ -114,6 +116,7 @@ class CompleteRegistrationFromDraft
             unset($registrationData['category_password']);
 
             $registration = $this->registrationService->createRegistration($registrationData);
+            $this->formResponses->promoteDraftRespondent($locked, $registration);
 
             if ($paymentStatus === 'paid' && (float) $pricing['total_amount'] <= 0) {
                 // Free registrations stay ledger-compatible with an opening paid balance of zero.
@@ -153,7 +156,7 @@ class CompleteRegistrationFromDraft
             }
 
             $imageData = (string) $request->input('profile_picture_data');
-            if (!preg_match('/^data:image\/(png|jpe?g);base64,/', $imageData, $matches)) {
+            if (! preg_match('/^data:image\/(png|jpe?g);base64,/', $imageData, $matches)) {
                 throw new InvalidArgumentException('Invalid profile picture data.');
             }
 

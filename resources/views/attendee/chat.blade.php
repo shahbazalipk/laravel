@@ -36,7 +36,7 @@
                     <div class="px-4 py-2 rounded-lg {{ $message->sender_id === $registration->id ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-900' }}">
                         <p class="text-sm">{{ $message->message }}</p>
                         @if($message->attachment)
-                            <a href="{{ asset('storage/' . $message->attachment) }}" 
+                            <a href="{{ storage_public_url($message->attachment) }}" 
                                target="_blank"
                                class="block mt-2 text-xs underline">
                                 View Attachment

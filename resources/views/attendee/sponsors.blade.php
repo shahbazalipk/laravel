@@ -33,7 +33,7 @@
                     <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden">
                         @if($sponsor->logo)
                             <div class="h-{{ $tier === 'platinum' ? '64' : ($tier === 'gold' ? '48' : '40') }} bg-gray-50 flex items-center justify-center p-8">
-                                <img src="{{ asset('storage/' . $sponsor->logo) }}" 
+                                <img src="{{ storage_public_url($sponsor->logo) }}" 
                                      alt="{{ $sponsor->name }}"
                                      class="max-h-full max-w-full object-contain">
                             </div>

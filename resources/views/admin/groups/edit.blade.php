@@ -21,7 +21,7 @@
 
 <!-- Form Card -->
 <div class="bg-white rounded-lg shadow-sm p-6">
-    <form action="{{ route('admin.groups.update', $group) }}" method="POST">
+    <form action="{{ route('admin.groups.update', $group) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         
@@ -40,6 +40,11 @@
                 <button type="button" onclick="switchTab('settings')" id="tab-settings" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
                     Settings
                 </button>
+                @if(isset($customForms) && $customForms->isNotEmpty())
+                    <button type="button" onclick="switchTab('custom')" id="tab-custom" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-testid="group-custom-questions-tab">
+                        Custom Questions
+                    </button>
+                @endif
             </nav>
         </div>
 
@@ -404,6 +409,15 @@
                 </div>
             </div>
         </div>
+
+        @if(isset($customForms) && $customForms->isNotEmpty())
+            <div id="content-custom" class="tab-content hidden" data-testid="admin-group-custom-questions">
+                <h3 class="mb-4 text-lg font-semibold text-gray-800">Custom Questions</h3>
+                <div class="space-y-5">
+                    @include('partials.custom-forms-fields')
+                </div>
+            </div>
+        @endif
 
         <!-- Form Actions -->
         <div class="mt-8 flex justify-end space-x-3 pt-6 border-t">

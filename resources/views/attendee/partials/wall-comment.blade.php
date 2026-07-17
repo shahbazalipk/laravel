@@ -10,10 +10,10 @@
             <p class="text-sm text-gray-800 mt-1">{{ $comment->content }}</p>
             
             @if($comment->image)
-                <img src="{{ asset('storage/' . $comment->image) }}" 
+                <img src="{{ storage_public_url($comment->image) }}" 
                      alt="Comment image" 
                      class="mt-2 max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition"
-                     onclick="openImageModal('{{ asset('storage/' . $comment->image) }}')">
+                     onclick="openImageModal('{{ storage_public_url($comment->image) }}')">
             @endif
         </div>
         

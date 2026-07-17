@@ -36,10 +36,17 @@
                     class="tab-button px-6 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 Address & Preferences
             </button>
+            @if(isset($customForms) && $customForms->isNotEmpty())
+                <button type="button" onclick="switchTab('custom')" id="tab-custom"
+                        class="tab-button px-6 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        data-testid="group-custom-questions-tab">
+                    Custom Questions
+                </button>
+            @endif
         </nav>
     </div>
 
-    <form action="{{ route('admin.groups.store') }}" method="POST" class="p-6">
+    <form action="{{ route('admin.groups.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
         @csrf
 
         <!-- Tab 1: Basic Information -->
@@ -429,6 +436,15 @@
                 @enderror
             </div>
         </div>
+
+        @if(isset($customForms) && $customForms->isNotEmpty())
+            <div id="content-custom" class="tab-content hidden" data-testid="admin-group-custom-questions">
+                <h3 class="mb-4 text-lg font-semibold text-gray-800">Custom Questions</h3>
+                <div class="space-y-5">
+                    @include('partials.custom-forms-fields')
+                </div>
+            </div>
+        @endif
 
         <!-- Form Actions -->
         <div class="mt-8 flex justify-end space-x-3 border-t pt-6">

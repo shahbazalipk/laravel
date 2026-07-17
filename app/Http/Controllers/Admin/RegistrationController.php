@@ -2,24 +2,28 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Forms\Enums\FormAudience;
+use App\Forms\Services\AudienceFormSubmissionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PurgeRegistrationRequest;
 use App\Http\Requests\Admin\UpdateRegistrationStatusRequest;
-use App\Models\Registration;
-use App\Models\RegistrationCategory;
-use App\Models\RegistrationStatus;
+use App\Models\BusinessActivity;
 use App\Models\Exhibitor;
 use App\Models\Group;
 use App\Models\Industry;
-use App\Models\BusinessActivity;
+use App\Models\Registration;
+use App\Models\RegistrationCategory;
+use App\Models\RegistrationStatus;
 use App\Payments\Services\RecordRegistrationPayment;
 use App\Payments\Services\RegistrationPaymentTotals;
-use App\Services\PurgeRegistration;
 use App\Registration\Enums\RegistrationWizardStep;
 use App\Registration\Services\AdminRegistrationListingService;
+use App\Services\PurgeRegistration;
 use App\Services\RegistrationService;
 use App\Services\RegistrationStatusService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class RegistrationController extends Controller
 {
@@ -27,7 +31,8 @@ class RegistrationController extends Controller
 
     public function __construct(
         RegistrationService $registrationService,
-        private AdminRegistrationListingService $listingService
+        private AdminRegistrationListingService $listingService,
+        private AudienceFormSubmissionService $audienceForms
     ) {
         $this->registrationService = $registrationService;
     }
@@ -49,11 +54,11 @@ class RegistrationController extends Controller
         ];
 
         $registrations = $this->listingService->paginate($filters);
-        
+
         $categories = RegistrationCategory::where('is_active', true)
             ->orderBy('name')
             ->get();
-        
+
         $statuses = RegistrationStatus::where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -79,26 +84,29 @@ class RegistrationController extends Controller
         $categories = RegistrationCategory::where('is_active', true)
             ->orderBy('name')
             ->get();
-        
+
         $statuses = RegistrationStatus::where('is_active', true)
             ->orderBy('name')
             ->get();
-        
+
         $exhibitors = Exhibitor::where('is_active', true)
             ->orderBy('company_name')
             ->get();
-        
+
         $groups = Group::where('is_active', true)
             ->orderBy('group_name')
             ->get();
-        
+
         $industries = Industry::where('is_active', true)
             ->orderBy('name')
             ->get();
-        
+
         $businessActivities = BusinessActivity::where('is_active', true)
             ->orderBy('name')
             ->get();
+
+        $customForms = $this->audienceForms->activeForms(FormAudience::Registration);
+        $customFormResponses = collect();
 
         return view('admin.registrations.create', compact(
             'categories',
@@ -106,7 +114,9 @@ class RegistrationController extends Controller
             'exhibitors',
             'groups',
             'industries',
-            'businessActivities'
+            'businessActivities',
+            'customForms',
+            'customFormResponses'
         ));
     }
 
@@ -154,43 +164,43 @@ class RegistrationController extends Controller
 
         // Get category and validate requirements
         $category = RegistrationCategory::findOrFail($validated['registration_category_id']);
-        
+
         // Validate category password
         if ($category->needs_password) {
             if (empty($validated['category_password']) || $validated['category_password'] !== $category->password) {
                 return back()->withErrors(['category_password' => 'Invalid category password.'])->withInput();
             }
         }
-        
+
         // Validate membership
         if ($category->need_membership_id) {
             if (empty($validated['membership_id'])) {
                 return back()->withErrors(['membership_id' => 'Membership ID is required for this category.'])->withInput();
             }
-            
+
             $membershipValid = $this->registrationService->validateMembership(
                 $validated['membership_id'],
                 $category->membership_id
             );
-            
-            if (!$membershipValid) {
+
+            if (! $membershipValid) {
                 return back()->withErrors([
-                    'membership_id' => $category->membership_not_found_message ?? 'Invalid membership ID.'
+                    'membership_id' => $category->membership_not_found_message ?? 'Invalid membership ID.',
                 ])->withInput();
             }
         }
-        
+
         // Validate professional/student ID
         if ($category->need_professional_student_id && empty($validated['professional_student_id'])) {
             return back()->withErrors([
-                'professional_student_id' => $category->professional_student_id_message ?? 'Professional/Student ID is required.'
+                'professional_student_id' => $category->professional_student_id_message ?? 'Professional/Student ID is required.',
             ])->withInput();
         }
 
         // Handle file upload
         if ($request->hasFile('professional_id_document')) {
             $file = $request->file('professional_id_document');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = time().'_'.$file->getClientOriginalName();
             $path = $file->storeAs('professional_ids', $filename, 'public');
             $validated['professional_id_document_path'] = $path;
         }
@@ -207,7 +217,22 @@ class RegistrationController extends Controller
         // Remove category_password from data (don't store it)
         unset($validated['category_password']);
 
-        $registration = $this->registrationService->createRegistration($validated);
+        try {
+            $registration = DB::transaction(function () use ($request, $validated) {
+                $this->audienceForms->validate(FormAudience::Registration, $request);
+                $registration = $this->registrationService->createRegistration($validated);
+                $this->audienceForms->submit(
+                    FormAudience::Registration,
+                    $registration,
+                    $request,
+                    'admin_registration'
+                );
+
+                return $registration;
+            });
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
+        }
 
         return redirect()
             ->route('admin.registrations.show', $registration)
@@ -231,12 +256,20 @@ class RegistrationController extends Controller
             'businessActivity',
             'paymentEntries',
             'event',
+            'customFormResponses' => fn ($query) => $query
+                ->where('status', 'submitted')
+                ->orderBy('submitted_at')
+                ->with([
+                    'form',
+                    'answers.files',
+                    'answers.question.options',
+                ]),
         ]);
 
         $statuses = $statusService->getActiveStatuses();
         if (
             $registration->registrationStatus
-            && !$statuses->contains('id', $registration->registration_status_id)
+            && ! $statuses->contains('id', $registration->registration_status_id)
         ) {
             $statuses = $statuses->prepend($registration->registrationStatus);
         }
@@ -278,26 +311,29 @@ class RegistrationController extends Controller
         $categories = RegistrationCategory::where('is_active', true)
             ->orderBy('name')
             ->get();
-        
+
         $statuses = RegistrationStatus::where('is_active', true)
             ->orderBy('name')
             ->get();
-        
+
         $exhibitors = Exhibitor::where('is_active', true)
             ->orderBy('company_name')
             ->get();
-        
+
         $groups = Group::where('is_active', true)
             ->orderBy('group_name')
             ->get();
-        
+
         $industries = Industry::where('is_active', true)
             ->orderBy('name')
             ->get();
-        
+
         $businessActivities = BusinessActivity::where('is_active', true)
             ->orderBy('name')
             ->get();
+
+        $customForms = $this->audienceForms->activeForms(FormAudience::Registration);
+        $customFormResponses = $this->audienceForms->existingResponses($registration, $customForms);
 
         return view('admin.registrations.edit', compact(
             'registration',
@@ -306,7 +342,9 @@ class RegistrationController extends Controller
             'exhibitors',
             'groups',
             'industries',
-            'businessActivities'
+            'businessActivities',
+            'customForms',
+            'customFormResponses'
         ));
     }
 
@@ -349,9 +387,9 @@ class RegistrationController extends Controller
             if ($registration->profile_picture) {
                 \Storage::disk('public')->delete($registration->profile_picture);
             }
-            
+
             $file = $request->file('profile_picture');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $filename = time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
             $path = $file->storeAs('registrations/profiles', $filename, 'public');
             $validated['profile_picture'] = $path;
         }
@@ -367,10 +405,23 @@ class RegistrationController extends Controller
             );
         }
 
-        $registration->update($validated);
+        try {
+            DB::transaction(function () use ($request, $registration, $validated, $categoryChanged) {
+                $this->audienceForms->validate(FormAudience::Registration, $request, $registration);
+                $registration->update($validated);
+                $this->audienceForms->submit(
+                    FormAudience::Registration,
+                    $registration->fresh(),
+                    $request,
+                    'admin_registration'
+                );
 
-        if ($categoryChanged) {
-            app(RecordRegistrationPayment::class)->syncRegistrationSummary($registration->fresh());
+                if ($categoryChanged) {
+                    app(RecordRegistrationPayment::class)->syncRegistrationSummary($registration->fresh());
+                }
+            });
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
         }
 
         return redirect()
@@ -385,8 +436,7 @@ class RegistrationController extends Controller
         PurgeRegistrationRequest $request,
         Registration $registration,
         PurgeRegistration $purgeRegistration
-    )
-    {
+    ) {
         $registrationNumber = $registration->registration_number;
         $purgeRegistration->execute($registration);
 
@@ -405,11 +455,11 @@ class RegistrationController extends Controller
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('registration_number', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -418,8 +468,8 @@ class RegistrationController extends Controller
             $query->where('qr_code', $request->qr);
         }
 
-        $registrations = $request->filled('search') || $request->filled('qr') 
-            ? $query->get() 
+        $registrations = $request->filled('search') || $request->filled('qr')
+            ? $query->get()
             : collect();
 
         // Calculate statistics
@@ -427,9 +477,9 @@ class RegistrationController extends Controller
             'total' => Registration::count(),
             'checked_in' => Registration::whereNotNull('checked_in_at')->count(),
             'not_checked_in' => Registration::whereNull('checked_in_at')->count(),
-            'rate' => Registration::count() > 0 
-                ? round((Registration::whereNotNull('checked_in_at')->count() / Registration::count()) * 100) 
-                : 0
+            'rate' => Registration::count() > 0
+                ? round((Registration::whereNotNull('checked_in_at')->count() / Registration::count()) * 100)
+                : 0,
         ];
 
         return view('admin.registrations.checkin', compact('registrations', 'stats'));
@@ -475,10 +525,10 @@ class RegistrationController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -496,9 +546,9 @@ class RegistrationController extends Controller
             'pending' => Registration::whereNotNull('checked_in_at')
                 ->whereNull('badge_printed_at')
                 ->count(),
-            'rate' => $checkedIn > 0 
-                ? round((Registration::whereNotNull('badge_printed_at')->count() / $checkedIn) * 100) 
-                : 0
+            'rate' => $checkedIn > 0
+                ? round((Registration::whereNotNull('badge_printed_at')->count() / $checkedIn) * 100)
+                : 0,
         ];
 
         return view('admin.registrations.badges', compact('registrations', 'categories', 'stats'));
@@ -528,14 +578,14 @@ class RegistrationController extends Controller
     public function printAllBadges(Request $request)
     {
         $filters = json_decode($request->filters, true) ?? [];
-        
+
         $query = Registration::whereNotNull('checked_in_at');
 
-        if (!empty($filters['status']) && $filters['status'] === 'pending') {
+        if (! empty($filters['status']) && $filters['status'] === 'pending') {
             $query->whereNull('badge_printed_at');
         }
 
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $query->where('registration_category_id', $filters['category']);
         }
 
@@ -576,14 +626,14 @@ class RegistrationController extends Controller
     public function export(Request $request)
     {
         $format = $request->input('format', 'csv');
-        
+
         $query = Registration::with([
             'registrationCategory',
             'registrationStatus',
             'exhibitor',
             'group',
             'industry',
-            'businessActivity'
+            'businessActivity',
         ]);
 
         // Apply filters
@@ -637,15 +687,15 @@ class RegistrationController extends Controller
      */
     private function exportCsv($registrations, $fields)
     {
-        $filename = 'registrations_' . date('Y-m-d_His') . '.csv';
+        $filename = 'registrations_'.date('Y-m-d_His').'.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
-        $callback = function() use ($registrations, $fields) {
+        $callback = function () use ($registrations, $fields) {
             $file = fopen('php://output', 'w');
-            
+
             // Headers
             $headerRow = $this->getCsvHeaders($fields);
             fputcsv($file, $headerRow);
@@ -687,12 +737,12 @@ class RegistrationController extends Controller
      */
     private function exportJson($registrations, $fields)
     {
-        $data = $registrations->map(function($registration) use ($fields) {
+        $data = $registrations->map(function ($registration) use ($fields) {
             return $this->getExportData($registration, $fields);
         });
 
-        $filename = 'registrations_' . date('Y-m-d_His') . '.json';
-        
+        $filename = 'registrations_'.date('Y-m-d_His').'.json';
+
         return response()->json($data, 200, [
             'Content-Type' => 'application/json',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -708,38 +758,38 @@ class RegistrationController extends Controller
 
         if (in_array('basic_info', $fields)) {
             $headers = array_merge($headers, [
-                'Registration Number', 'Registration Type', 'Category', 'Status'
+                'Registration Number', 'Registration Type', 'Category', 'Status',
             ]);
         }
 
         if (in_array('contact', $fields)) {
             $headers = array_merge($headers, [
-                'Salutation', 'First Name', 'Last Name', 'Email', 'Phone', 'Mobile'
+                'Salutation', 'First Name', 'Last Name', 'Email', 'Phone', 'Mobile',
             ]);
         }
 
         if (in_array('company', $fields)) {
             $headers = array_merge($headers, [
                 'Job Title', 'Department', 'Company Name', 'Industry', 'Business Activity',
-                'Company Size', 'Website', 'Address', 'City', 'State', 'Postal Code', 'Country'
+                'Company Size', 'Website', 'Address', 'City', 'State', 'Postal Code', 'Country',
             ]);
         }
 
         if (in_array('payment', $fields)) {
             $headers = array_merge($headers, [
-                'Base Price', 'Tax Amount', 'Total Amount', 'Currency', 'Payment Status'
+                'Base Price', 'Tax Amount', 'Total Amount', 'Currency', 'Payment Status',
             ]);
         }
 
         if (in_array('checkin', $fields)) {
             $headers = array_merge($headers, [
-                'Checked In', 'Checked In At', 'Checked In By', 'Badge Printed'
+                'Checked In', 'Checked In At', 'Checked In By', 'Badge Printed',
             ]);
         }
 
         if (in_array('additional', $fields)) {
             $headers = array_merge($headers, [
-                'Dietary Requirements', 'Special Needs', 'T-Shirt Size', 'How Did You Hear'
+                'Dietary Requirements', 'Special Needs', 'T-Shirt Size', 'How Did You Hear',
             ]);
         }
 
@@ -766,7 +816,7 @@ class RegistrationController extends Controller
                 $registration->registration_number,
                 $registration->registration_type,
                 $registration->registrationCategory->name ?? '',
-                $registration->registrationStatus->name ?? ''
+                $registration->registrationStatus->name ?? '',
             ]);
         }
 
@@ -777,7 +827,7 @@ class RegistrationController extends Controller
                 $registration->last_name,
                 $registration->email,
                 $registration->phone,
-                $registration->mobile_phone
+                $registration->mobile_phone,
             ]);
         }
 
@@ -794,7 +844,7 @@ class RegistrationController extends Controller
                 $registration->city,
                 $registration->state,
                 $registration->postal_code,
-                $registration->country
+                $registration->country,
             ]);
         }
 
@@ -804,7 +854,7 @@ class RegistrationController extends Controller
                 $registration->tax_amount,
                 $registration->total_amount,
                 $registration->currency,
-                $registration->payment_status
+                $registration->payment_status,
             ]);
         }
 
@@ -813,7 +863,7 @@ class RegistrationController extends Controller
                 $registration->checked_in_at ? 'Yes' : 'No',
                 $registration->checked_in_at?->format('Y-m-d H:i:s') ?? '',
                 $registration->checked_in_by ?? '',
-                $registration->badge_printed_at ? 'Yes' : 'No'
+                $registration->badge_printed_at ? 'Yes' : 'No',
             ]);
         }
 
@@ -822,7 +872,7 @@ class RegistrationController extends Controller
                 $registration->dietary_requirements,
                 $registration->special_needs,
                 $registration->tshirt_size,
-                $registration->how_did_you_hear
+                $registration->how_did_you_hear,
             ]);
         }
 
@@ -833,7 +883,7 @@ class RegistrationController extends Controller
         if (in_array('timestamps', $fields)) {
             $row = array_merge($row, [
                 $registration->created_at->format('Y-m-d H:i:s'),
-                $registration->updated_at->format('Y-m-d H:i:s')
+                $registration->updated_at->format('Y-m-d H:i:s'),
             ]);
         }
 
@@ -852,7 +902,7 @@ class RegistrationController extends Controller
                 'registration_number' => $registration->registration_number,
                 'registration_type' => $registration->registration_type,
                 'category' => $registration->registrationCategory->name ?? null,
-                'status' => $registration->registrationStatus->name ?? null
+                'status' => $registration->registrationStatus->name ?? null,
             ];
         }
 
@@ -863,7 +913,7 @@ class RegistrationController extends Controller
                 'last_name' => $registration->last_name,
                 'email' => $registration->email,
                 'phone' => $registration->phone,
-                'mobile' => $registration->mobile_phone
+                'mobile' => $registration->mobile_phone,
             ];
         }
 
@@ -880,7 +930,7 @@ class RegistrationController extends Controller
                 'city' => $registration->city,
                 'state' => $registration->state,
                 'postal_code' => $registration->postal_code,
-                'country' => $registration->country
+                'country' => $registration->country,
             ];
         }
 
@@ -890,7 +940,7 @@ class RegistrationController extends Controller
                 'tax_amount' => $registration->tax_amount,
                 'total_amount' => $registration->total_amount,
                 'currency' => $registration->currency,
-                'payment_status' => $registration->payment_status
+                'payment_status' => $registration->payment_status,
             ];
         }
 
@@ -899,7 +949,7 @@ class RegistrationController extends Controller
                 'checked_in' => $registration->checked_in_at ? true : false,
                 'checked_in_at' => $registration->checked_in_at?->toIso8601String(),
                 'checked_in_by' => $registration->checked_in_by,
-                'badge_printed' => $registration->badge_printed_at ? true : false
+                'badge_printed' => $registration->badge_printed_at ? true : false,
             ];
         }
 
@@ -908,7 +958,7 @@ class RegistrationController extends Controller
                 'dietary_requirements' => $registration->dietary_requirements,
                 'special_needs' => $registration->special_needs,
                 'tshirt_size' => $registration->tshirt_size,
-                'how_did_you_hear' => $registration->how_did_you_hear
+                'how_did_you_hear' => $registration->how_did_you_hear,
             ];
         }
 
@@ -919,7 +969,7 @@ class RegistrationController extends Controller
         if (in_array('timestamps', $fields)) {
             $data['timestamps'] = [
                 'created_at' => $registration->created_at->toIso8601String(),
-                'updated_at' => $registration->updated_at->toIso8601String()
+                'updated_at' => $registration->updated_at->toIso8601String(),
             ];
         }
 
@@ -935,4 +985,3 @@ class RegistrationController extends Controller
         return back()->with('success', 'Verification email sent.');
     }
 }
-

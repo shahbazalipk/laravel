@@ -13,7 +13,7 @@
             <!-- Header -->
             <div class="text-center mb-8">
                 @if($event->logo)
-                    <img src="{{ asset('storage/' . $event->logo) }}" alt="{{ $event->title }}" class="h-16 mx-auto mb-4">
+                    <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->title }}" class="h-16 mx-auto mb-4">
                 @endif
                 <h1 class="text-3xl font-bold text-gray-900">{{ $event->title }}</h1>
                 <p class="text-gray-600 mt-2">Event Registration</p>

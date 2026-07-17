@@ -326,6 +326,16 @@
                       placeholder="Add any internal notes about this registration">{{ old('notes') }}</textarea>
         </div>
 
+        <!-- Custom Questions -->
+        @if(isset($customForms) && $customForms->isNotEmpty())
+            <div class="mt-8 border-t border-gray-200 pt-8" data-testid="admin-registration-custom-questions">
+                <h2 class="mb-4 text-lg font-semibold text-gray-800">Custom Questions</h2>
+                <div class="space-y-5">
+                    @include('partials.custom-forms-fields')
+                </div>
+            </div>
+        @endif
+
         <!-- Form Actions -->
         <div class="mt-8 flex justify-end space-x-3">
             <a href="{{ route('admin.registrations.index') }}" 

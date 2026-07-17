@@ -36,7 +36,7 @@
         </label>
         @if($template->preview_image)
             <div class="mb-3">
-                <img src="{{ asset('storage/' . $template->preview_image) }}" 
+                <img src="{{ storage_public_url($template->preview_image) }}" 
                      alt="Current preview" 
                      class="h-32 rounded border border-gray-300">
             </div>

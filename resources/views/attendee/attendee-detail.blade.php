@@ -21,7 +21,7 @@
             <!-- Profile Picture -->
             <div class="text-center mb-6">
                 @if($registration->profile_picture)
-                    <img src="{{ asset('storage/' . $registration->profile_picture) }}" 
+                    <img src="{{ storage_public_url($registration->profile_picture) }}" 
                          alt="{{ $registration->full_name }}"
                          class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-gray-100">
                 @else

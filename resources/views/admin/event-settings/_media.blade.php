@@ -42,7 +42,7 @@
         </label>
         @if($event->logo)
             <div class="mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <img src="{{ asset('storage/' . $event->logo) }}?v={{ time() }}" alt="Current Logo" class="h-20 object-contain">
+                <img src="{{ storage_public_url($event->logo) }}?v={{ time() }}" alt="Current Logo" class="h-20 object-contain">
                 <p class="text-xs text-gray-500 mt-2">Current logo</p>
                 <p class="text-xs text-gray-400">Path: {{ $event->logo }}</p>
             </div>
@@ -70,7 +70,7 @@
         </label>
         @if($event->header_image)
             <div class="mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <img src="{{ asset('storage/' . $event->header_image) }}?v={{ time() }}" alt="Current Header" class="h-20 object-cover rounded">
+                <img src="{{ storage_public_url($event->header_image) }}?v={{ time() }}" alt="Current Header" class="h-20 object-cover rounded">
                 <p class="text-xs text-gray-500 mt-2">Current header image</p>
                 <p class="text-xs text-gray-400">Path: {{ $event->header_image }}</p>
             </div>
@@ -98,7 +98,7 @@
         </label>
         @if($event->portal_background)
             <div class="mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <img src="{{ asset('storage/' . $event->portal_background) }}?v={{ time() }}" alt="Current Background" class="h-20 object-cover rounded">
+                <img src="{{ storage_public_url($event->portal_background) }}?v={{ time() }}" alt="Current Background" class="h-20 object-cover rounded">
                 <p class="text-xs text-gray-500 mt-2">Current background</p>
                 <p class="text-xs text-gray-400">Path: {{ $event->portal_background }}</p>
             </div>
@@ -133,11 +133,11 @@
                         </svg>
                         <div>
                             <p class="text-sm font-medium">PDF Floor Plan</p>
-                            <a href="{{ asset('storage/' . $event->main_floor_plan) }}" target="_blank" class="text-xs text-indigo-600 hover:text-indigo-800">View PDF</a>
+                            <a href="{{ storage_public_url($event->main_floor_plan) }}" target="_blank" class="text-xs text-indigo-600 hover:text-indigo-800">View PDF</a>
                         </div>
                     </div>
                 @else
-                    <img src="{{ asset('storage/' . $event->main_floor_plan) }}?v={{ time() }}" alt="Current Floor Plan" class="h-20 object-contain">
+                    <img src="{{ storage_public_url($event->main_floor_plan) }}?v={{ time() }}" alt="Current Floor Plan" class="h-20 object-contain">
                 @endif
                 <p class="text-xs text-gray-500 mt-2">Current floor plan</p>
                 <p class="text-xs text-gray-400">Path: {{ $event->main_floor_plan }}</p>
@@ -166,7 +166,7 @@
         </label>
         @if($event->social_media_share_banner)
             <div class="mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <img src="{{ asset('storage/' . $event->social_media_share_banner) }}?v={{ time() }}" alt="Current Share Banner" class="h-20 object-cover rounded">
+                <img src="{{ storage_public_url($event->social_media_share_banner) }}?v={{ time() }}" alt="Current Share Banner" class="h-20 object-cover rounded">
                 <p class="text-xs text-gray-500 mt-2">Current share banner</p>
                 <p class="text-xs text-gray-400">Path: {{ $event->social_media_share_banner }}</p>
             </div>

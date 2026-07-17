@@ -53,7 +53,7 @@
                 <div class="flex items-center space-x-2">
                     <input type="text" 
                            id="file-url" 
-                           value="{{ asset('storage/' . $file->file_path) }}" 
+                           value="{{ storage_public_url($file->file_path) }}" 
                            readonly
                            class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white font-mono">
                     <button type="button" 

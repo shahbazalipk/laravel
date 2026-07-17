@@ -203,7 +203,7 @@
                 @if($registration->professional_id_document_path)
                 <div class="md:col-span-2">
                     <p class="text-sm text-gray-600 mb-2">ID Document</p>
-                    <a href="{{ asset('storage/' . $registration->professional_id_document_path) }}" 
+                    <a href="{{ storage_public_url($registration->professional_id_document_path) }}" 
                        target="_blank"
                        class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,6 +250,10 @@
         </div>
         @endif
 
+        @include('admin.partials.custom-form-responses', [
+            'customFormResponses' => $registration->customFormResponses,
+        ])
+
         @include('admin.registrations.partials.payment-history')
     </div>
 
@@ -259,7 +263,7 @@
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4">Profile Picture</h2>
             <div class="flex justify-center">
-                <img src="{{ asset('storage/' . $registration->profile_picture) }}"
+                <img src="{{ storage_public_url($registration->profile_picture) }}"
                      alt="{{ $registration->full_name }}"
                      class="w-48 h-48 rounded-full object-cover border-4 border-gray-200">
             </div>

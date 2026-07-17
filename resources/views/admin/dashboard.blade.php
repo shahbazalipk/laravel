@@ -117,7 +117,7 @@
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                     <div class="flex items-center space-x-3">
                         @if($exhibitor->logo)
-                            <img src="{{ asset('storage/' . $exhibitor->logo) }}" 
+                            <img src="{{ storage_public_url($exhibitor->logo) }}" 
                                  alt="{{ $exhibitor->company_name }}"
                                  class="w-10 h-10 rounded object-cover">
                         @else
@@ -183,7 +183,7 @@
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                     <div class="flex items-center space-x-3">
                         @if($speaker->profile_image)
-                            <img src="{{ asset('storage/' . $speaker->profile_image) }}" 
+                            <img src="{{ storage_public_url($speaker->profile_image) }}" 
                                  alt="{{ $speaker->full_name }}"
                                  class="w-10 h-10 rounded-full object-cover">
                         @else

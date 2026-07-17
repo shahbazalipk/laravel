@@ -28,7 +28,7 @@
                     <!-- Preview Image -->
                     <div class="h-48 bg-gray-100 relative">
                         @if($template->preview_image)
-                            <img src="{{ asset('storage/' . $template->preview_image) }}" 
+                            <img src="{{ storage_public_url($template->preview_image) }}" 
                                  alt="{{ $template->name }}"
                                  class="w-full h-full object-cover">
                         @else

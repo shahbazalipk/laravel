@@ -90,7 +90,7 @@
                 <div class="flex items-start gap-4">
                     <!-- Profile Picture -->
                     @if($attendee->profile_picture)
-                        <img src="{{ asset('storage/' . $attendee->profile_picture) }}" 
+                        <img src="{{ storage_public_url($attendee->profile_picture) }}" 
                              alt="{{ $attendee->full_name }}"
                              class="w-16 h-16 rounded-full object-cover flex-shrink-0">
                     @else

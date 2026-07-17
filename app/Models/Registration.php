@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Forms\Models\CustomFormResponse;
 use App\Traits\HasEventScope;
 use App\Traits\HasHashedRoutes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Registration extends Model
@@ -142,6 +144,11 @@ class Registration extends Model
         return $this->hasMany(\App\Payments\Models\RegistrationPaymentEntry::class);
     }
 
+    public function customFormResponses(): MorphMany
+    {
+        return $this->morphMany(CustomFormResponse::class, 'respondent');
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -186,18 +193,18 @@ class Registration extends Model
 
     public function getFormattedPriceAttribute()
     {
-        return number_format($this->total_amount, 2) . ' ' . ($this->currency ?? 'AED');
+        return number_format($this->total_amount, 2).' '.($this->currency ?? 'AED');
     }
 
     public function getIsVerifiedAttribute()
     {
-        return $this->email_verified && (!$this->verification_code || $this->code_verified);
+        return $this->email_verified && (! $this->verification_code || $this->code_verified);
     }
 
     public function getCanCheckInAttribute()
     {
         return in_array($this->payment_status, ['paid', 'overpaid'], true)
             && $this->is_verified
-            && !$this->checked_in;
+            && ! $this->checked_in;
     }
 }

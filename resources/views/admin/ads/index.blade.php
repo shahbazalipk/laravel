@@ -97,7 +97,7 @@
             <div class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition">
                 <div class="flex items-start gap-4">
                     @if($ad->image)
-                        <img src="{{ asset('storage/' . $ad->image) }}" 
+                        <img src="{{ storage_public_url($ad->image) }}" 
                              alt="{{ $ad->title }}"
                              class="w-32 h-20 object-cover rounded">
                     @else

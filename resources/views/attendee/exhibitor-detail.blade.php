@@ -20,7 +20,7 @@
         <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24">
             @if($exhibitor->logo)
                 <div class="mb-6">
-                    <img src="{{ asset('storage/' . $exhibitor->logo) }}" 
+                    <img src="{{ storage_public_url($exhibitor->logo) }}" 
                          alt="{{ $exhibitor->company_name }}"
                          class="w-full h-auto max-h-64 object-contain">
                 </div>
@@ -250,7 +250,7 @@
                 @foreach($exhibitor->products->where('is_active', true) as $product)
                     <div class="border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-300 transition">
                         @if($product->image)
-                            <img src="{{ asset('storage/' . $product->image) }}" 
+                            <img src="{{ storage_public_url($product->image) }}" 
                                  alt="{{ $product->name }}"
                                  class="w-full h-48 object-cover">
                         @else

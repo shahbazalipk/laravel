@@ -34,7 +34,7 @@
                 <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden">
                     @if($exhibitor->logo)
                         <div class="h-48 bg-gray-100 flex items-center justify-center p-6">
-                            <img src="{{ asset('storage/' . $exhibitor->logo) }}" 
+                            <img src="{{ storage_public_url($exhibitor->logo) }}" 
                                  alt="{{ $exhibitor->company_name }}"
                                  class="max-h-full max-w-full object-contain">
                         </div>
@@ -79,7 +79,7 @@
                 <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden">
                     @if($speaker->photo)
                         <div class="h-64 bg-gray-100">
-                            <img src="{{ asset('storage/' . $speaker->photo) }}" 
+                            <img src="{{ storage_public_url($speaker->photo) }}" 
                                  alt="{{ $speaker->full_name }}"
                                  class="w-full h-full object-cover">
                         </div>
@@ -157,7 +157,7 @@
                 <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden">
                     @if($partner->logo)
                         <div class="h-48 bg-gray-50 flex items-center justify-center p-6">
-                            <img src="{{ asset('storage/' . $partner->logo) }}" 
+                            <img src="{{ storage_public_url($partner->logo) }}" 
                                  alt="{{ $partner->name }}"
                                  class="max-h-full max-w-full object-contain">
                         </div>
@@ -201,7 +201,7 @@
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     <div class="flex items-start gap-4">
                         @if($attendee->profile_picture)
-                            <img src="{{ asset('storage/' . $attendee->profile_picture) }}" 
+                            <img src="{{ storage_public_url($attendee->profile_picture) }}" 
                                  alt="{{ $attendee->full_name }}"
                                  class="w-16 h-16 rounded-full object-cover flex-shrink-0">
                         @else

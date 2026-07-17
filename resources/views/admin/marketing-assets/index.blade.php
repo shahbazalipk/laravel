@@ -59,7 +59,7 @@
                     <!-- Image Preview -->
                     @if($asset->image_path)
                         <div class="aspect-video bg-gray-100 rounded-t-lg overflow-hidden">
-                            <img src="{{ asset('storage/' . $asset->image_path) }}" 
+                            <img src="{{ storage_public_url($asset->image_path) }}" 
                                  alt="{{ $asset->title }}"
                                  class="w-full h-full object-cover">
                         </div>

@@ -65,6 +65,11 @@
                 <button type="button" onclick="showTab('settings')" id="tab-settings" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
                     Settings
                 </button>
+                @if(isset($customForms) && $customForms->isNotEmpty())
+                    <button type="button" onclick="showTab('custom')" id="tab-custom" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-testid="exhibitor-custom-questions-tab">
+                        Custom Questions
+                    </button>
+                @endif
             </nav>
         </div>
 
@@ -572,6 +577,15 @@
                 <p class="mt-1 text-xs text-gray-500">Lower numbers appear first</p>
             </div>
         </div>
+
+        @if(isset($customForms) && $customForms->isNotEmpty())
+            <div id="content-custom" class="tab-content hidden" data-testid="admin-exhibitor-custom-questions">
+                <h3 class="mb-4 text-lg font-semibold text-gray-800">Custom Questions</h3>
+                <div class="space-y-5">
+                    @include('partials.custom-forms-fields')
+                </div>
+            </div>
+        @endif
 
         <!-- Form Actions -->
         <div class="mt-8 flex justify-end space-x-3">

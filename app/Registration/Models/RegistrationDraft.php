@@ -2,6 +2,7 @@
 
 namespace App\Registration\Models;
 
+use App\Forms\Models\CustomFormResponse;
 use App\Models\Event;
 use App\Models\EventUrl;
 use App\Models\Registration;
@@ -9,6 +10,7 @@ use App\Registration\Enums\RegistrationWizardStep;
 use App\Traits\HasEventScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 
 class RegistrationDraft extends Model
@@ -67,6 +69,11 @@ class RegistrationDraft extends Model
     public function registration(): BelongsTo
     {
         return $this->belongsTo(Registration::class);
+    }
+
+    public function customFormResponses(): MorphMany
+    {
+        return $this->morphMany(CustomFormResponse::class, 'respondent');
     }
 
     public function getRouteKeyName(): string

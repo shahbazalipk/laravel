@@ -63,7 +63,7 @@
     
     @if(isset($asset) && $asset->image_path)
         <div class="mb-4">
-            <img src="{{ asset('storage/' . $asset->image_path) }}" 
+            <img src="{{ storage_public_url($asset->image_path) }}" 
                  alt="Current image" 
                  class="w-64 h-auto rounded-lg border">
             <p class="text-xs text-gray-500 mt-1">Current image</p>

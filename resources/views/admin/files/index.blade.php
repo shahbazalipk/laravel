@@ -146,7 +146,7 @@
                        class="flex-1 text-center px-2 py-1.5 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 transition">
                         Download
                     </a>
-                    <button onclick="copyFileUrl('{{ asset('storage/' . $file->file_path) }}', this)" 
+                    <button onclick="copyFileUrl('{{ storage_public_url($file->file_path) }}', this)" 
                             class="flex-1 text-center px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition">
                         Copy URL
                     </button>

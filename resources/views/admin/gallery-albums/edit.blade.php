@@ -63,7 +63,7 @@
                     
                     @if($galleryAlbum->cover_photo)
                         <div class="mb-4">
-                            <img src="{{ asset('storage/' . $galleryAlbum->cover_photo) }}" 
+                            <img src="{{ storage_public_url($galleryAlbum->cover_photo) }}" 
                                  alt="Current cover" 
                                  class="w-48 h-32 object-cover rounded-lg">
                             <p class="text-xs text-gray-500 mt-1">Current cover photo</p>

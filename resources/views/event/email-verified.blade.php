@@ -12,7 +12,7 @@
             <!-- Success Icon -->
             <div class="text-center mb-8">
                 @if($event->logo)
-                    <img src="{{ asset('storage/' . $event->logo) }}" alt="{{ $event->title }}" class="h-16 mx-auto mb-6">
+                    <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->title }}" class="h-16 mx-auto mb-6">
                 @endif
                 <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
                     <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

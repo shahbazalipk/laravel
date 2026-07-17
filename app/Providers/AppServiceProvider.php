@@ -2,7 +2,17 @@
 
 namespace App\Providers;
 
+use App\Models\Exhibitor;
+use App\Models\Group;
+use App\Models\Registration;
+use App\Registration\Models\RegistrationDraft;
+use App\Sales\Models\Deal;
+use App\Sales\Models\InquiryForm;
+use App\Sales\Models\InquirySubmission;
+use App\Sales\Models\Pipeline;
+use App\Sales\Models\PipelineType;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -36,6 +46,24 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             \URL::forceScheme('https');
         }
+
+        // Stable morph aliases for custom form respondents (and shared domain models).
+        Relation::morphMap([
+            'registration_draft' => RegistrationDraft::class,
+            'registration' => Registration::class,
+            'exhibitor' => Exhibitor::class,
+            'group' => Group::class,
+            'sales_pipeline_type' => PipelineType::class,
+            'sales_pipeline' => Pipeline::class,
+            'sales_deal' => Deal::class,
+            'sales_inquiry_form' => InquiryForm::class,
+            'sales_inquiry_submission' => InquirySubmission::class,
+            'pipeline_type' => PipelineType::class,
+            'pipeline' => Pipeline::class,
+            'deal' => Deal::class,
+            'inquiry_form' => InquiryForm::class,
+            'inquiry_submission' => InquirySubmission::class,
+        ]);
         
         // Configure rate limiting for email sending
         RateLimiter::for('email-sending', function ($job) {

@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Traits\HasEventScope;
 use App\Traits\HasHashedRoutes;
+use App\Forms\Models\CustomFormResponse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Exhibitor extends Model
 {
@@ -120,6 +122,11 @@ class Exhibitor extends Model
         return $this->hasMany(ExhibitorProduct::class);
     }
 
+    public function customFormResponses(): MorphMany
+    {
+        return $this->morphMany(CustomFormResponse::class, 'respondent');
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -155,7 +162,7 @@ class Exhibitor extends Model
     public function getLogoUrlAttribute(): ?string
     {
         if ($this->logo && \Storage::disk('public')->exists($this->logo)) {
-            return asset('storage/' . $this->logo);
+            return storage_public_url($this->logo);
         }
         return null;
     }
@@ -163,7 +170,7 @@ class Exhibitor extends Model
     public function getBannerImageUrlAttribute(): ?string
     {
         if ($this->banner_image && \Storage::disk('public')->exists($this->banner_image)) {
-            return asset('storage/' . $this->banner_image);
+            return storage_public_url($this->banner_image);
         }
         return null;
     }
@@ -171,7 +178,7 @@ class Exhibitor extends Model
     public function getCatalogFileUrlAttribute(): ?string
     {
         if ($this->catalog_file && \Storage::disk('public')->exists($this->catalog_file)) {
-            return asset('storage/' . $this->catalog_file);
+            return storage_public_url($this->catalog_file);
         }
         return null;
     }

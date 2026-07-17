@@ -2,23 +2,29 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Forms\Enums\FormAudience;
+use App\Forms\Services\AudienceFormSubmissionService;
 use App\Http\Controllers\Controller;
+use App\Models\ExhibitorTag;
 use App\Models\Group;
 use App\Models\GroupType;
 use App\Models\Industry;
-use App\Models\ExhibitorTag;
 use App\Services\GroupService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class GroupController extends Controller
 {
     public function __construct(
-        private GroupService $groupService
+        private GroupService $groupService,
+        private AudienceFormSubmissionService $audienceForms
     ) {}
 
     public function index()
     {
         $groups = $this->groupService->getAllGroups();
+
         return view('admin.groups.index', compact('groups'));
     }
 
@@ -27,8 +33,16 @@ class GroupController extends Controller
         $groupTypes = GroupType::where('is_active', true)->orderBy('name')->get();
         $industries = Industry::where('is_active', true)->orderBy('name')->get();
         $tags = ExhibitorTag::where('is_active', true)->orderBy('name')->get();
-        
-        return view('admin.groups.create', compact('groupTypes', 'industries', 'tags'));
+        $customForms = $this->audienceForms->activeForms(FormAudience::Group);
+        $customFormResponses = collect();
+
+        return view('admin.groups.create', compact(
+            'groupTypes',
+            'industries',
+            'tags',
+            'customForms',
+            'customFormResponses'
+        ));
     }
 
     public function store(Request $request)
@@ -62,15 +76,43 @@ class GroupController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['is_vip'] = $request->has('is_vip');
 
-        $this->groupService->createGroup($validated);
+        try {
+            $group = DB::transaction(function () use ($request, $validated) {
+                $this->audienceForms->validate(FormAudience::Group, $request);
+                $group = $this->groupService->createGroup($validated);
+                $this->audienceForms->submit(
+                    FormAudience::Group,
+                    $group,
+                    $request,
+                    'admin_group'
+                );
 
-        return redirect()->route('admin.groups.index')
+                return $group;
+            });
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('admin.groups.show', $group)
             ->with('success', 'Group created successfully.');
     }
 
     public function show(Group $group)
     {
-        $group->load(['groupType', 'industry', 'tags']);
+        $group->load([
+            'groupType',
+            'industry',
+            'tags',
+            'customFormResponses' => fn ($query) => $query
+                ->where('status', 'submitted')
+                ->orderBy('submitted_at')
+                ->with([
+                    'form',
+                    'answers.files',
+                    'answers.question.options',
+                ]),
+        ]);
+
         return view('admin.groups.show', compact('group'));
     }
 
@@ -79,8 +121,17 @@ class GroupController extends Controller
         $groupTypes = GroupType::where('is_active', true)->orderBy('name')->get();
         $industries = Industry::where('is_active', true)->orderBy('name')->get();
         $tags = ExhibitorTag::where('is_active', true)->orderBy('name')->get();
-        
-        return view('admin.groups.edit', compact('group', 'groupTypes', 'industries', 'tags'));
+        $customForms = $this->audienceForms->activeForms(FormAudience::Group);
+        $customFormResponses = $this->audienceForms->existingResponses($group, $customForms);
+
+        return view('admin.groups.edit', compact(
+            'group',
+            'groupTypes',
+            'industries',
+            'tags',
+            'customForms',
+            'customFormResponses'
+        ));
     }
 
     public function update(Request $request, Group $group)
@@ -114,9 +165,22 @@ class GroupController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['is_vip'] = $request->has('is_vip');
 
-        $this->groupService->updateGroup($group, $validated);
+        try {
+            DB::transaction(function () use ($request, $group, $validated) {
+                $this->audienceForms->validate(FormAudience::Group, $request, $group);
+                $this->groupService->updateGroup($group, $validated);
+                $this->audienceForms->submit(
+                    FormAudience::Group,
+                    $group->fresh(),
+                    $request,
+                    'admin_group'
+                );
+            });
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
+        }
 
-        return redirect()->route('admin.groups.index')
+        return redirect()->route('admin.groups.show', $group)
             ->with('success', 'Group updated successfully.');
     }
 

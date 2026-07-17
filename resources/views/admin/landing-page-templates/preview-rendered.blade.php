@@ -31,9 +31,9 @@
     <meta property="og:title" content="{{ $event->seo_title ?? $event->event_name ?? $template->name }}">
     <meta property="og:description" content="{{ $event->seo_description ?? $event->description ?? 'Join us for an amazing event experience.' }}">
     @if($event->social_media_share_banner)
-        <meta property="og:image" content="{{ asset('storage/' . $event->social_media_share_banner) }}">
+        <meta property="og:image" content="{{ storage_public_url($event->social_media_share_banner) }}">
     @elseif($event->logo)
-        <meta property="og:image" content="{{ asset('storage/' . $event->logo) }}">
+        <meta property="og:image" content="{{ storage_public_url($event->logo) }}">
     @endif
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -46,9 +46,9 @@
     <meta property="twitter:title" content="{{ $event->seo_title ?? $event->event_name ?? $template->name }}">
     <meta property="twitter:description" content="{{ $event->seo_description ?? $event->description ?? 'Join us for an amazing event experience.' }}">
     @if($event->social_media_share_banner)
-        <meta property="twitter:image" content="{{ asset('storage/' . $event->social_media_share_banner) }}">
+        <meta property="twitter:image" content="{{ storage_public_url($event->social_media_share_banner) }}">
     @elseif($event->logo)
-        <meta property="twitter:image" content="{{ asset('storage/' . $event->logo) }}">
+        <meta property="twitter:image" content="{{ storage_public_url($event->logo) }}">
     @endif
     @if($event->twitter_mention)
         <meta name="twitter:site" content="{{ $event->twitter_mention }}">
@@ -94,9 +94,9 @@
         @endif
         "image": [
             @if($event->social_media_share_banner)
-                "{{ asset('storage/' . $event->social_media_share_banner) }}"
+                "{{ storage_public_url($event->social_media_share_banner) }}"
             @elseif($event->logo)
-                "{{ asset('storage/' . $event->logo) }}"
+                "{{ storage_public_url($event->logo) }}"
             @endif
         ],
         @if($event->organizer_name)
@@ -118,8 +118,8 @@
     
     <!-- Favicon -->
     @if($event->logo)
-        <link rel="icon" type="image/png" href="{{ asset('storage/' . $event->logo) }}">
-        <link rel="apple-touch-icon" href="{{ asset('storage/' . $event->logo) }}">
+        <link rel="icon" type="image/png" href="{{ storage_public_url($event->logo) }}">
+        <link rel="apple-touch-icon" href="{{ storage_public_url($event->logo) }}">
     @endif
     
     <!-- Fonts -->

@@ -1,6 +1,6 @@
 @extends('online.wizard.layout')
 
-@section('title', 'Email')
+@section('title', 'Register')
 
 @section('content')
     <div class="mb-6">

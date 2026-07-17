@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use App\Forms\Models\CustomFormResponse;
 use App\Traits\HasEventScope;
 use App\Traits\HasHashedRoutes;
 
@@ -63,5 +65,10 @@ class Group extends Model
     {
         return $this->belongsToMany(ExhibitorTag::class, 'event_group_tag', 'event_group_id', 'exhibitor_tag_id')
                     ->withTimestamps();
+    }
+
+    public function customFormResponses(): MorphMany
+    {
+        return $this->morphMany(CustomFormResponse::class, 'respondent');
     }
 }

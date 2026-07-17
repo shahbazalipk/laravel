@@ -32,7 +32,7 @@
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center">
                     @if($event->logo)
-                        <img src="{{ $event->logo }}" alt="{{ $event->title }}" class="h-10">
+                        <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->title }}" class="h-10">
                     @else
                         <span class="text-xl font-bold text-primary">{{ $event->title }}</span>
                     @endif

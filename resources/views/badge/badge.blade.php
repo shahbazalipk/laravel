@@ -68,7 +68,7 @@
                  style="background-color: {{ $badgeDesign ? $badgeDesign->header_bg_color : '#4F46E5' }}; color: {{ $badgeDesign ? $badgeDesign->header_text_color : '#FFFFFF' }};">
                 @if(!$badgeDesign || $badgeDesign->show_event_logo)
                     @if($registration->event->logo)
-                        <img src="{{ asset('storage/' . $registration->event->logo) }}" alt="{{ $registration->event->name }}" class="h-12 mx-auto mb-2">
+                        <img src="{{ storage_public_url($registration->event->logo) }}" alt="{{ $registration->event->name }}" class="h-12 mx-auto mb-2">
                     @endif
                 @endif
                 
@@ -91,7 +91,7 @@
                 @if(!$badgeDesign || $badgeDesign->show_profile_picture)
                     @if($registration->profile_picture)
                         <div class="mb-4">
-                            <img src="{{ asset('storage/' . $registration->profile_picture) }}" 
+                            <img src="{{ storage_public_url($registration->profile_picture) }}" 
                                  alt="{{ $registration->full_name }}"
                                  class="w-32 h-32 mx-auto object-cover border-4 border-gray-200 
                                  {{ $badgeDesign && $badgeDesign->profile_picture_shape == 'circle' ? 'rounded-full' : '' }}

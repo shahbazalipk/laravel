@@ -88,7 +88,7 @@ class LandingPageTemplateSeeder extends Seeder
         <div class="container">
             <div class="hero-content">
                 @if($event->logo)
-                    <img src="{{ asset('storage/' . $event->logo) }}" alt="{{ $event->event_name }}" class="event-logo">
+                    <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->event_name }}" class="event-logo">
                 @endif
                 <h1 class="hero-title">{{ $event->event_name ?? 'Event Name' }}</h1>
                 <p class="hero-subtitle">{{ $event->start_date ? $event->start_date->format('F d, Y') : 'Event Date' }}</p>
@@ -143,7 +143,7 @@ class LandingPageTemplateSeeder extends Seeder
                 @foreach($speakers->take(6) as $speaker)
                 <div class="speaker-card">
                     @if($speaker->profile_image)
-                        <img src="{{ asset('storage/' . $speaker->profile_image) }}" alt="{{ $speaker->full_name }}" class="speaker-image">
+                        <img src="{{ storage_public_url($speaker->profile_image) }}" alt="{{ $speaker->full_name }}" class="speaker-image">
                     @endif
                     <h3 class="speaker-name">{{ $speaker->full_name }}</h3>
                     <p class="speaker-title">{{ $speaker->job_title }}</p>
@@ -191,7 +191,7 @@ class LandingPageTemplateSeeder extends Seeder
                 @foreach($exhibitors->take(12) as $exhibitor)
                 <div class="exhibitor-card">
                     @if($exhibitor->logo)
-                        <img src="{{ asset('storage/' . $exhibitor->logo) }}" alt="{{ $exhibitor->name }}">
+                        <img src="{{ storage_public_url($exhibitor->logo) }}" alt="{{ $exhibitor->name }}">
                     @endif
                     <h3>{{ $exhibitor->name }}</h3>
                     @if($exhibitor->booth_number)
@@ -215,10 +215,10 @@ class LandingPageTemplateSeeder extends Seeder
                     @if($sponsor->logo)
                         @if($sponsor->website)
                             <a href="{{ $sponsor->website }}" target="_blank">
-                                <img src="{{ asset('storage/' . $sponsor->logo) }}" alt="{{ $sponsor->name }}">
+                                <img src="{{ storage_public_url($sponsor->logo) }}" alt="{{ $sponsor->name }}">
                             </a>
                         @else
-                            <img src="{{ asset('storage/' . $sponsor->logo) }}" alt="{{ $sponsor->name }}">
+                            <img src="{{ storage_public_url($sponsor->logo) }}" alt="{{ $sponsor->name }}">
                         @endif
                     @endif
                 </div>
@@ -237,7 +237,7 @@ class LandingPageTemplateSeeder extends Seeder
                 @foreach($partners as $partner)
                 <div class="partner-logo">
                     @if($partner->logo)
-                        <img src="{{ asset('storage/' . $partner->logo) }}" alt="{{ $partner->name }}">
+                        <img src="{{ storage_public_url($partner->logo) }}" alt="{{ $partner->name }}">
                     @endif
                 </div>
                 @endforeach
@@ -468,7 +468,7 @@ CSS;
         <div class="container">
             <div class="header-content">
                 @if($event->logo)
-                    <img src="{{ asset('storage/' . $event->logo) }}" alt="{{ $event->event_name }}" class="logo">
+                    <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->event_name }}" class="logo">
                 @endif
                 <nav class="nav">
                     <a href="#about">About</a>
@@ -502,7 +502,7 @@ CSS;
                 @foreach($speakers->take(4) as $speaker)
                 <div class="speaker-item">
                     @if($speaker->profile_image)
-                        <img src="{{ asset('storage/' . $speaker->profile_image) }}" alt="{{ $speaker->full_name }}">
+                        <img src="{{ storage_public_url($speaker->profile_image) }}" alt="{{ $speaker->full_name }}">
                     @endif
                     <div>
                         <h3>{{ $speaker->full_name }}</h3>
@@ -684,7 +684,7 @@ CSS;
         <div class="container">
             <div class="hero-box">
                 @if($event->logo)
-                    <img src="{{ asset('storage/' . $event->logo) }}" alt="{{ $event->event_name }}" class="logo-vibrant">
+                    <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->event_name }}" class="logo-vibrant">
                 @endif
                 <h1 class="title-vibrant">{{ $event->event_name ?? 'Event Name' }}</h1>
                 <div class="event-meta">
@@ -704,7 +704,7 @@ CSS;
                 @foreach($speakers->take(6) as $speaker)
                 <div class="speaker-box">
                     @if($speaker->profile_image)
-                        <div class="speaker-photo" style="background-image: url('{{ asset('storage/' . $speaker->profile_image) }}')"></div>
+                        <div class="speaker-photo" style="background-image: url('{{ storage_public_url($speaker->profile_image) }}')"></div>
                     @endif
                     <h3>{{ $speaker->full_name }}</h3>
                     <p>{{ $speaker->job_title }}</p>
@@ -722,7 +722,7 @@ CSS;
             <div class="sponsors-flex">
                 @foreach($sponsors as $sponsor)
                 @if($sponsor->logo)
-                    <img src="{{ asset('storage/' . $sponsor->logo) }}" alt="{{ $sponsor->name }}">
+                    <img src="{{ storage_public_url($sponsor->logo) }}" alt="{{ $sponsor->name }}">
                 @endif
                 @endforeach
             </div>

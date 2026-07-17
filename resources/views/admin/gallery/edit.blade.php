@@ -22,7 +22,7 @@
     <div class="bg-white rounded-lg shadow-sm p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Photo Preview</h3>
         <div class="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-            <img src="{{ asset('storage/' . $gallery->image_path) }}" 
+            <img src="{{ storage_public_url($gallery->image_path) }}" 
                  alt="{{ $gallery->title }}"
                  class="w-full h-full object-contain">
         </div>

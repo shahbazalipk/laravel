@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Register') - {{ $event->title }}</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    @include('online.partials.seo-meta')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-50">
@@ -11,8 +12,8 @@
     <div class="mx-auto max-w-4xl">
         <div class="mb-6 overflow-hidden rounded-2xl bg-white shadow-lg">
             <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-6 text-white sm:px-8">
-                <h1 class="text-2xl font-bold sm:text-3xl">{{ $event->title }}</h1>
-                <p class="mt-2 text-sm text-indigo-100 sm:text-base">{{ $event->seo_description ?? 'Complete your registration in a few steps' }}</p>
+                <h1 class="text-2xl font-bold sm:text-3xl">{{ $event->event_name ?: $event->title }}</h1>
+                <p class="mt-2 text-sm text-indigo-100 sm:text-base">{{ $event->seo_description ?: ($event->social_media_description ?: 'Complete your registration in a few steps') }}</p>
             </div>
 
             @include('online.partials.event-details')

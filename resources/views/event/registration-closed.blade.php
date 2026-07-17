@@ -12,7 +12,7 @@
             <!-- Header -->
             <div class="text-center mb-8">
                 @if($event->logo)
-                    <img src="{{ $event->logo }}" alt="{{ $event->title }}" class="h-20 mx-auto mb-6">
+                    <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->title }}" class="h-20 mx-auto mb-6">
                 @endif
                 <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
                     <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -37,10 +37,10 @@
     @if($post->images && count($post->images) > 0)
         <div class="mb-4 grid {{ count($post->images) === 1 ? 'grid-cols-1' : 'grid-cols-2' }} gap-2">
             @foreach($post->images as $image)
-                <img src="{{ asset('storage/' . $image) }}" 
+                <img src="{{ storage_public_url($image) }}" 
                      alt="Post image" 
                      class="w-full rounded-lg {{ count($post->images) === 1 ? 'max-h-96' : 'aspect-square' }} object-cover cursor-pointer hover:opacity-90 transition"
-                     onclick="openImageModal('{{ asset('storage/' . $image) }}')"
+                     onclick="openImageModal('{{ storage_public_url($image) }}')"
                      onerror="console.error('Failed to load image:', '{{ $image }}'); this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ddd%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage not found%3C/text%3E%3C/svg%3E';">
             @endforeach
         </div>

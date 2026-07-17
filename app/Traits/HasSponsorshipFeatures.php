@@ -9,7 +9,7 @@ trait HasSponsorshipFeatures
     public function getLogoThumbnailUrlAttribute(): ?string
     {
         if ($this->logo_thumbnail && Storage::disk('public')->exists($this->logo_thumbnail)) {
-            return asset('storage/' . $this->logo_thumbnail);
+            return storage_public_url($this->logo_thumbnail);
         }
         return null;
     }
@@ -17,7 +17,7 @@ trait HasSponsorshipFeatures
     public function getLogoDefinedSizeUrlAttribute(): ?string
     {
         if ($this->logo_defined_size && Storage::disk('public')->exists($this->logo_defined_size)) {
-            return asset('storage/' . $this->logo_defined_size);
+            return storage_public_url($this->logo_defined_size);
         }
         return null;
     }

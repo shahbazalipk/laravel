@@ -23,7 +23,7 @@
                class="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden group">
                 @if($speaker->photo)
                     <div class="h-64 bg-gray-100">
-                        <img src="{{ asset('storage/' . $speaker->photo) }}" 
+                        <img src="{{ storage_public_url($speaker->photo) }}" 
                              alt="{{ $speaker->full_name }}"
                              class="w-full h-full object-cover">
                     </div>

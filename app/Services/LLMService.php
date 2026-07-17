@@ -297,7 +297,7 @@ class LLMService
                "- Use Tailwind CSS classes or inline styles\n" .
                "- Make it responsive\n" .
                "- Check if collections exist before displaying\n" .
-               "- Use asset('storage/' . \$path) for images\n\n" .
+               "- Use storage_public_url(\$path) for images\n\n" .
                "Provide ONLY the HTML code, no explanations.";
     }
 

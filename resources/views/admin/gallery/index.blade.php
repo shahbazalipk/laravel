@@ -72,7 +72,7 @@
         @foreach($photos as $photo)
         <div class="bg-white rounded-lg shadow-sm overflow-hidden group relative">
             <div class="aspect-square overflow-hidden bg-gray-100">
-                <img src="{{ asset('storage/' . $photo->image_path) }}" 
+                <img src="{{ storage_public_url($photo->image_path) }}" 
                      alt="{{ $photo->title }}"
                      class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
             </div>

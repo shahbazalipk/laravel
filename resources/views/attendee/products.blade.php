@@ -79,7 +79,7 @@
     @forelse($products as $product)
         <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition">
             @if($product->image)
-                <img src="{{ asset('storage/' . $product->image) }}" 
+                <img src="{{ storage_public_url($product->image) }}" 
                      alt="{{ $product->name }}"
                      class="w-full h-56 object-cover">
             @else

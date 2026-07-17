@@ -16,7 +16,7 @@
             @foreach($featured as $asset)
                 <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg overflow-hidden">
                     @if($asset->image_path)
-                        <img src="{{ asset('storage/' . $asset->image_path) }}" 
+                        <img src="{{ storage_public_url($asset->image_path) }}" 
                              alt="{{ $asset->title }}"
                              class="w-full h-48 object-cover">
                     @endif
@@ -76,7 +76,7 @@
                 <!-- Image -->
                 @if($asset->image_path)
                     <div class="aspect-video bg-gray-100 overflow-hidden">
-                        <img src="{{ asset('storage/' . $asset->image_path) }}" 
+                        <img src="{{ storage_public_url($asset->image_path) }}" 
                              alt="{{ $asset->title }}"
                              class="w-full h-full object-cover hover:scale-105 transition duration-300 cursor-pointer"
                              onclick="viewAsset({{ $asset->id }})">

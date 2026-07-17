@@ -48,7 +48,7 @@
                     <td class="px-6 py-4">
                         <div class="flex items-center">
                             @if($speaker->profile_image)
-                                <img src="{{ asset('storage/' . $speaker->profile_image) }}" alt="{{ $speaker->full_name }}" class="w-10 h-10 rounded-full object-cover mr-3">
+                                <img src="{{ storage_public_url($speaker->profile_image) }}" alt="{{ $speaker->full_name }}" class="w-10 h-10 rounded-full object-cover mr-3">
                             @else
                                 <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
                                     <span class="text-indigo-600 font-semibold text-sm">{{ substr($speaker->full_name, 0, 2) }}</span>

@@ -14,7 +14,7 @@
                 <!-- Logo -->
                 <div class="flex items-center gap-4">
                     @if($registration->event->logo)
-                        <img src="{{ asset('storage/' . $registration->event->logo) }}" 
+                        <img src="{{ storage_public_url($registration->event->logo) }}" 
                              alt="{{ $registration->event->name }}" 
                              class="h-10">
                     @else
@@ -71,7 +71,7 @@
                     <button onclick="toggleUserMenu()" 
                             class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition">
                         @if($registration->profile_picture)
-                            <img src="{{ asset('storage/' . $registration->profile_picture) }}" 
+                            <img src="{{ storage_public_url($registration->profile_picture) }}" 
                                  alt="{{ $registration->full_name }}"
                                  class="w-8 h-8 rounded-full object-cover">
                         @else

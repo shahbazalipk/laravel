@@ -244,6 +244,10 @@
     <!-- Right Column - Settings -->
     <div class="space-y-6">
         
+        @include('admin.partials.custom-form-responses', [
+            'customFormResponses' => $group->customFormResponses,
+        ])
+
         <!-- System Information -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">

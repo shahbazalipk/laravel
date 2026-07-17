@@ -103,7 +103,7 @@
             <a href="{{ route('attendee.speakers.show', $speaker) }}" 
                class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                 @if($speaker->profile_image)
-                    <img src="{{ asset('storage/' . $speaker->profile_image) }}" 
+                    <img src="{{ storage_public_url($speaker->profile_image) }}" 
                          alt="{{ $speaker->full_name }}"
                          class="w-16 h-16 rounded-full object-cover">
                 @else

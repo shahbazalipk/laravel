@@ -14,7 +14,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center">
                 @if($event->logo)
-                    <img src="{{ asset('storage/' . $event->logo) }}" alt="{{ $event->name }}" class="h-20 mx-auto mb-4">
+                    <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->name }}" class="h-20 mx-auto mb-4">
                 @endif
                 <h1 class="text-4xl font-bold">{{ $event->name }}</h1>
                 @if($event->start_date && $event->end_date)

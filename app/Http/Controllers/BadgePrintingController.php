@@ -94,7 +94,7 @@ class BadgePrintingController extends Controller
                     'status' => $reg->registrationStatus->name ?? 'N/A',
                     'badge_printed' => $reg->badge_printed,
                     'badge_printed_at' => $reg->badge_printed_at?->format('Y-m-d H:i:s'),
-                    'profile_picture' => $reg->profile_picture ? asset('storage/' . $reg->profile_picture) : null,
+                    'profile_picture' => $reg->profile_picture ? storage_public_url($reg->profile_picture) : null,
                 ];
             })
         ]);
@@ -244,7 +244,7 @@ class BadgePrintingController extends Controller
                     'status' => $reg->registrationStatus->name ?? 'N/A',
                     'badge_printed' => $reg->badge_printed,
                     'badge_printed_at' => $reg->badge_printed_at?->format('Y-m-d H:i:s'),
-                    'profile_picture' => $reg->profile_picture ? asset('storage/' . $reg->profile_picture) : null,
+                    'profile_picture' => $reg->profile_picture ? storage_public_url($reg->profile_picture) : null,
                 ];
             })
         ]);

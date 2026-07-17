@@ -29,7 +29,7 @@
                 <div class="flex items-center space-x-8">
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 hover:opacity-80 transition">
                         @if(config('event.logo'))
-                            <img src="{{ asset('storage/' . config('event.logo')) }}" 
+                            <img src="{{ storage_public_url(config('event.logo')) }}" 
                                  alt="{{ config('event.name', 'Event') }}"
                                  class="h-10 w-auto">
                         @endif
@@ -66,11 +66,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                            <div class="dropdown-menu hidden absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Pipelines</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Deals</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Website Forms</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Form Submissions</a>
+                            <div class="dropdown-menu hidden absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                                <a href="{{ route('admin.sales.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Dashboard</a>
+                                <a href="{{ route('admin.sales.pipeline-types.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Pipeline Types</a>
+                                <a href="{{ route('admin.sales.pipelines.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Pipelines</a>
+                                <a href="{{ route('admin.sales.deals.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Deals</a>
+                                <a href="{{ route('admin.sales.inquiry-forms.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Inquiry Forms</a>
+                                <a href="{{ route('admin.sales.submissions.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Form Submissions</a>
                             </div>
                         </div>
 
@@ -171,7 +173,7 @@
 
                         <!-- Settings -->
                         <div class="dropdown relative">
-                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/files*') || request()->is('admin/memberships*') || request()->is('admin/event-urls*') || request()->is('admin/badge-designs*') || request()->is('admin/gallery*') || request()->is('admin/marketing-assets*') ? 'bg-indigo-800' : '' }}">
+                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/files*') || request()->is('admin/memberships*') || request()->is('admin/event-urls*') || request()->is('admin/badge-designs*') || request()->is('admin/gallery*') || request()->is('admin/marketing-assets*') || request()->is('admin/custom-forms*') ? 'bg-indigo-800' : '' }}">
                                 Settings
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -179,6 +181,7 @@
                             </button>
                             <div class="dropdown-menu hidden absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Event Settings</a>
+                                <a href="{{ route('admin.custom-forms.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Custom Questions</a>
                                 <a href="{{ route('admin.landing-page-templates.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Landing Page Templates</a>
                                 <a href="{{ route('admin.event-urls.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">URLs</a>
                                 <a href="{{ route('admin.badge-designs.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Badge Designs</a>
@@ -256,6 +259,15 @@
                 <a href="{{ route('admin.registrations.export-page') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Export</a>
                 
                 <div class="border-t border-indigo-700 my-2"></div>
+                <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Sales</p>
+                <a href="{{ route('admin.sales.dashboard') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Dashboard</a>
+                <a href="{{ route('admin.sales.pipeline-types.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Pipeline Types</a>
+                <a href="{{ route('admin.sales.pipelines.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Pipelines</a>
+                <a href="{{ route('admin.sales.deals.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Deals</a>
+                <a href="{{ route('admin.sales.inquiry-forms.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Inquiry Forms</a>
+                <a href="{{ route('admin.sales.submissions.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Form Submissions</a>
+                
+                <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Marketing</p>
                 <a href="{{ route('admin.email-campaigns.email-campaigns.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Email Campaigns</a>
                 <a href="{{ route('admin.email-campaigns.email-templates.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Email Templates</a>
@@ -275,6 +287,7 @@
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Settings</p>
                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Event Settings</a>
+                <a href="{{ route('admin.custom-forms.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Custom Questions</a>
                 <a href="{{ route('admin.landing-page-templates.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Landing Page Templates</a>
                 <a href="{{ route('admin.event-urls.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">URLs</a>
                 <a href="{{ route('admin.badge-designs.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Badge Designs</a>
@@ -359,6 +372,7 @@
         });
     </script>
 
+    @stack('scripts')
     @yield('scripts')
 </body>
 </html>

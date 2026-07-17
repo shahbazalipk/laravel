@@ -18,7 +18,7 @@
     <!-- Photo Display -->
     <div class="lg:col-span-2">
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <img src="{{ asset('storage/' . $gallery->image_path) }}" 
+            <img src="{{ storage_public_url($gallery->image_path) }}" 
                  alt="{{ $gallery->title }}"
                  class="w-full h-auto"
                  id="photo-image">
@@ -101,7 +101,7 @@
                 </button>
 
                 <!-- Download -->
-                <a href="{{ asset('storage/' . $gallery->image_path) }}" 
+                <a href="{{ storage_public_url($gallery->image_path) }}" 
                    download="{{ $gallery->title }}"
                    class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@
 <script>
 const photoUrl = '{{ route('attendee.gallery.photo', $gallery) }}';
 const photoTitle = '{{ addslashes($gallery->title) }}';
-const photoImage = '{{ asset('storage/' . $gallery->image_path) }}';
+const photoImage = '{{ storage_public_url($gallery->image_path) }}';
 
 function shareOnFacebook() {
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(photoUrl)}`;

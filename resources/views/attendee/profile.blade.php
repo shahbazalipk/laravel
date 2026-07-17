@@ -13,7 +13,7 @@
     <div class="lg:col-span-1">
         <div class="bg-white rounded-xl shadow-sm p-6 text-center">
             @if($registration->profile_picture)
-                <img src="{{ asset('storage/' . $registration->profile_picture) }}" 
+                <img src="{{ storage_public_url($registration->profile_picture) }}" 
                      alt="{{ $registration->full_name }}"
                      class="w-32 h-32 rounded-full mx-auto mb-4 object-cover">
             @else

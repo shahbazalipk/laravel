@@ -20,7 +20,7 @@
         <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24">
             @if($speaker->photo)
                 <div class="mb-6">
-                    <img src="{{ asset('storage/' . $speaker->photo) }}" 
+                    <img src="{{ storage_public_url($speaker->photo) }}" 
                          alt="{{ $speaker->full_name }}"
                          class="w-full h-auto rounded-lg">
                 </div>

@@ -71,7 +71,7 @@
                     <a href="{{ route('attendee.exhibitors.show', $job->exhibitor) }}" 
                        class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2 mb-3">
                         @if($job->exhibitor->logo)
-                            <img src="{{ asset('storage/' . $job->exhibitor->logo) }}" 
+                            <img src="{{ storage_public_url($job->exhibitor->logo) }}" 
                                  alt="{{ $job->exhibitor->company_name }}"
                                  class="w-8 h-8 object-contain">
                         @endif

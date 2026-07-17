@@ -50,7 +50,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
         @if(isset($ad) && $ad->image)
             <div class="mb-3">
-                <img src="{{ asset('storage/' . $ad->image) }}" 
+                <img src="{{ storage_public_url($ad->image) }}" 
                      alt="{{ $ad->title }}"
                      class="w-64 h-auto rounded border border-gray-300">
             </div>

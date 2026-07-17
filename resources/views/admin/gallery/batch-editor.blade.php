@@ -340,7 +340,7 @@
                 @foreach($photos as $photo)
                 <div class="bg-white rounded-lg shadow-sm overflow-hidden group relative photo-item" data-photo-id="{{ $photo->id }}">
                     <div class="aspect-square overflow-hidden bg-gray-100 relative">
-                        <img src="{{ asset('storage/' . $photo->image_path) }}" 
+                        <img src="{{ storage_public_url($photo->image_path) }}" 
                              alt="{{ $photo->title }}"
                              class="w-full h-full object-cover photo-preview"
                              id="photo-{{ $photo->id }}">
