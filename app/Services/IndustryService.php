@@ -91,4 +91,107 @@ class IndustryService
 
         return $industry;
     }
+
+    /**
+     * Bulk import industries from pasted text or an uploaded file.
+     *
+     * @return array{imported: int, skipped: int, names: list<string>}
+     */
+    public function bulkImportIndustries(array $data): array
+    {
+        $content = $this->resolveBulkImportContent($data);
+        $names = $this->parseIndustryNames($content);
+
+        $existingNames = Industry::query()
+            ->pluck('name')
+            ->map(fn (string $name) => Str::lower($name))
+            ->all();
+
+        $seen = [];
+        $imported = 0;
+        $skipped = 0;
+        $importedNames = [];
+        $sortOrder = (int) ($data['sort_order'] ?? 0);
+        $isActive = (bool) ($data['is_active'] ?? true);
+        $color = $data['color'] ?? null;
+
+        foreach ($names as $name) {
+            $normalized = Str::lower($name);
+
+            if (isset($seen[$normalized]) || in_array($normalized, $existingNames, true)) {
+                $skipped++;
+                continue;
+            }
+
+            $seen[$normalized] = true;
+
+            $industry = $this->createIndustry([
+                'name' => $name,
+                'color' => $color,
+                'sort_order' => $sortOrder,
+                'is_active' => $isActive,
+            ]);
+
+            $importedNames[] = $industry->name;
+            $imported++;
+            $sortOrder++;
+        }
+
+        return [
+            'imported' => $imported,
+            'skipped' => $skipped,
+            'names' => $importedNames,
+        ];
+    }
+
+    private function resolveBulkImportContent(array $data): string
+    {
+        if (!empty($data['names'])) {
+            return (string) $data['names'];
+        }
+
+        if (!empty($data['import_file'])) {
+            return (string) file_get_contents($data['import_file']->getRealPath());
+        }
+
+        return '';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function parseIndustryNames(string $content): array
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $content) ?: [];
+        $names = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            // Support CSV/TSV rows: use the first column as the industry name.
+            if (str_contains($line, "\t") || str_contains($line, ',')) {
+                $parts = preg_split('/[\t,]/', $line, 2) ?: [];
+                $line = trim((string) ($parts[0] ?? ''));
+            }
+
+            // Strip surrounding quotes from CSV exports.
+            $line = trim($line, " \t\"'");
+
+            if ($line === '' || Str::lower($line) === 'name') {
+                continue;
+            }
+
+            if (mb_strlen($line) > 255) {
+                $line = mb_substr($line, 0, 255);
+            }
+
+            $names[] = $line;
+        }
+
+        return $names;
+    }
 }

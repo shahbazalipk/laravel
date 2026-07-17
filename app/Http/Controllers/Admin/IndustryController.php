@@ -80,4 +80,42 @@ class IndustryController extends Controller
         return redirect()->route('admin.industries.index')
             ->with('success', 'Industry status updated successfully');
     }
+
+    public function bulkImport(Request $request)
+    {
+        $validated = $request->validate([
+            'names' => 'nullable|string|max:50000',
+            'import_file' => 'nullable|file|mimes:txt,csv|max:2048',
+            'color' => 'nullable|string|max:7',
+            'sort_order' => 'nullable|integer|min:0',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        if (empty(trim((string) ($validated['names'] ?? ''))) && empty($validated['import_file'])) {
+            return redirect()->route('admin.industries.index')
+                ->with('error', 'Paste a list of industries or upload a TXT/CSV file.');
+        }
+
+        $validated['is_active'] = $request->has('is_active');
+        $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
+
+        $result = $this->service->bulkImportIndustries($validated);
+
+        if ($result['imported'] === 0) {
+            $message = $result['skipped'] > 0
+                ? 'No new industries were imported. All names were empty or already exist.'
+                : 'No valid industry names were found to import.';
+
+            return redirect()->route('admin.industries.index')
+                ->with('error', $message);
+        }
+
+        $message = "Successfully imported {$result['imported']} industr" . ($result['imported'] === 1 ? 'y' : 'ies');
+        if ($result['skipped'] > 0) {
+            $message .= " ({$result['skipped']} skipped as duplicates)";
+        }
+
+        return redirect()->route('admin.industries.index')
+            ->with('success', $message);
+    }
 }

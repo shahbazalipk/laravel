@@ -169,6 +169,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('exhibitor-types.toggle-active');
         
         // Industries
+        Route::post('industries/bulk-import', [IndustryController::class, 'bulkImport'])
+            ->name('industries.bulk-import');
         Route::resource('industries', IndustryController::class);
         Route::patch('industries/{industry}/toggle-active', [IndustryController::class, 'toggleActive'])
             ->name('industries.toggle-active');
