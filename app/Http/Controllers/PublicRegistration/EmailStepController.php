@@ -95,10 +95,10 @@ class EmailStepController extends WizardController
                 ->with('success', 'We sent a verification code to your email. Enter it below to continue.');
         }
 
-        $draft = $this->drafts->advanceTo($draft, RegistrationWizardStep::Information);
+        $draft = $this->drafts->advanceTo($draft, RegistrationWizardStep::Category);
 
-        return $this->redirectToStep($slug, RegistrationWizardStep::Information, $draft)
-            ->with('success', 'Progress saved. Continue with your registration details.');
+        return $this->redirectToStep($slug, RegistrationWizardStep::Category, $draft)
+            ->with('success', 'Progress saved. Choose your registration category.');
     }
 
     public function verify(VerifyOtpRequest $request, string $slug): RedirectResponse
@@ -108,13 +108,13 @@ class EmailStepController extends WizardController
         try {
             $draft = $this->requireDraft($request, $event);
             $this->otp->verify($draft, $request->validated('otp'));
-            $draft = $this->drafts->advanceTo($draft->fresh(), RegistrationWizardStep::Information);
+            $draft = $this->drafts->advanceTo($draft->fresh(), RegistrationWizardStep::Category);
         } catch (InvalidArgumentException $exception) {
             return back()->withInput()->with('error', $exception->getMessage());
         }
 
-        return $this->redirectToStep($slug, RegistrationWizardStep::Information, $draft)
-            ->with('success', 'Email verified. Continue with your registration details.');
+        return $this->redirectToStep($slug, RegistrationWizardStep::Category, $draft)
+            ->with('success', 'Email verified. Choose your registration category.');
     }
 
     public function resend(Request $request, string $slug): RedirectResponse

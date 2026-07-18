@@ -41,7 +41,7 @@ class InformationStepController extends WizardController
             $this->drafts->assertCanAccessStep($draft, RegistrationWizardStep::Information);
         } catch (InvalidArgumentException $exception) {
             if (isset($draft)) {
-                return $this->redirectToStep($slug, RegistrationWizardStep::Email, $draft)
+                return $this->redirectToStep($slug, $draft->current_step, $draft)
                     ->with('error', $exception->getMessage());
             }
 
@@ -145,7 +145,7 @@ class InformationStepController extends WizardController
                     );
                 }
 
-                return $this->drafts->savePayload($lockedDraft, $data, RegistrationWizardStep::Category);
+                return $this->drafts->savePayload($lockedDraft, $data, RegistrationWizardStep::Confirmation);
             });
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
@@ -153,7 +153,7 @@ class InformationStepController extends WizardController
             return back()->withInput()->with('error', $exception->getMessage());
         }
 
-        return $this->redirectToStep($slug, RegistrationWizardStep::Category, $draft)
-            ->with('success', 'Your details were saved.');
+        return $this->redirectToStep($slug, RegistrationWizardStep::Confirmation, $draft)
+            ->with('success', 'Your details were saved. Review and confirm your registration.');
     }
 }

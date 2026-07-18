@@ -76,7 +76,7 @@
         </div>
 
         <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-between">
-            <a href="{{ $wizardStepRoute('information') }}"
+            <a href="{{ $wizardStepRoute('email') }}"
                class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 Back
             </a>

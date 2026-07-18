@@ -78,12 +78,12 @@ class CategoryStepController extends WizardController
             $pricing = $this->registrationService->calculatePrice($category, $event);
             $draft = $this->drafts->savePayload($draft, array_merge($request->validated(), [
                 'pricing' => $pricing,
-            ]), RegistrationWizardStep::Confirmation);
+            ]), RegistrationWizardStep::Information);
         } catch (InvalidArgumentException $exception) {
             return back()->withInput()->with('error', $exception->getMessage());
         }
 
-        return $this->redirectToStep($slug, RegistrationWizardStep::Confirmation, $draft)
-            ->with('success', 'Category selected. Review and confirm your registration.');
+        return $this->redirectToStep($slug, RegistrationWizardStep::Information, $draft)
+            ->with('success', 'Category selected. Continue with your registration details.');
     }
 }

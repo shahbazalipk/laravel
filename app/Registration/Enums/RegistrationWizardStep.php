@@ -23,8 +23,8 @@ enum RegistrationWizardStep: string
     {
         return match ($this) {
             self::Email => 1,
-            self::Information => 2,
-            self::Category => 3,
+            self::Category => 2,
+            self::Information => 3,
             self::Confirmation => 4,
         };
     }
@@ -32,9 +32,9 @@ enum RegistrationWizardStep: string
     public function next(): ?self
     {
         return match ($this) {
-            self::Email => self::Information,
-            self::Information => self::Category,
-            self::Category => self::Confirmation,
+            self::Email => self::Category,
+            self::Category => self::Information,
+            self::Information => self::Confirmation,
             self::Confirmation => null,
         };
     }
@@ -43,9 +43,9 @@ enum RegistrationWizardStep: string
     {
         return match ($this) {
             self::Email => null,
-            self::Information => self::Email,
-            self::Category => self::Information,
-            self::Confirmation => self::Category,
+            self::Category => self::Email,
+            self::Information => self::Category,
+            self::Confirmation => self::Information,
         };
     }
 
@@ -56,8 +56,8 @@ enum RegistrationWizardStep: string
     {
         return [
             self::Email,
-            self::Information,
             self::Category,
+            self::Information,
             self::Confirmation,
         ];
     }

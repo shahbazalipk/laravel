@@ -406,7 +406,7 @@ class OnlineRegistrationWizardTest extends TestCase
     {
         $drafts = app(RegistrationDraftService::class);
         [$draft, $token] = $drafts->start($this->event, $this->eventUrl, $email);
-        $drafts->advanceTo($draft, RegistrationWizardStep::Information);
+        $drafts->advanceTo($draft, RegistrationWizardStep::Category);
 
         return [$draft->fresh(), $token];
     }
@@ -553,42 +553,54 @@ class OnlineRegistrationWizardTest extends TestCase
         $this->assertNotNull($draft);
         $reg = app(RegistrationDraftService::class)->encodeUrlKey($draft);
 
-        $response->assertRedirect(route('online.registration.reg.step.information', [
+        $response->assertRedirect(route('online.registration.reg.step.category', [
             'slug' => $this->slug,
             'reg' => $reg,
         ]));
         $response->assertCookie(RegistrationDraftService::COOKIE_NAME);
 
         $this->assertSame('ada@example.com', $draft->email);
-        $this->assertSame(RegistrationWizardStep::Information, $draft->current_step);
+        $this->assertSame(RegistrationWizardStep::Category, $draft->current_step);
         $this->assertNotNull($draft->email_verified_at);
     }
 
     #[Test]
-    public function information_step_is_refresh_safe_via_encrypted_reg_without_cookie(): void
+    public function category_step_is_refresh_safe_and_information_is_locked_until_category_is_saved(): void
     {
         [$draft, $token] = $this->startDraft();
         $reg = app(RegistrationDraftService::class)->encodeUrlKey($draft);
 
-        $this->get('/online/'.$this->slug.'/'.$reg.'/step/information')
-            ->assertOk()
-            ->assertSee('data-testid="wizard-information-form"', false);
-
         $this->get('/online/'.$this->slug.'/'.$reg.'/step/category')
-            ->assertRedirect($this->regStep('email', $draft));
+            ->assertOk()
+            ->assertSee('data-testid="wizard-category-form"', false);
+
+        $this->get('/online/'.$this->slug.'/'.$reg.'/step/information')
+            ->assertRedirect($this->regStep('category', $draft));
 
         $this->withCookie(RegistrationDraftService::COOKIE_NAME, 'missing-token')
-            ->get('/online/'.$this->slug.'/step/information')
+            ->get('/online/'.$this->slug.'/step/category')
             ->assertRedirect(route('online.registration.step.email', $this->slug));
     }
 
     #[Test]
-    public function wizard_persists_information_and_only_shows_url_enabled_categories(): void
+    public function wizard_selects_category_before_persisting_information(): void
     {
         [$draft, $token] = $this->startDraft();
 
+        $response = $this->get($this->regStep('category', $draft));
+        $response->assertOk();
+        $response->assertSee('Free Pass');
+        $response->assertSee('Paid Pass');
+        $response->assertDontSee('Hidden Pass');
+
         $this->withDraftCookie($token)
-            ->post($this->regStep('information', $draft, 'store'), [
+            ->post($this->regStep('category', $draft, 'store'), [
+                'registration_category_id' => $this->freeCategory->id,
+            ])
+            ->assertRedirect($this->regStep('information', $draft));
+
+        $this->withDraftCookie($token)
+            ->post($this->regStep('information', $draft->fresh(), 'store'), [
                 'first_name' => 'Ada',
                 'last_name' => 'Lovelace',
                 'phone' => '+971500000000',
@@ -596,14 +608,16 @@ class OnlineRegistrationWizardTest extends TestCase
                 'company_name' => 'Analytical Engines',
                 'industry_id' => $this->industry->id,
             ])
-            ->assertRedirect($this->regStep('category', $draft));
+            ->assertRedirect($this->regStep('confirmation', $draft));
 
-        $response = $this->get($this->regStep('category', $draft));
+        $this->assertSame(
+            $this->freeCategory->id,
+            $draft->fresh()->payload['registration_category_id']
+        );
 
-        $response->assertOk();
-        $response->assertSee('Free Pass');
-        $response->assertSee('Paid Pass');
-        $response->assertDontSee('Hidden Pass');
+        $this->get($this->regStep('confirmation', $draft->fresh()))
+            ->assertOk()
+            ->assertSee($this->regStep('information', $draft), false);
     }
 
     #[Test]
@@ -681,6 +695,8 @@ class OnlineRegistrationWizardTest extends TestCase
         }
 
         [$draft, $token] = $this->startDraft('questions@example.com');
+        $draft = app(RegistrationDraftService::class)
+            ->advanceTo($draft, RegistrationWizardStep::Information);
         $this->withDraftCookie($token)
             ->get($this->regStep('information', $draft))
             ->assertOk()
@@ -708,7 +724,7 @@ class OnlineRegistrationWizardTest extends TestCase
                     ],
                 ],
             ])
-            ->assertRedirect($this->regStep('category', $draft))
+            ->assertRedirect($this->regStep('confirmation', $draft))
             ->assertSessionHasNoErrors();
 
         $customResponse = CustomFormResponse::query()
@@ -770,6 +786,8 @@ class OnlineRegistrationWizardTest extends TestCase
     public function information_step_shows_saved_profile_picture(): void
     {
         [$draft, $token] = $this->startDraft('photo@example.com');
+        $draft = app(RegistrationDraftService::class)
+            ->advanceTo($draft, RegistrationWizardStep::Information);
         $path = 'registrations/drafts/'.$draft->public_id.'/saved-photo.jpg';
 
         app(RegistrationDraftService::class)->savePayload($draft, [
@@ -828,7 +846,7 @@ class OnlineRegistrationWizardTest extends TestCase
             ->assertRedirect($this->regStep('email', $draft));
 
         $this->post($this->regStep('email', $draft, 'verify'), ['otp' => $plainOtp])
-            ->assertRedirect($this->regStep('information', $draft));
+            ->assertRedirect($this->regStep('category', $draft));
 
         $this->assertNotNull($draft->fresh()->email_verified_at);
     }
