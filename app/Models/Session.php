@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditLogging;
 use App\Traits\HasEventScope;
 use App\Traits\HasHashedRoutes;
-use App\Traits\HasAuditLogging;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Session extends Model
 {
-    use SoftDeletes, HasEventScope, HasHashedRoutes, HasAuditLogging;
+    use HasAuditLogging, HasEventScope, HasHashedRoutes, SoftDeletes;
 
     protected $table = 'agenda_sessions';
+
     public $organizationColumn = 'org_id';
 
     protected $fillable = [
@@ -76,7 +77,7 @@ class Session extends Model
     public function speakers(): BelongsToMany
     {
         return $this->belongsToMany(Speaker::class, 'session_speaker')
-            ->withPivot('role')
+            ->withPivot('role', 'submission_id', 'presentation_order', 'duration_minutes', 'status', 'confirmed_at', 'event_id', 'org_id')
             ->withTimestamps();
     }
 

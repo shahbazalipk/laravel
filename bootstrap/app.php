@@ -28,6 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'event.admin' => \App\Http\Middleware\EventAdmin::class,
             'attendee.auth' => \App\Http\Middleware\AttendeeAuth::class,
+            'submission.portal' => \App\Http\Middleware\SubmissionPortalAuthenticated::class,
+            'submissions.enabled' => \App\Http\Middleware\SubmissionModuleEnabled::class,
+            'submission.ability' => \App\Http\Middleware\RequireSubmissionAbility::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

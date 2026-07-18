@@ -67,6 +67,56 @@
     @endif
 </div>
 
+@if($speaker->submissionLinks->isNotEmpty())
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6" data-testid="speaker-operations">
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-800">Onboarding</h2>
+        @foreach($speaker->submissionLinks as $link)
+            <div class="mt-4 rounded-lg bg-gray-50 p-4">
+                <p class="font-semibold">{{ $link->submission->title }}</p>
+                <p class="mt-1 text-sm text-gray-500">{{ ucfirst(str_replace('_', ' ', $link->onboarding->status ?? 'not_started')) }} · {{ $link->onboarding->completion_percent ?? 0 }}%</p>
+            </div>
+        @endforeach
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-800">Assign session</h2>
+        <form method="POST" action="{{ route('admin.submissions.speakers.sessions', $speaker) }}" class="mt-4 space-y-3">@csrf
+            <select name="session_id" required class="w-full rounded-lg border-gray-300">@foreach($sessions as $session)<option value="{{ $session->id }}">{{ $session->title }} · {{ $session->start_time->format('M j, g:i A') }}</option>@endforeach</select>
+            <input name="role" required value="Speaker" placeholder="Role" class="w-full rounded-lg border-gray-300">
+            <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Assign</button>
+        </form>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-800">Commercial details</h2>
+        @php($commercial = $speaker->submissionLinks->first()->commercialTerm)
+        <form method="POST" action="{{ route('admin.submissions.speakers.commercial', $speaker) }}" class="mt-4 space-y-3">@csrf @method('PUT')
+            <div class="grid grid-cols-[1fr_5rem] gap-2"><input type="number" step="0.01" min="0" name="speaker_fee" value="{{ $commercial->fee_amount ?? '' }}" placeholder="Speaker fee" class="rounded-lg border-gray-300"><input name="currency" value="{{ $commercial->currency ?? 'USD' }}" class="rounded-lg border-gray-300"></div>
+            <select name="payment_status" class="w-full rounded-lg border-gray-300">@foreach(['not_applicable','pending_approval','approved','invoice_requested','invoice_received','processing','paid','partially_paid'] as $status)<option @selected(($commercial->payment_status ?? '') === $status)>{{ $status }}</option>@endforeach</select>
+            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Save protected details</button>
+        </form>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-800">Contract</h2>
+        <form method="POST" action="{{ route('admin.submissions.speakers.contracts', $speaker) }}" class="mt-4 space-y-3">@csrf
+            <input type="date" name="expires_at" class="w-full rounded-lg border-gray-300">
+            <textarea name="terms" required rows="4" placeholder="Agreement terms" class="w-full rounded-lg border-gray-300"></textarea>
+            <button class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Send new version</button>
+        </form>
+    </div>
+</div>
+<div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-800">Travel and visa</h2>
+    @php($travel = $speaker->submissionLinks->first()->travel ?? null)
+    <form method="POST" action="{{ route('admin.submissions.speakers.travel', $speaker) }}" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">@csrf @method('PUT')
+        <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" name="travel_required" value="1" @checked(($travel->status ?? '') === 'required')> Travel required</label>
+        <input name="departure_country" value="{{ $travel->itinerary['departure_country'] ?? '' }}" placeholder="Departure country" class="rounded-lg border-gray-300">
+        <input name="departure_city" value="{{ $travel->itinerary['departure_city'] ?? '' }}" placeholder="Departure city" class="rounded-lg border-gray-300">
+        <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" name="visa_required" value="1" @checked($travel->documents['visa_required'] ?? false)> Visa support required</label>
+        <button class="sm:col-span-2 lg:col-span-1 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Save travel details</button>
+    </form>
+</div>
+@endif
+
 <div class="bg-white rounded-lg shadow-sm p-6">
     <h2 class="text-lg font-semibold text-gray-800 mb-4">Schedule</h2>
 

@@ -128,9 +128,21 @@
                         </div>
 
                         <!-- Abstracts -->
-                        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm">
-                            Abstracts
-                        </a>
+                        <div class="dropdown relative">
+                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/submissions*') ? 'bg-indigo-800' : '' }}">
+                                Abstracts
+                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu hidden absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                                <a href="{{ route('admin.submissions.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Dashboard</a>
+                                <a href="{{ route('admin.submissions.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Submissions</a>
+                                <a href="{{ route('admin.submissions.kanban') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Kanban</a>
+                                <a href="{{ route('admin.submissions.types.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Submission Types</a>
+                                <a href="{{ route('admin.submissions.reviewers.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Reviewers</a>
+                            </div>
+                        </div>
 
                         <!-- Categories -->
                         <div class="dropdown relative">
@@ -266,6 +278,13 @@
                 <a href="{{ route('admin.sales.deals.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Deals</a>
                 <a href="{{ route('admin.sales.inquiry-forms.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Inquiry Forms</a>
                 <a href="{{ route('admin.sales.submissions.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Form Submissions</a>
+
+                <div class="border-t border-indigo-700 my-2"></div>
+                <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Abstracts</p>
+                <a href="{{ route('admin.submissions.dashboard') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Dashboard</a>
+                <a href="{{ route('admin.submissions.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Submissions</a>
+                <a href="{{ route('admin.submissions.types.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Submission Types</a>
+                <a href="{{ route('admin.submissions.reviewers.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Reviewers</a>
                 
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Marketing</p>

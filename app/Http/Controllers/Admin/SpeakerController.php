@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Speaker;
 use App\Services\SpeakerService;
+use App\Models\Session;
 use Illuminate\Http\Request;
 
 class SpeakerController extends Controller
@@ -54,7 +55,10 @@ class SpeakerController extends Controller
     public function show(Speaker $speaker)
     {
         $schedule = $this->speakerService->getSchedule($speaker);
-        return view('admin.speakers.show', compact('speaker', 'schedule'));
+        $speaker->load(['submissionLinks.submission', 'submissionLinks.onboarding', 'submissionLinks.contracts', 'submissionLinks.commercialTerm', 'submissionLinks.travel']);
+        $sessions = Session::query()->orderBy('start_time')->get();
+
+        return view('admin.speakers.show', compact('speaker', 'schedule', 'sessions'));
     }
 
     public function edit(Speaker $speaker)

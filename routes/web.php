@@ -35,10 +35,6 @@ use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationContro
 use App\Http\Controllers\Admin\RegistrationDraftController;
 use App\Http\Controllers\Admin\RegistrationPaymentController;
 use App\Http\Controllers\Admin\RegistrationStatusController;
-use App\Http\Controllers\Admin\SessionController;
-use App\Http\Controllers\Admin\SpeakerController;
-use App\Http\Controllers\Admin\SponsorController;
-use App\Http\Controllers\Admin\TrackController;
 use App\Http\Controllers\Admin\Sales\DashboardController as SalesDashboardController;
 use App\Http\Controllers\Admin\Sales\DealController as SalesDealController;
 use App\Http\Controllers\Admin\Sales\InquiryFormController as SalesInquiryFormController;
@@ -46,8 +42,14 @@ use App\Http\Controllers\Admin\Sales\InquirySubmissionController as SalesInquiry
 use App\Http\Controllers\Admin\Sales\KanbanController as SalesKanbanController;
 use App\Http\Controllers\Admin\Sales\PipelineController as SalesPipelineController;
 use App\Http\Controllers\Admin\Sales\PipelineTypeController as SalesPipelineTypeController;
+use App\Http\Controllers\Admin\SessionController;
+use App\Http\Controllers\Admin\SpeakerController;
+use App\Http\Controllers\Admin\SponsorController;
+use App\Http\Controllers\Admin\TrackController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\PublicSales\EmbedController as SalesEmbedController;
 use App\Http\Controllers\PublicSales\InquiryFormController as PublicSalesInquiryFormController;
+use App\Http\Controllers\UnsubscribeController;
 
 // Base URL shows event landing page
 Route::get('/', [EventController::class, 'landing'])->name('event.landing');
@@ -56,6 +58,38 @@ Route::get('/', [EventController::class, 'landing'])->name('event.landing');
 Route::get('/sales/f/{slug}', [PublicSalesInquiryFormController::class, 'show'])->name('sales.public.form');
 Route::post('/sales/f/{slug}', [PublicSalesInquiryFormController::class, 'store'])->name('sales.public.form.store');
 Route::get('/sales/embed/{embed_token}', [SalesEmbedController::class, 'show'])->name('sales.public.embed');
+
+// Speaker and abstract submission portal
+Route::prefix('submissions')->name('submissions.')->middleware('submissions.enabled')->group(function () {
+    Route::get('login', [\App\Http\Controllers\Submissions\PortalController::class, 'login'])->name('portal.login');
+    Route::post('login', [\App\Http\Controllers\Submissions\PortalController::class, 'send'])->middleware('throttle:5,1')->name('portal.send');
+    Route::get('access/{token}', [\App\Http\Controllers\Submissions\PortalController::class, 'consume'])->middleware('throttle:10,1')->name('portal.consume');
+    Route::get('events/{eventSlug}/{typeSlug}', [\App\Http\Controllers\Submissions\PublicSubmissionController::class, 'landing'])->name('public.landing');
+
+    Route::middleware('submission.portal')->group(function () {
+        Route::get('dashboard', [\App\Http\Controllers\Submissions\PortalController::class, 'dashboard'])->name('portal.dashboard');
+        Route::post('logout', [\App\Http\Controllers\Submissions\PortalController::class, 'logout'])->name('portal.logout');
+        Route::post('events/{eventSlug}/types/{submissionType}/start', [\App\Http\Controllers\Submissions\PublicSubmissionController::class, 'start'])->name('public.start');
+        Route::get('events/{eventSlug}/drafts/{submission}/edit', [\App\Http\Controllers\Submissions\PublicSubmissionController::class, 'edit'])->name('public.edit');
+        Route::put('events/{eventSlug}/drafts/{submission}', [\App\Http\Controllers\Submissions\PublicSubmissionController::class, 'update'])->name('public.update');
+        Route::post('events/{eventSlug}/drafts/{submission}/submit', [\App\Http\Controllers\Submissions\PublicSubmissionController::class, 'submit'])->name('public.submit');
+        Route::post('events/{eventSlug}/drafts/{submission}/withdraw', [\App\Http\Controllers\Submissions\PublicSubmissionController::class, 'withdraw'])->name('public.withdraw');
+        Route::get('speaker/{link}/onboarding', [\App\Http\Controllers\Submissions\SpeakerPortalController::class, 'show'])->name('speaker.onboarding');
+        Route::put('speaker/{link}/onboarding', [\App\Http\Controllers\Submissions\SpeakerPortalController::class, 'update'])->name('speaker.update');
+        Route::post('speaker/{link}/presentation', [\App\Http\Controllers\Submissions\SpeakerPortalController::class, 'presentation'])->name('speaker.presentation');
+        Route::post('speaker/contracts/{contract}/accept', [\App\Http\Controllers\Submissions\SpeakerPortalController::class, 'acceptContract'])->name('speaker.contract.accept');
+    });
+});
+
+Route::prefix('reviewer')->name('reviewer.')->middleware(['submissions.enabled', 'submission.portal:reviewer'])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Submissions\ReviewerPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('assignments/{assignment}', [\App\Http\Controllers\Submissions\ReviewerPortalController::class, 'show'])->name('assignments.show');
+    Route::post('assignments/{assignment}/conflict', [\App\Http\Controllers\Submissions\ReviewerPortalController::class, 'conflict'])->name('assignments.conflict');
+    Route::post('assignments/{assignment}/review', [\App\Http\Controllers\Submissions\ReviewerPortalController::class, 'save'])->name('assignments.review');
+});
+Route::get('submission-files/{file}/download', [\App\Http\Controllers\Submissions\SubmissionFileController::class, 'download'])
+    ->middleware('signed')
+    ->name('submissions.files.download');
 
 // Attendee Authentication Routes
 Route::prefix('attendee')->name('attendee.')->group(function () {
@@ -192,6 +226,37 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::patch('submissions/{inquiry_submission}/status', [SalesInquirySubmissionController::class, 'updateStatus'])->name('submissions.status');
             Route::post('submissions/{inquiry_submission}/convert', [SalesInquirySubmissionController::class, 'convert'])->name('submissions.convert');
             Route::delete('submissions/{inquiry_submission}', [SalesInquirySubmissionController::class, 'destroy'])->name('submissions.destroy');
+        });
+
+        // Speaker and abstract submission management
+        Route::prefix('submissions')->name('submissions.')->middleware('submissions.enabled')->group(function () {
+            Route::get('dashboard', [\App\Http\Controllers\Admin\Submissions\SubmissionController::class, 'dashboard'])->name('dashboard');
+            Route::get('all', [\App\Http\Controllers\Admin\Submissions\SubmissionController::class, 'index'])->name('index');
+            Route::get('kanban', [\App\Http\Controllers\Admin\Submissions\SubmissionController::class, 'kanban'])->name('kanban');
+            Route::get('export', [\App\Http\Controllers\Admin\Submissions\SubmissionController::class, 'export'])->middleware('submission.ability:submissions.export')->name('export');
+            Route::get('all/{submission}', [\App\Http\Controllers\Admin\Submissions\SubmissionController::class, 'show'])->name('show');
+            Route::post('all/{submission}/stage', [\App\Http\Controllers\Admin\Submissions\SubmissionController::class, 'move'])->name('stage');
+            Route::post('all/{submission}/decision', [\App\Http\Controllers\Admin\Submissions\DecisionController::class, 'store'])->middleware('submission.ability:submissions.decide')->name('decision');
+            Route::post('all/{submission}/revision', [\App\Http\Controllers\Admin\Submissions\DecisionController::class, 'revision'])->middleware('submission.ability:submissions.request-revision')->name('revision');
+            Route::post('all/{submission}/convert', [\App\Http\Controllers\Admin\Submissions\SpeakerOperationsController::class, 'convert'])->middleware('submission.ability:submissions.convert-speaker')->name('convert');
+            Route::post('all/{submission}/reviewers', [\App\Http\Controllers\Admin\Submissions\ReviewerController::class, 'assign'])->middleware('submission.ability:submissions.assign-reviewers')->name('reviewers.assign');
+
+            Route::resource('types', \App\Http\Controllers\Admin\Submissions\SubmissionTypeController::class)->parameters(['types' => 'submission_type'])->middleware('submission.ability:submissions.configure');
+            Route::post('types/{submission_type}/duplicate', [\App\Http\Controllers\Admin\Submissions\SubmissionTypeController::class, 'duplicate'])->name('types.duplicate');
+            Route::post('types/{submission_type}/publish', [\App\Http\Controllers\Admin\Submissions\SubmissionTypeController::class, 'publish'])->name('types.publish');
+            Route::post('types/{submission_type}/sections', [\App\Http\Controllers\Admin\Submissions\ConfigurationController::class, 'storeSection'])->name('sections.store');
+            Route::post('sections/{section}/questions', [\App\Http\Controllers\Admin\Submissions\ConfigurationController::class, 'storeQuestion'])->name('questions.store');
+            Route::delete('questions/{question}', [\App\Http\Controllers\Admin\Submissions\ConfigurationController::class, 'destroyQuestion'])->name('questions.destroy');
+            Route::post('types/{submission_type}/rules', [\App\Http\Controllers\Admin\Submissions\ConfigurationController::class, 'storeRule'])->name('rules.store');
+            Route::post('types/{submission_type}/stages', [\App\Http\Controllers\Admin\Submissions\ConfigurationController::class, 'storeStage'])->name('stages.store');
+            Route::post('types/{submission_type}/criteria', [\App\Http\Controllers\Admin\Submissions\ConfigurationController::class, 'storeCriterion'])->name('criteria.store');
+
+            Route::get('reviewers', [\App\Http\Controllers\Admin\Submissions\ReviewerController::class, 'index'])->name('reviewers.index');
+            Route::post('reviewers', [\App\Http\Controllers\Admin\Submissions\ReviewerController::class, 'store'])->name('reviewers.store');
+            Route::post('speakers/{speaker}/sessions', [\App\Http\Controllers\Admin\Submissions\SpeakerOperationsController::class, 'assignSession'])->name('speakers.sessions');
+            Route::put('speakers/{speaker}/commercial', [\App\Http\Controllers\Admin\Submissions\SpeakerOperationsController::class, 'commercial'])->middleware('submission.ability:submissions.view-financial')->name('speakers.commercial');
+            Route::post('speakers/{speaker}/contracts', [\App\Http\Controllers\Admin\Submissions\SpeakerOperationsController::class, 'contract'])->middleware('submission.ability:submissions.manage-contracts')->name('speakers.contracts');
+            Route::put('speakers/{speaker}/travel', [\App\Http\Controllers\Admin\Submissions\SpeakerOperationsController::class, 'travel'])->middleware('submission.ability:submissions.manage-travel')->name('speakers.travel');
         });
 
         Route::resource('categories', CategoryController::class);
