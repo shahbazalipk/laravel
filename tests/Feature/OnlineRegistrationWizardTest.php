@@ -633,6 +633,7 @@ class OnlineRegistrationWizardTest extends TestCase
         $attending = $form->questions()->create([
             'key' => 'attending_dinner',
             'label' => 'Will you attend dinner?',
+            'help_text' => '<p>Review the <strong>dinner details</strong>.</p><script>alert("xss")</script>',
             'type' => FormQuestionType::Radio,
             'is_required' => true,
             'sort_order' => 0,
@@ -702,6 +703,8 @@ class OnlineRegistrationWizardTest extends TestCase
             ->assertOk()
             ->assertSee('Travel requirements')
             ->assertSee('data-custom-question="attending_dinner"', false)
+            ->assertSee('<strong>dinner details</strong>', false)
+            ->assertDontSee('alert("xss")', false)
             ->assertDontSee('Exhibitor questions')
             ->assertDontSee('Group questions');
 

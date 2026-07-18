@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const adminFormId = process.env.PLAYWRIGHT_CUSTOM_FORM_ID;
 const informationUrl = process.env.PLAYWRIGHT_REGISTRATION_INFORMATION_URL;
+const helpTextQuestionKey = process.env.PLAYWRIGHT_HELP_TEXT_QUESTION_KEY;
 
 test.describe('custom question builder', () => {
     test.skip(
@@ -23,6 +24,7 @@ test.describe('custom question builder', () => {
         await expect(page.getByTestId('add-question-panel')).toBeVisible();
 
         const fields = page.getByTestId('question-fields-new');
+        await expect(fields.locator('textarea[name="help_text"]')).toBeVisible();
         const type = fields.locator('[data-question-type]');
         await expect(type).toBeVisible();
 
@@ -75,6 +77,30 @@ test.describe('registration conditional questions', () => {
             await expect(target).toBeHidden();
             await expect(target.locator('input, select, textarea').first()).toBeDisabled();
         }
+
+        expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
+    });
+});
+
+test.describe('registration question help text', () => {
+    test.skip(
+        !informationUrl || !helpTextQuestionKey,
+        'Set PLAYWRIGHT_REGISTRATION_INFORMATION_URL and PLAYWRIGHT_HELP_TEXT_QUESTION_KEY.',
+    );
+
+    test('renders sanitized help HTML instead of displaying markup as text', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('console', (message) => {
+            if (message.type() === 'error') errors.push(message.text());
+        });
+        page.on('pageerror', (error) => errors.push(error.message));
+
+        await page.goto(informationUrl!);
+        const help = page.getByTestId(`custom-question-help-${helpTextQuestionKey}`);
+        await expect(help).toBeVisible();
+        await expect(help.locator('p, h1, h2, h3, ul, ol, strong, a').first()).toBeVisible();
+        await expect(help).not.toContainText(/<[^>]+>/);
+        await expect(help.locator('script, iframe, object, embed')).toHaveCount(0);
 
         expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
     });

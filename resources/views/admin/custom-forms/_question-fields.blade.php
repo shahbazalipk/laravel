@@ -48,9 +48,10 @@
         </div>
         <div>
             <label for="help-{{ $fieldId }}" class="block text-sm font-semibold text-gray-800">Help text</label>
-            <input id="help-{{ $fieldId }}" name="help_text" maxlength="2000"
-                   value="{{ $fieldValue('help_text', $question?->help_text) }}"
-                   class="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+            <textarea id="help-{{ $fieldId }}" name="help_text" maxlength="2000" rows="5"
+                      placeholder="Add guidance or formatted HTML for this question."
+                      class="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2.5 font-mono text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">{{ $fieldValue('help_text', $question?->help_text) }}</textarea>
+            <p class="mt-1 text-xs text-gray-500">Safe HTML is supported, including headings, paragraphs, lists, links, and emphasis.</p>
         </div>
     </div>
 

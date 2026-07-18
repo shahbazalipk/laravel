@@ -108,7 +108,10 @@
                     @endif
 
                     @if($question->help_text)
-                        <p class="mt-2 text-xs leading-5 text-slate-500">{{ $question->help_text }}</p>
+                        <div class="mt-2 text-xs leading-5 text-slate-500 [&_a]:font-medium [&_a]:text-indigo-600 [&_a]:underline [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-sm [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_hr]:my-3 [&_li]:ml-4 [&_ol]:list-decimal [&_p+p]:mt-2 [&_strong]:font-semibold [&_ul]:list-disc"
+                             data-testid="custom-question-help-{{ $question->key }}">
+                            {!! app(\App\Services\CustomHtmlSanitizer::class)->sanitize($question->help_text) !!}
+                        </div>
                     @endif
                     @error($errorKey)
                         <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>

@@ -190,6 +190,33 @@ class AdminCustomFormBuilderTest extends TestCase
     }
 
     #[Test]
+    public function help_text_uses_a_textarea_and_sanitizes_supported_html(): void
+    {
+        $form = $this->createForm();
+
+        $this->actingAsAdmin()
+            ->post(route('admin.custom-forms.questions.store', $form), [
+                'label' => 'Payment receipt',
+                'key' => 'payment_receipt',
+                'type' => FormQuestionType::Text->value,
+                'is_required' => '0',
+                'help_text' => '<h3>Bank details</h3><p>Pay to <strong>Account 123</strong>.</p><script>alert("xss")</script>',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $question = $form->questions()->where('key', 'payment_receipt')->firstOrFail();
+        $this->assertStringContainsString('<h3>Bank details</h3>', $question->help_text);
+        $this->assertStringContainsString('<strong>Account 123</strong>', $question->help_text);
+        $this->assertStringNotContainsString('<script', $question->help_text);
+
+        $this->actingAsAdmin()
+            ->get(route('admin.custom-forms.edit', $form))
+            ->assertOk()
+            ->assertSee('<textarea id="help-'.$question->public_id.'"', false)
+            ->assertSee('Safe HTML is supported');
+    }
+
+    #[Test]
     public function a_condition_source_from_another_form_is_rejected(): void
     {
         $form = $this->createForm('Primary', 'primary', FormAudience::Registration);

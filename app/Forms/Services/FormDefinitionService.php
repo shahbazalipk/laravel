@@ -6,6 +6,7 @@ use App\Forms\Enums\FormAudience;
 use App\Forms\Models\CustomForm;
 use App\Forms\Models\CustomFormCondition;
 use App\Forms\Models\CustomFormQuestion;
+use App\Services\CustomHtmlSanitizer;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class FormDefinitionService
 {
+    public function __construct(private readonly CustomHtmlSanitizer $htmlSanitizer)
+    {
+    }
+
     /**
      * @return list<FormAudience>
      */
@@ -227,8 +232,9 @@ class FormDefinitionService
     private function questionAttributes(array $data): array
     {
         return Arr::only($data, [
-            'key', 'label', 'type', 'is_required', 'placeholder', 'help_text',
+            'key', 'label', 'type', 'is_required', 'placeholder',
         ]) + [
+            'help_text' => $this->htmlSanitizer->sanitize($data['help_text'] ?? null),
             'validation' => array_filter($data['validation'] ?? [], fn ($value) => $value !== null && $value !== ''),
         ];
     }
