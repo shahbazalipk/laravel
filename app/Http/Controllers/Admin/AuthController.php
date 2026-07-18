@@ -25,7 +25,7 @@ class AuthController extends Controller
             return $this->handleSsoLogin($request);
         }
 
-        if (!$this->ensureEventContext($request)) {
+        if (! $this->ensureEventContext($request)) {
             return redirect()->route('event.landing')
                 ->with('error', 'Invalid or expired event login link.');
         }
@@ -35,7 +35,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        if (!$this->ensureEventContext($request)) {
+        if (! $this->ensureEventContext($request)) {
             return back()->withErrors([
                 'email' => 'Event context is missing. Use the Login to Event button from the organization portal.',
             ]);
@@ -51,7 +51,7 @@ class AuthController extends Controller
             $request->string('password')->toString()
         );
 
-        if (!$user) {
+        if (! $user) {
             return back()
                 ->withErrors(['email' => 'Invalid credentials or you do not have access to this event.'])
                 ->withInput($request->only('email'));
@@ -68,6 +68,7 @@ class AuthController extends Controller
             'admin_email',
             'admin_name',
             'admin_type',
+            'admin_is_primary',
             'event_id',
             'org_id',
         ]);
@@ -86,7 +87,7 @@ class AuthController extends Controller
                 ->with('error', $exception->getMessage());
         }
 
-        if (!$result) {
+        if (! $result) {
             return redirect()->route('admin.login')
                 ->with('error', 'Invalid or expired login link.');
         }
@@ -106,6 +107,7 @@ class AuthController extends Controller
             'admin_email' => $user->email,
             'admin_name' => $user->name,
             'admin_type' => OrganizationAdminUser::class,
+            'admin_is_primary' => $user->is_primary_admin,
         ]);
 
         return redirect()->route('admin.dashboard')->with('success', $message);
@@ -119,7 +121,7 @@ class AuthController extends Controller
 
         $context = $this->eventContext->resolveFromRequest($request);
 
-        if (!$context) {
+        if (! $context) {
             return false;
         }
 

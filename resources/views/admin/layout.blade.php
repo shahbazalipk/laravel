@@ -20,7 +20,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="overflow-x-hidden bg-gray-100">
     <!-- Top Navigation Bar -->
     <nav class="bg-indigo-900 text-white shadow-lg">
         <div class="px-6">
@@ -75,6 +75,73 @@
                                 <a href="{{ route('admin.sales.submissions.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Form Submissions</a>
                             </div>
                         </div>
+
+                        @if(config('modules.finance.enabled') && app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('finance', \App\Finance\Enums\FinanceAbility::VIEW))
+                            <!-- Finance -->
+                            <div class="dropdown relative">
+                                <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/finance*') ? 'bg-indigo-800' : '' }}">
+                                    Finance
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div class="dropdown-menu hidden absolute left-0 mt-2 w-52 bg-white rounded-lg shadow-lg py-2 z-50">
+                                    <a href="{{ route('admin.finance.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Overview</a>
+                                    <a href="{{ route('admin.finance.transactions.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Transactions</a>
+                                    <a href="{{ route('admin.finance.income.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Income</a>
+                                    <a href="{{ route('admin.finance.expenses.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Expenses</a>
+                                    <a href="{{ route('admin.finance.invoices.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Invoices</a>
+                                    <a href="{{ route('admin.finance.bills.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Bills</a>
+                                    <a href="{{ route('admin.finance.payments.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Payments</a>
+                                    <a href="{{ route('admin.finance.refunds.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Refunds</a>
+                                    <a href="{{ route('admin.finance.budgets.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Budgets</a>
+                                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('finance', \App\Finance\Enums\FinanceAbility::APPROVE))
+                                        <a href="{{ route('admin.finance.approvals.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Approvals</a>
+                                    @endif
+                                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('finance', \App\Finance\Enums\FinanceAbility::RECONCILE))
+                                        <a href="{{ route('admin.finance.reconciliation.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Reconciliation</a>
+                                    @endif
+                                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('finance', \App\Finance\Enums\FinanceAbility::VIEW_REPORTS))
+                                        <a href="{{ route('admin.finance.reports.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Reports</a>
+                                    @endif
+                                    <a href="{{ route('admin.finance.accounts.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Accounts</a>
+                                    <a href="{{ route('admin.finance.vendors.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Vendors</a>
+                                    <a href="{{ route('admin.finance.categories.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Categories</a>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if(config('modules.projects.enabled') && app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::VIEW))
+                            <!-- Projects -->
+                            <div class="dropdown relative">
+                                <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/projects*') ? 'bg-indigo-800' : '' }}">
+                                    Projects
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div class="dropdown-menu hidden absolute left-0 mt-2 w-52 bg-white rounded-lg shadow-lg py-2 z-50">
+                                    <a href="{{ route('admin.projects.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Overview</a>
+                                    <a href="{{ route('admin.projects.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">All Projects</a>
+                                    <a href="{{ route('admin.projects.calendar') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Calendar</a>
+                                    <a href="{{ route('admin.projects.timeline') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Timeline</a>
+                                    <a href="{{ route('admin.projects.templates.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Templates</a>
+                                    <a href="{{ route('admin.projects.teams.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Teams</a>
+                                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::MANAGE_MEMBERS))
+                                        <a href="{{ route('admin.projects.guests.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Guests</a>
+                                    @endif
+                                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::VIEW_WORKLOAD))
+                                        <a href="{{ route('admin.projects.controls.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Controls</a>
+                                    @endif
+                                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::VIEW_REPORTS))
+                                        <a href="{{ route('admin.projects.reports.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Reports</a>
+                                    @endif
+                                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::CREATE))
+                                        <a href="{{ route('admin.projects.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">New Project</a>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
 
                         <!-- Marketing -->
                         <div class="dropdown relative">
@@ -144,55 +211,49 @@
                             </div>
                         </div>
 
-                        <!-- Categories -->
-                        <div class="dropdown relative">
-                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/registration-categories*') ? 'bg-indigo-800' : '' }}">
-                                Categories
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div class="dropdown-menu hidden absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-                                <a href="{{ route('admin.registration-categories.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">List</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Items</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Options</a>
-                            </div>
-                        </div>
-
-                        <!-- Parameters -->
-                        <div class="dropdown relative">
-                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/sponsors*') || request()->is('admin/partners*') || request()->is('admin/registration-statuses*') || request()->is('admin/personas*') || request()->is('admin/category-types*') || request()->is('admin/product-types*') || request()->is('admin/exhibitor-tags*') || request()->is('admin/booth-types*') || request()->is('admin/exhibitor-types*') || request()->is('admin/industries*') || request()->is('admin/business-activities*') || request()->is('admin/group-types*') ? 'bg-indigo-800' : '' }}">
-                                Parameters
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div class="dropdown-menu hidden absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 max-h-96 overflow-y-auto">
-                                <a href="{{ route('admin.sponsors.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Sponsors</a>
-                                <a href="{{ route('admin.partners.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Partners</a>
-                                <a href="{{ route('admin.registration-statuses.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Registration Statuses</a>
-                                <a href="{{ route('admin.personas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Personas</a>
-                                <a href="{{ route('admin.category-types.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Category Types</a>
-                                <a href="{{ route('admin.product-types.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Product Types</a>
-                                <a href="{{ route('admin.exhibitor-tags.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Exhibitor Tags</a>
-                                <a href="{{ route('admin.booth-types.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Booth Types</a>
-                                <a href="{{ route('admin.exhibitor-types.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Exhibitor Types</a>
-                                <a href="{{ route('admin.industries.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Industries</a>
-                                <a href="{{ route('admin.business-activities.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Business Activities</a>
-                                <a href="{{ route('admin.group-types.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Group Types</a>
-                            </div>
-                        </div>
-
                         <!-- Settings -->
                         <div class="dropdown relative">
-                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/files*') || request()->is('admin/memberships*') || request()->is('admin/event-urls*') || request()->is('admin/badge-designs*') || request()->is('admin/gallery*') || request()->is('admin/marketing-assets*') || request()->is('admin/custom-forms*') ? 'bg-indigo-800' : '' }}">
+                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/files*') || request()->is('admin/memberships*') || request()->is('admin/event-urls*') || request()->is('admin/badge-designs*') || request()->is('admin/gallery*') || request()->is('admin/marketing-assets*') || request()->is('admin/custom-forms*') || request()->is('admin/registration-categories*') || request()->is('admin/sponsors*') || request()->is('admin/partners*') || request()->is('admin/registration-statuses*') || request()->is('admin/personas*') || request()->is('admin/category-types*') || request()->is('admin/product-types*') || request()->is('admin/exhibitor-tags*') || request()->is('admin/booth-types*') || request()->is('admin/exhibitor-types*') || request()->is('admin/industries*') || request()->is('admin/business-activities*') || request()->is('admin/group-types*') ? 'bg-indigo-800' : '' }}">
                                 Settings
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                            <div class="dropdown-menu hidden absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                            <div class="dropdown-menu absolute right-0 z-50 mt-2 hidden max-h-[calc(100vh-6rem)] w-72 overflow-y-auto rounded-xl bg-white py-2 shadow-xl ring-1 ring-black/5">
                                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Event Settings</a>
+                                <details class="group border-y border-gray-100">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-indigo-50">
+                                        Categories
+                                        <svg class="h-4 w-4 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </summary>
+                                    <div class="bg-gray-50 py-1">
+                                        <a href="{{ route('admin.registration-categories.index') }}" class="block px-7 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-700">Registration Categories</a>
+                                    </div>
+                                </details>
+                                <details class="group border-b border-gray-100">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-indigo-50">
+                                        Parameters
+                                        <svg class="h-4 w-4 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </summary>
+                                    <div class="bg-gray-50 py-1">
+                                        @foreach([
+                                            ['route' => 'admin.sponsors.index', 'label' => 'Sponsors'],
+                                            ['route' => 'admin.partners.index', 'label' => 'Partners'],
+                                            ['route' => 'admin.registration-statuses.index', 'label' => 'Registration Statuses'],
+                                            ['route' => 'admin.personas.index', 'label' => 'Personas'],
+                                            ['route' => 'admin.category-types.index', 'label' => 'Category Types'],
+                                            ['route' => 'admin.product-types.index', 'label' => 'Product Types'],
+                                            ['route' => 'admin.exhibitor-tags.index', 'label' => 'Exhibitor Tags'],
+                                            ['route' => 'admin.booth-types.index', 'label' => 'Booth Types'],
+                                            ['route' => 'admin.exhibitor-types.index', 'label' => 'Exhibitor Types'],
+                                            ['route' => 'admin.industries.index', 'label' => 'Industries'],
+                                            ['route' => 'admin.business-activities.index', 'label' => 'Business Activities'],
+                                            ['route' => 'admin.group-types.index', 'label' => 'Group Types'],
+                                        ] as $parameter)
+                                            <a href="{{ route($parameter['route']) }}" class="block px-7 py-2 text-sm text-gray-600 hover:bg-indigo-50 hover:text-indigo-700">{{ $parameter['label'] }}</a>
+                                        @endforeach
+                                    </div>
+                                </details>
                                 <a href="{{ route('admin.custom-forms.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Custom Questions</a>
                                 <a href="{{ route('admin.landing-page-templates.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Landing Page Templates</a>
                                 <a href="{{ route('admin.event-urls.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">URLs</a>
@@ -279,6 +340,55 @@
                 <a href="{{ route('admin.sales.inquiry-forms.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Inquiry Forms</a>
                 <a href="{{ route('admin.sales.submissions.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Form Submissions</a>
 
+                @if(config('modules.finance.enabled') && app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('finance', \App\Finance\Enums\FinanceAbility::VIEW))
+                    <div class="border-t border-indigo-700 my-2"></div>
+                    <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Finance</p>
+                    <a href="{{ route('admin.finance.dashboard') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Overview</a>
+                    <a href="{{ route('admin.finance.transactions.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Transactions</a>
+                    <a href="{{ route('admin.finance.income.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Income</a>
+                    <a href="{{ route('admin.finance.expenses.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Expenses</a>
+                    <a href="{{ route('admin.finance.invoices.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Invoices</a>
+                    <a href="{{ route('admin.finance.bills.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Bills</a>
+                    <a href="{{ route('admin.finance.payments.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Payments</a>
+                    <a href="{{ route('admin.finance.refunds.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Refunds</a>
+                    <a href="{{ route('admin.finance.budgets.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Budgets</a>
+                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('finance', \App\Finance\Enums\FinanceAbility::APPROVE))
+                        <a href="{{ route('admin.finance.approvals.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Approvals</a>
+                    @endif
+                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('finance', \App\Finance\Enums\FinanceAbility::RECONCILE))
+                        <a href="{{ route('admin.finance.reconciliation.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Reconciliation</a>
+                    @endif
+                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('finance', \App\Finance\Enums\FinanceAbility::VIEW_REPORTS))
+                        <a href="{{ route('admin.finance.reports.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Reports</a>
+                    @endif
+                    <a href="{{ route('admin.finance.accounts.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Accounts</a>
+                    <a href="{{ route('admin.finance.vendors.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Vendors</a>
+                    <a href="{{ route('admin.finance.categories.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Categories</a>
+                @endif
+
+                @if(config('modules.projects.enabled') && app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::VIEW))
+                    <div class="border-t border-indigo-700 my-2"></div>
+                    <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Projects</p>
+                    <a href="{{ route('admin.projects.dashboard') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Overview</a>
+                    <a href="{{ route('admin.projects.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">All Projects</a>
+                    <a href="{{ route('admin.projects.calendar') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Calendar</a>
+                    <a href="{{ route('admin.projects.timeline') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Timeline</a>
+                    <a href="{{ route('admin.projects.templates.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Templates</a>
+                    <a href="{{ route('admin.projects.teams.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Teams</a>
+                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::MANAGE_MEMBERS))
+                        <a href="{{ route('admin.projects.guests.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Guests</a>
+                    @endif
+                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::VIEW_WORKLOAD))
+                        <a href="{{ route('admin.projects.controls.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Controls</a>
+                    @endif
+                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::VIEW_REPORTS))
+                        <a href="{{ route('admin.projects.reports.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Reports</a>
+                    @endif
+                    @if(app(\App\Shared\Authorization\ModuleAuthorizer::class)->allows('projects', \App\Projects\Enums\ProjectAbility::CREATE))
+                        <a href="{{ route('admin.projects.create') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">New Project</a>
+                    @endif
+                @endif
+
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Abstracts</p>
                 <a href="{{ route('admin.submissions.dashboard') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Dashboard</a>
@@ -306,6 +416,37 @@
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Settings</p>
                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Event Settings</a>
+                <details class="rounded-lg bg-indigo-900/30">
+                    <summary class="flex cursor-pointer list-none items-center justify-between rounded px-3 py-2 text-sm font-semibold hover:bg-indigo-700">
+                        Categories
+                        <span aria-hidden="true">⌄</span>
+                    </summary>
+                    <a href="{{ route('admin.registration-categories.index') }}" class="block rounded px-6 py-2 text-sm text-indigo-100 hover:bg-indigo-700">Registration Categories</a>
+                </details>
+                <details class="rounded-lg bg-indigo-900/30">
+                    <summary class="flex cursor-pointer list-none items-center justify-between rounded px-3 py-2 text-sm font-semibold hover:bg-indigo-700">
+                        Parameters
+                        <span aria-hidden="true">⌄</span>
+                    </summary>
+                    <div class="pb-1">
+                        @foreach([
+                            ['route' => 'admin.sponsors.index', 'label' => 'Sponsors'],
+                            ['route' => 'admin.partners.index', 'label' => 'Partners'],
+                            ['route' => 'admin.registration-statuses.index', 'label' => 'Registration Statuses'],
+                            ['route' => 'admin.personas.index', 'label' => 'Personas'],
+                            ['route' => 'admin.category-types.index', 'label' => 'Category Types'],
+                            ['route' => 'admin.product-types.index', 'label' => 'Product Types'],
+                            ['route' => 'admin.exhibitor-tags.index', 'label' => 'Exhibitor Tags'],
+                            ['route' => 'admin.booth-types.index', 'label' => 'Booth Types'],
+                            ['route' => 'admin.exhibitor-types.index', 'label' => 'Exhibitor Types'],
+                            ['route' => 'admin.industries.index', 'label' => 'Industries'],
+                            ['route' => 'admin.business-activities.index', 'label' => 'Business Activities'],
+                            ['route' => 'admin.group-types.index', 'label' => 'Group Types'],
+                        ] as $parameter)
+                            <a href="{{ route($parameter['route']) }}" class="block rounded px-6 py-2 text-sm text-indigo-100 hover:bg-indigo-700">{{ $parameter['label'] }}</a>
+                        @endforeach
+                    </div>
+                </details>
                 <a href="{{ route('admin.custom-forms.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Custom Questions</a>
                 <a href="{{ route('admin.landing-page-templates.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Landing Page Templates</a>
                 <a href="{{ route('admin.event-urls.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">URLs</a>
@@ -327,8 +468,8 @@
     </nav>
 
     <!-- Page Content -->
-    <main class="min-h-screen">
-        <div class="max-w-7xl mx-auto px-6 py-6">
+    <main class="min-h-screen min-w-0 overflow-x-hidden">
+        <div class="mx-auto min-w-0 max-w-7xl px-4 py-6 sm:px-6">
             @if(session('success'))
                 <div class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded" data-testid="flash-success">
                     {{ session('success') }}

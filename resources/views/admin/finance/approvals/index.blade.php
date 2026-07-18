@@ -1,0 +1,11 @@
+@extends('admin.layout')
+@section('title', 'Finance Approvals')
+@section('content')
+<div class="mb-7"><p class="text-sm font-semibold uppercase tracking-[0.18em] text-indigo-600">Financial controls</p><h1 class="mt-1 text-3xl font-bold text-slate-950">Approval queue</h1><p class="mt-2 text-sm text-slate-500">Review expense and bill decisions with an immutable action trail.</p></div>
+@include('admin.finance._nav')
+<section class="space-y-4" data-testid="finance-approvals-list">
+@forelse($approvals as $approval)<article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><div class="flex items-center gap-2"><span class="rounded-full px-2.5 py-1 text-xs font-bold capitalize {{ $approval->status === 'pending' ? 'bg-amber-100 text-amber-700' : ($approval->status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700') }}">{{ $approval->status }}</span><span class="text-xs font-semibold uppercase text-slate-400">{{ $approval->subject_type }}</span></div><p class="mt-3 text-xl font-bold text-slate-900">{{ format_money($approval->amount,2,$approval->currency) }}</p><p class="mt-1 text-xs text-slate-500">Submitted {{ $approval->submitted_at->diffForHumans() }} · {{ $approval->approval_count }}/{{ $approval->required_approvals }} approvals</p></div>
+@if($approval->status === 'pending')<form method="POST" action="{{ route('admin.finance.approvals.decide',$approval) }}" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] lg:w-[34rem]">@csrf<input name="comments" placeholder="Decision comments" class="rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm"><button name="decision" value="rejected" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700">Reject</button><button name="decision" value="approved" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white">Approve</button></form>@endif</div></article>
+@empty<div class="rounded-2xl border border-dashed border-slate-300 bg-white p-14 text-center text-sm text-slate-500">No approval requests.</div>@endforelse
+</section><div class="mt-6">{{ $approvals->links() }}</div>
+@endsection

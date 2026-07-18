@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Event;
+use App\Shared\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use RuntimeException;
 
@@ -33,15 +34,19 @@ class EventContextService
 
     public function apply(int $eventId, int $organizationId): void
     {
+        $context = new TenantContext($eventId, $organizationId);
+
         config([
-            'event.event_id' => $eventId,
-            'event.org_id' => $organizationId,
+            'event.event_id' => $context->eventId,
+            'event.org_id' => $context->organizationId,
         ]);
 
         session([
-            'event_id' => $eventId,
-            'org_id' => $organizationId,
+            'event_id' => $context->eventId,
+            'org_id' => $context->organizationId,
         ]);
+
+        app()->instance(TenantContext::class, $context);
     }
 
     /**
@@ -52,7 +57,7 @@ class EventContextService
         $eventId = config('event.event_id');
         $organizationId = config('event.org_id');
 
-        if (!$eventId || !$organizationId) {
+        if (! $eventId || ! $organizationId) {
             throw new RuntimeException('Event context is missing. Open this event from the organization portal.');
         }
 
@@ -66,17 +71,17 @@ class EventContextService
     {
         [$payload, $signature] = array_pad(explode('.', $context, 2), 2, null);
 
-        if (!$payload || !$signature || !hash_equals($this->sign($payload), $signature)) {
+        if (! $payload || ! $signature || ! hash_equals($this->sign($payload), $signature)) {
             return null;
         }
 
         $data = json_decode(base64_decode($payload, true) ?: '', true);
 
-        if (!is_array($data) || ($data['exp'] ?? 0) < now()->timestamp) {
+        if (! is_array($data) || ($data['exp'] ?? 0) < now()->timestamp) {
             return null;
         }
 
-        if (!isset($data['event_id'], $data['organization_id'])) {
+        if (! isset($data['event_id'], $data['organization_id'])) {
             return null;
         }
 
@@ -96,7 +101,7 @@ class EventContextService
             ->where('subdomain', $subdomain)
             ->first(['id', 'organization_id', 'subdomain']);
 
-        if (!$event) {
+        if (! $event) {
             return null;
         }
 
@@ -112,11 +117,11 @@ class EventContextService
         $host = $request->getHost();
         $domain = config('event.event_domain', 'glimzo.ai');
 
-        if (!str_ends_with($host, '.' . $domain)) {
+        if (! str_ends_with($host, '.'.$domain)) {
             return null;
         }
 
-        $subdomain = str_replace('.' . $domain, '', $host);
+        $subdomain = str_replace('.'.$domain, '', $host);
 
         return $subdomain !== $domain && $subdomain !== '' ? $subdomain : null;
     }
@@ -130,7 +135,7 @@ class EventContextService
     {
         $secret = config('event.sso_secret');
 
-        if (!$secret) {
+        if (! $secret) {
             throw new RuntimeException('EVENT_SSO_SECRET must be configured.');
         }
 

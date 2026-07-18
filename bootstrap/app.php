@@ -31,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'submission.portal' => \App\Http\Middleware\SubmissionPortalAuthenticated::class,
             'submissions.enabled' => \App\Http\Middleware\SubmissionModuleEnabled::class,
             'submission.ability' => \App\Http\Middleware\RequireSubmissionAbility::class,
+            'tenant.required' => \App\Http\Middleware\RequireTenantContext::class,
+            'module.enabled' => \App\Http\Middleware\RequireModuleEnabled::class,
+            'module.ability' => \App\Http\Middleware\RequireModuleAbility::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

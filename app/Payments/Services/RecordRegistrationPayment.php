@@ -5,11 +5,11 @@ namespace App\Payments\Services;
 use App\Models\Registration;
 use App\Payments\Enums\PaymentEntryStatus;
 use App\Payments\Enums\PaymentEntryType;
+use App\Payments\Events\RegistrationPaymentRecorded;
 use App\Payments\Models\RegistrationPaymentEntry;
 use App\Services\AuditService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
-use RuntimeException;
 
 class RecordRegistrationPayment
 {
@@ -32,7 +32,7 @@ class RecordRegistrationPayment
             throw new InvalidArgumentException('Refund source does not belong to this registration.');
         }
 
-        if (!$sourcePayment->isPayment() || !$sourcePayment->isSucceeded()) {
+        if (! $sourcePayment->isPayment() || ! $sourcePayment->isSucceeded()) {
             throw new InvalidArgumentException('Only successful payments can be refunded.');
         }
 
@@ -51,7 +51,7 @@ class RecordRegistrationPayment
             throw new InvalidArgumentException('Reversal source does not belong to this registration.');
         }
 
-        if (!$sourceEntry->isSucceeded()) {
+        if (! $sourceEntry->isSucceeded()) {
             throw new InvalidArgumentException('Only succeeded entries can be reversed.');
         }
 
@@ -155,6 +155,12 @@ class RecordRegistrationPayment
                 "Recorded {$type->value} of {$amount} {$currency} for registration {$locked->registration_number}"
             );
 
+            event(new RegistrationPaymentRecorded(
+                $entry->public_id,
+                (int) $entry->event_id,
+                (int) $entry->org_id,
+            ));
+
             return $entry->fresh();
         });
     }
@@ -182,7 +188,7 @@ class RecordRegistrationPayment
         Registration $registration,
         RegistrationPaymentEntry $payment
     ): float {
-        if (!$payment->isPayment() || !$payment->isSucceeded()) {
+        if (! $payment->isPayment() || ! $payment->isSucceeded()) {
             return 0.0;
         }
 
