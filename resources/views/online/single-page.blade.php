@@ -14,15 +14,11 @@
             <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-6 text-white sm:px-8">
                 <h1 class="text-2xl font-bold sm:text-3xl">{{ $event->event_name ?: $event->title }}</h1>
                 <p class="mt-2 text-sm text-indigo-100 sm:text-base">
-                    {{ $event->seo_description ?: ($event->social_media_description ?: 'Complete your registration on one form') }}
+                    {{ $event->seo_description ?: ($event->social_media_description ?: 'Complete your registration below') }}
                 </p>
             </div>
 
             @include('online.partials.event-details')
-
-            <div class="border-b border-slate-200 px-4 py-3 sm:px-8" data-testid="single-page-banner">
-                <p class="text-sm font-medium text-slate-600">Single-page registration — all fields on one form.</p>
-            </div>
         </div>
 
         @if(session('success'))
@@ -44,6 +40,29 @@
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
+            </div>
+        @endif
+
+        @if($draft)
+            <div class="mb-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between"
+                 data-testid="single-page-resume-banner"
+                 role="status">
+                <div class="min-w-0">
+                    <p class="font-semibold">You have a registration in progress</p>
+                    <p class="mt-0.5 text-amber-900/80">
+                        @if($draft->email)
+                            Continuing as <strong class="font-medium">{{ $draft->email }}</strong>.
+                        @else
+                            Your previous answers are restored on this form.
+                        @endif
+                        Prefer to begin again with a different email?
+                    </p>
+                </div>
+                <a href="{{ route('online.registration.new', ['slug' => $slug]) }}"
+                   class="inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-100"
+                   data-testid="single-page-start-fresh">
+                    Start fresh
+                </a>
             </div>
         @endif
 

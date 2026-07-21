@@ -45,7 +45,6 @@ test('single-page registration form is complete and responsive', async ({ page }
     await page.goto(onlinePath());
     await expect(page).toHaveURL(new RegExp(`/online/${slug}/form`));
     await expect(page.getByTestId('single-page-form')).toBeVisible();
-    await expect(page.getByTestId('single-page-banner')).toBeVisible();
     await expect(page.getByTestId('wizard-progress')).toHaveCount(0);
 
     await page.getByTestId('single-page-email').fill(email);
@@ -67,5 +66,42 @@ test('single-page registration form is complete and responsive', async ({ page }
     await page.getByTestId('single-page-submit').click();
 
     await expect(page).toHaveURL(/\/register\/confirmation\//);
+    expect(consoleErrors.filter((error) => !error.includes('favicon'))).toEqual([]);
+});
+
+test('single-page registration can start fresh from an in-progress session', async ({ page }, testInfo) => {
+    test.skip(
+        !ctx && !process.env.PLAYWRIGHT_ALLOW_WITHOUT_CTX,
+        'Set PLAYWRIGHT_EVENT_CTX and a single-page registration URL slug.',
+    );
+    test.skip(
+        !process.env.PLAYWRIGHT_SINGLE_PAGE_SLUG && !process.env.PLAYWRIGHT_ALLOW_WITHOUT_CTX,
+        'Set PLAYWRIGHT_SINGLE_PAGE_SLUG to a URL configured as single_page.',
+    );
+
+    const consoleErrors = await collectConsoleErrors(page);
+
+    await page.setViewportSize(
+        testInfo.project.name.includes('mobile')
+            ? { width: 390, height: 844 }
+            : { width: 1280, height: 900 },
+    );
+
+    await page.goto(onlinePath());
+    await expect(page.getByTestId('single-page-form')).toBeVisible();
+
+    // If a previous browser session restored a draft, start fresh clears it.
+    if (await page.getByTestId('single-page-resume-banner').isVisible().catch(() => false)) {
+        await expect(page.getByTestId('single-page-start-fresh')).toBeVisible();
+        await page.getByTestId('single-page-start-fresh').click();
+        await expect(page).toHaveURL(new RegExp(`/online/${slug}(/form)?`));
+    }
+
+    await page.goto(onlinePath('/new'));
+    await expect(page).toHaveURL(new RegExp(`/online/${slug}/form`));
+    await expect(page.getByTestId('single-page-resume-banner')).toHaveCount(0);
+    await expect(page.getByTestId('single-page-form')).toBeVisible();
+    await expect(page.getByTestId('single-page-email')).toHaveValue('');
+
     expect(consoleErrors.filter((error) => !error.includes('favicon'))).toEqual([]);
 });

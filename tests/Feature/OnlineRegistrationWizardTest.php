@@ -1063,6 +1063,41 @@ class OnlineRegistrationWizardTest extends TestCase
     }
 
     #[Test]
+    public function single_page_resume_shows_start_fresh_and_new_clears_session(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        [$draft, $token] = $this->startDraft('resume-single@example.com');
+        $reg = app(RegistrationDraftService::class)->encodeUrlKey($draft);
+
+        $this->withDraftCookie($token)
+            ->get(route('online.registration.single.reg', [
+                'slug' => $this->slug,
+                'reg' => $reg,
+            ]))
+            ->assertOk()
+            ->assertSee('data-testid="single-page-resume-banner"', false)
+            ->assertSee('data-testid="single-page-start-fresh"', false)
+            ->assertSee('resume-single@example.com')
+            ->assertSee(route('online.registration.new', $this->slug), false);
+
+        $this->withDraftCookie($token)
+            ->get('/online/'.$this->slug.'/new')
+            ->assertRedirect(route('online.registration.single', $this->slug))
+            ->assertCookieExpired(RegistrationDraftService::COOKIE_NAME);
+
+        // Drop the cookie that withCookie() keeps on the test client.
+        unset($this->defaultCookies[RegistrationDraftService::COOKIE_NAME]);
+
+        $this->get(route('online.registration.single', $this->slug))
+            ->assertOk()
+            ->assertDontSee('data-testid="single-page-resume-banner"', false)
+            ->assertSee('data-testid="single-page-form"', false);
+    }
+
+    #[Test]
     public function admin_can_set_registration_format_on_online_urls(): void
     {
         $admin = $this->withSession([
