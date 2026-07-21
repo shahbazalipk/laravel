@@ -3,11 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
-use App\Models\RegistrationCategory;
-use App\Models\Exhibitor;
-use App\Models\Group;
 use App\Models\Industry;
-use App\Models\BusinessActivity;
+use App\Models\RegistrationCategory;
 use App\Services\RegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -24,26 +21,26 @@ class RegistrationController extends Controller
     public function showForm($slug = null)
     {
         $event = Event::getCurrentEvent();
-        
-        if (!$event || !$event->registration_form_active) {
+
+        if (! $event || ! $event->registration_form_active) {
             return view('event.registration-closed', compact('event'));
         }
 
         // Check if accessing via custom URL
         $eventUrl = null;
         $allowedCategories = null;
-        
+
         if ($slug) {
             $eventUrl = \App\Models\EventUrl::where('slug', $slug)
                 ->where('is_active', true)
                 ->first();
-            
-            if (!$eventUrl) {
+
+            if (! $eventUrl) {
                 abort(404, 'Registration URL not found or inactive');
             }
-            
+
             // Get allowed categories for this URL
-            if (!empty($eventUrl->enabled_categories)) {
+            if (! empty($eventUrl->enabled_categories)) {
                 $allowedCategories = $eventUrl->enabled_categories;
             }
         }
@@ -51,12 +48,12 @@ class RegistrationController extends Controller
         // Get active categories
         $categoriesQuery = RegistrationCategory::where('is_active', true)
             ->where('visible', true);
-        
+
         // Filter by allowed categories if URL specifies them
         if ($allowedCategories) {
             $categoriesQuery->whereIn('id', $allowedCategories);
         }
-        
+
         $categories = $categoriesQuery->orderBy('sort_order')->get();
 
         // Get industries for dropdown
@@ -77,17 +74,17 @@ class RegistrationController extends Controller
     {
         $category = RegistrationCategory::with(['registrationStatus', 'mobilePersona', 'membership'])
             ->findOrFail($categoryId);
-        
+
         $event = Event::getCurrentEvent();
-        
+
         // Calculate pricing
         $pricing = $this->service->calculatePrice($category, $event);
-        
+
         // Get registered count for capacity check
         $registeredCount = \App\Models\Registration::where('registration_category_id', $categoryId)
             ->whereIn('payment_status', ['paid', 'pending'])
             ->count();
-        
+
         $remainingCapacity = $category->capacity ? $category->capacity - $registeredCount : null;
 
         return response()->json([
@@ -106,13 +103,13 @@ class RegistrationController extends Controller
     {
         $step = $request->input('step');
         $rules = $this->getValidationRules($step, $request->all());
-        
+
         $validator = validator($request->all(), $rules);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'valid' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -121,10 +118,10 @@ class RegistrationController extends Controller
             $category = RegistrationCategory::find($request->registration_category_id);
             if ($category) {
                 $categoryErrors = $this->service->validateCategory($category, $request->all());
-                if (!empty($categoryErrors)) {
+                if (! empty($categoryErrors)) {
                     return response()->json([
                         'valid' => false,
-                        'errors' => $categoryErrors
+                        'errors' => $categoryErrors,
                     ], 422);
                 }
             }
@@ -145,8 +142,8 @@ class RegistrationController extends Controller
     public function store(Request $request)
     {
         $event = Event::getCurrentEvent();
-        
-        if (!$event || !$event->registration_form_active) {
+
+        if (! $event || ! $event->registration_form_active) {
             return redirect()->route('event.landing')
                 ->with('error', 'Registration is currently closed.');
         }
@@ -169,7 +166,7 @@ class RegistrationController extends Controller
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
             $file = $request->file('profile_picture');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $filename = time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
             $path = $file->storeAs('registrations/profiles', $filename, 'public');
             $validated['profile_picture'] = $path;
         } elseif ($request->filled('profile_picture_data')) {
@@ -178,38 +175,38 @@ class RegistrationController extends Controller
             $imageData = str_replace('data:image/png;base64,', '', $imageData);
             $imageData = str_replace(' ', '+', $imageData);
             $imageData = base64_decode($imageData);
-            
-            $filename = time() . '_' . uniqid() . '.png';
-            $path = 'registrations/profiles/' . $filename;
+
+            $filename = time().'_'.uniqid().'.png';
+            $path = 'registrations/profiles/'.$filename;
             \Storage::disk('public')->put($path, $imageData);
             $validated['profile_picture'] = $path;
         }
 
         // Get category and validate
         $category = RegistrationCategory::findOrFail($validated['registration_category_id']);
-        
+
         // Calculate pricing
         $pricing = $this->service->calculatePrice($category, $event);
-        
+
         // Determine payment status based on total amount
         $paymentStatus = 'pending';
         $paymentDate = null;
         $registrationStatusId = null;
-        
+
         if ($pricing['total_amount'] == 0) {
             // Free registration - auto confirm
             $paymentStatus = 'paid';
             $paymentDate = now();
-            
+
             // Find "Confirmed" or "Approved" status
             $confirmedStatus = \App\Models\RegistrationStatus::whereIn('name', ['Confirmed', 'Approved', 'Active'])
                 ->first();
-            
+
             if ($confirmedStatus) {
                 $registrationStatusId = $confirmedStatus->id;
             }
         }
-        
+
         // Prepare registration data
         $registrationData = array_merge($validated, [
             'event_id' => $event->id,
@@ -240,7 +237,7 @@ class RegistrationController extends Controller
         } else {
             // TODO: Redirect to payment gateway
             return redirect()->route('registration.confirmation', $registration->hash)
-                ->with('success', 'Registration submitted successfully! Please complete payment to confirm your registration.');
+                ->with('success', 'Registration and payment screenshot submitted successfully. We’ll update you after payment verification.');
         }
     }
 
@@ -251,11 +248,11 @@ class RegistrationController extends Controller
     {
         $hashService = app(\App\Services\HashService::class);
         $registration = $hashService->resolveHash($hash);
-        
-        if (!$registration || !($registration instanceof \App\Models\Registration)) {
+
+        if (! $registration || ! ($registration instanceof \App\Models\Registration)) {
             abort(404, 'Registration not found');
         }
-        
+
         // Load event relationship
         $registration->load('event');
         $event = $registration->event;
@@ -270,7 +267,7 @@ class RegistrationController extends Controller
                 ->where('type', 'online')
                 ->where('is_active', true)
                 ->value('slug');
-        
+
         return view('event.registration-confirmation', compact(
             'registration',
             'event',
@@ -284,12 +281,12 @@ class RegistrationController extends Controller
     public function verifyEmail($token)
     {
         $registration = $this->service->verifyEmail($token);
-        
+
         if ($registration) {
             return view('event.email-verified', compact('registration'))
                 ->with('success', 'Email verified successfully!');
         }
-        
+
         return view('event.email-verification-failed')
             ->with('error', 'Invalid or expired verification link.');
     }
@@ -373,6 +370,7 @@ class RegistrationController extends Controller
         for ($i = 1; $i <= 6; $i++) {
             $rules = array_merge($rules, $this->getValidationRules($i, $data));
         }
+
         return $rules;
     }
 }

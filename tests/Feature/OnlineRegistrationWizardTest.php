@@ -231,6 +231,7 @@ class OnlineRegistrationWizardTest extends TestCase
             $table->string('name')->nullable();
             $table->string('slug');
             $table->string('type')->default('online');
+            $table->string('registration_format', 32)->default('multi_step');
             $table->boolean('is_active')->default(true);
             $table->json('enabled_categories')->nullable();
             $table->boolean('allow_reprint')->default(false);
@@ -937,9 +938,10 @@ class OnlineRegistrationWizardTest extends TestCase
 
         $this->get(route('registration.confirmation', $registration->hash))
             ->assertOk()
-            ->assertSee('Payment Pending')
-            ->assertSee('Your registration was received, but your attendance is not confirmed yet.')
-            ->assertSee('Complete payment to confirm your registration')
+            ->assertSee('Payment Verification Pending')
+            ->assertSee('We received your registration and payment screenshot.')
+            ->assertSee('We’ll verify your payment and update you')
+            ->assertSee('No further action is required right now.')
             ->assertSee('1,050.00 PKR')
             ->assertSee('data-testid="payment-pending-alert"', false)
             ->assertDontSee('Registration Confirmed!');
@@ -1000,5 +1002,96 @@ class OnlineRegistrationWizardTest extends TestCase
             ])
             ->assertRedirect('/online/'.$this->slug.'/step/category')
             ->assertSessionHas('error');
+    }
+
+    #[Test]
+    public function single_page_url_entry_redirects_to_single_form(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        $this->get('/online/'.$this->slug)
+            ->assertRedirect(route('online.registration.single', $this->slug));
+
+        $this->get(route('online.registration.single', $this->slug))
+            ->assertOk()
+            ->assertSee('data-testid="single-page-form"', false)
+            ->assertSee('data-testid="single-page-category-list"', false)
+            ->assertSee('Free Pass')
+            ->assertDontSee('data-testid="wizard-progress"', false);
+    }
+
+    #[Test]
+    public function multi_step_url_cannot_open_single_page_form_route(): void
+    {
+        $this->get(route('online.registration.single', $this->slug))->assertNotFound();
+    }
+
+    #[Test]
+    public function single_page_form_completes_free_registration_in_one_submit(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        RegistrationStatus::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'name' => 'Confirmed',
+            'slug' => 'confirmed',
+            'is_active' => true,
+        ]);
+
+        $response = $this->post(route('online.registration.single.store', $this->slug), [
+            'email' => 'single@example.com',
+            'registration_category_id' => $this->freeCategory->id,
+            'first_name' => 'Single',
+            'last_name' => 'Page',
+            'phone' => '+971500000099',
+            'job_title' => 'Attendee',
+            'company_name' => 'One Form Co',
+            'industry_id' => $this->industry->id,
+            'terms_accepted' => '1',
+        ]);
+
+        $registration = Registration::query()->where('email', 'single@example.com')->first();
+        $this->assertNotNull($registration);
+        $this->assertSame('paid', $registration->payment_status);
+        $this->assertEquals(0.0, (float) $registration->total_amount);
+        $response->assertRedirect(route('registration.confirmation', $registration->hash));
+    }
+
+    #[Test]
+    public function admin_can_set_registration_format_on_online_urls(): void
+    {
+        $admin = $this->withSession([
+            'admin_logged_in' => true,
+            'admin_id' => 1,
+            'admin_email' => 'admin@example.com',
+            'event_id' => 1,
+            'org_id' => 1,
+        ]);
+
+        $admin->put(route('admin.event-urls.update', $this->eventUrl), [
+            'name' => $this->eventUrl->name,
+            'slug' => $this->eventUrl->slug,
+            'type' => 'online',
+            'registration_format' => 'single_page',
+            'is_active' => '1',
+            'enabled_categories' => [$this->freeCategory->id, $this->paidCategory->id],
+        ])->assertRedirect(route('admin.event-urls.index'));
+
+        $this->assertTrue($this->eventUrl->fresh()->usesSinglePageRegistration());
+
+        config([
+            'modules.finance.enabled' => false,
+            'modules.projects.enabled' => false,
+        ]);
+
+        $admin->get(route('admin.event-urls.edit', $this->eventUrl))
+            ->assertOk()
+            ->assertSee('data-testid="registration-format-select"', false)
+            ->assertSee('value="single_page"', false);
     }
 }

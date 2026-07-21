@@ -96,6 +96,28 @@
             </div>
         </div>
 
+        <!-- Registration Format (online only) -->
+        <div id="registration-format-options" class="mt-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg" style="display: none;" data-testid="registration-format-options">
+            <label for="registration_format" class="block text-sm font-semibold text-gray-800 mb-2">
+                Registration form format
+            </label>
+            <p class="text-xs text-gray-600 mb-3">Choose how registrants complete online registration for this URL.</p>
+            <select name="registration_format"
+                    id="registration_format"
+                    class="w-full md:w-1/2 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                    data-testid="registration-format-select">
+                @foreach(\App\Registration\Enums\RegistrationFormat::options() as $format)
+                    <option value="{{ $format->value }}" {{ old('registration_format', 'multi_step') === $format->value ? 'selected' : '' }}>
+                        {{ $format->label() }}
+                    </option>
+                @endforeach
+            </select>
+            <p id="registration-format-help" class="mt-2 text-xs text-gray-600"></p>
+            @error('registration_format')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
+
         <!-- Description -->
         <div class="mt-6">
             <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
@@ -258,28 +280,27 @@ document.addEventListener('DOMContentLoaded', function() {
         previewSlug.textContent = this.value || 'your-slug';
     });
 
-    // Update type preview
-    typeSelect.addEventListener('change', function() {
-        // Show/hide badge options based on type
-        const badgeOptions = document.getElementById('badge-options');
-        if (this.value === 'badge') {
-            badgeOptions.style.display = 'block';
-        } else {
-            badgeOptions.style.display = 'none';
+    const formatOptions = document.getElementById('registration-format-options');
+    const formatSelect = document.getElementById('registration_format');
+    const formatHelp = document.getElementById('registration-format-help');
+    const formatDescriptions = {
+        multi_step: @json(\App\Registration\Enums\RegistrationFormat::MultiStep->description()),
+        single_page: @json(\App\Registration\Enums\RegistrationFormat::SinglePage->description()),
+    };
+
+    function syncTypeDependentFields() {
+        const type = typeSelect.value || 'online';
+        document.getElementById('badge-options').style.display = type === 'badge' ? 'block' : 'none';
+        formatOptions.style.display = type === 'online' ? 'block' : 'none';
+        previewType.textContent = type;
+        if (formatHelp && formatSelect) {
+            formatHelp.textContent = formatDescriptions[formatSelect.value] || '';
         }
-        
-        // Update URL preview
-        const previewType = document.getElementById('preview-type');
-        previewType.textContent = this.value || 'online';
-    });
-    
-    // Trigger on page load if old value exists
-    if (typeSelect.value === 'badge') {
-        document.getElementById('badge-options').style.display = 'block';
     }
-    if (typeSelect.value) {
-        document.getElementById('preview-type').textContent = typeSelect.value;
-    }
+
+    typeSelect.addEventListener('change', syncTypeDependentFields);
+    formatSelect?.addEventListener('change', syncTypeDependentFields);
+    syncTypeDependentFields();
 });
 </script>
 @endsection

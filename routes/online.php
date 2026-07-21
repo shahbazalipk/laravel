@@ -5,6 +5,7 @@ use App\Http\Controllers\PublicRegistration\ConfirmationStepController;
 use App\Http\Controllers\PublicRegistration\EmailStepController;
 use App\Http\Controllers\PublicRegistration\EntryController;
 use App\Http\Controllers\PublicRegistration\InformationStepController;
+use App\Http\Controllers\PublicRegistration\SinglePageRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 |
 | Refresh-safe multi-step public registration wizard.
 | After email capture, step URLs include an encrypted draft key ({reg}).
+| Event URLs can also opt into a single-page registration form.
 |
 */
 
@@ -26,6 +28,28 @@ Route::get('/{slug}/new', [EntryController::class, 'startNew'])
 Route::get('/{slug}/resume/{token}', [EmailStepController::class, 'resume'])
     ->middleware('throttle:registration-resume')
     ->name('online.registration.resume');
+
+Route::get('/{slug}/form', [SinglePageRegistrationController::class, 'show'])
+    ->name('online.registration.single');
+Route::post('/{slug}/form', [SinglePageRegistrationController::class, 'store'])
+    ->middleware('throttle:registration-complete')
+    ->name('online.registration.single.store');
+
+Route::prefix('{slug}/{reg}')
+    ->where(['reg' => '^(?!step$|resume$|form$).+'])
+    ->group(function () {
+        Route::get('/form', [SinglePageRegistrationController::class, 'show'])
+            ->name('online.registration.single.reg');
+        Route::post('/form', [SinglePageRegistrationController::class, 'store'])
+            ->middleware('throttle:registration-complete')
+            ->name('online.registration.single.reg.store');
+        Route::post('/form/verify', [SinglePageRegistrationController::class, 'verify'])
+            ->middleware('throttle:registration-otp-verify')
+            ->name('online.registration.single.reg.verify');
+        Route::post('/form/resend', [SinglePageRegistrationController::class, 'resend'])
+            ->middleware('throttle:registration-otp-send')
+            ->name('online.registration.single.reg.resend');
+    });
 
 // Bootstrap / cookie-fallback routes (no encrypted reg yet)
 Route::get('/{slug}/step/email', [EmailStepController::class, 'show'])
@@ -51,7 +75,7 @@ Route::post('/{slug}/step/confirmation', [ConfirmationStepController::class, 'st
 
 // Draft-scoped wizard steps (encrypted reg key in the path)
 Route::prefix('{slug}/{reg}')
-    ->where(['reg' => '^(?!step$|resume$).+'])
+    ->where(['reg' => '^(?!step$|resume$|form$).+'])
     ->group(function () {
         Route::get('/step/email', [EmailStepController::class, 'show'])
             ->name('online.registration.reg.step.email');

@@ -49,10 +49,10 @@ class ConfirmationStepController extends WizardController
         }
 
         $payload = $draft->payload ?? [];
-        $category = !empty($payload['registration_category_id'])
+        $category = ! empty($payload['registration_category_id'])
             ? RegistrationCategory::query()->find($payload['registration_category_id'])
             : null;
-        $industry = !empty($payload['industry_id'])
+        $industry = ! empty($payload['industry_id'])
             ? Industry::query()->find($payload['industry_id'])
             : null;
         $pricing = $payload['pricing'] ?? ($category
@@ -93,7 +93,7 @@ class ConfirmationStepController extends WizardController
 
         $message = ((float) $registration->total_amount) <= 0
             ? 'Registration confirmed successfully! Your registration is complete.'
-            : 'Registration submitted successfully! Please complete payment to confirm your registration.';
+            : 'Registration and payment screenshot submitted successfully. We’ll update you after payment verification.';
 
         return redirect()
             ->route('registration.confirmation', $registration->hash)

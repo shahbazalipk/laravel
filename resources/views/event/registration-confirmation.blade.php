@@ -6,7 +6,7 @@
     @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $isPaymentPending ? 'Payment Pending' : 'Registration Confirmed' }} - {{ $event->title }}</title>
+    <title>{{ $isPaymentPending ? 'Payment Verification Pending' : 'Registration Confirmed' }} - {{ $event->title }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50">
@@ -78,8 +78,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
                         </svg>
                     </div>
-                    <h1 class="text-3xl font-bold text-amber-900 mb-2" data-testid="payment-pending-heading">Payment Pending</h1>
-                    <p class="text-lg font-medium text-amber-800">Your registration was received, but your attendance is not confirmed yet.</p>
+                    <h1 class="text-3xl font-bold text-amber-900 mb-2" data-testid="payment-pending-heading">Payment Verification Pending</h1>
+                    <p class="text-lg font-medium text-amber-800">We received your registration and payment screenshot. Your attendance will be confirmed after verification.</p>
                 @else
                     <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
                         <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -97,12 +97,12 @@
                      data-testid="payment-pending-alert">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <p class="text-sm font-bold uppercase tracking-wide text-amber-700">Action required</p>
-                            <h2 class="mt-1 text-xl font-bold text-amber-950">Complete payment to confirm your registration</h2>
-                            <p class="mt-1 text-sm text-amber-800">Your place is not confirmed until the event team receives and approves payment.</p>
+                            <p class="text-sm font-bold uppercase tracking-wide text-amber-700">Under review</p>
+                            <h2 class="mt-1 text-xl font-bold text-amber-950">We’ll verify your payment and update you</h2>
+                            <p class="mt-1 text-sm text-amber-800">Our event team will review your payment screenshot. We’ll email you as soon as your registration is confirmed.</p>
                         </div>
                         <div class="shrink-0 rounded-lg bg-white px-5 py-3 text-left ring-1 ring-amber-200 sm:text-right">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Amount due</p>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Amount submitted</p>
                             <p class="mt-1 text-2xl font-bold text-amber-950">
                                 {{ number_format($registration->total_amount, 2) }} {{ $registration->currency }}
                             </p>
@@ -118,7 +118,7 @@
                 <!-- Registration Number -->
                 <div class="mb-6 p-4 bg-indigo-50 border-2 border-indigo-200 rounded-lg">
                     <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-1">{{ $isPaymentPending ? 'Registration Reference (payment pending)' : 'Registration Number' }}</p>
+                        <p class="text-sm text-gray-600 mb-1">{{ $isPaymentPending ? 'Registration Reference (verification pending)' : 'Registration Number' }}</p>
                         <p class="text-2xl font-bold text-indigo-600">{{ $registration->registration_number }}</p>
                     </div>
                 </div>
@@ -240,18 +240,14 @@
             </div>
             @endif
 
-            <!-- Payment Instructions -->
+            <!-- Payment Verification -->
             @if($registration->payment_status === 'pending')
             <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Payment Instructions</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Payment Verification</h3>
                 <div class="prose prose-sm text-gray-600">
-                    <p>Your registration is pending payment. Please complete the payment to confirm your attendance.</p>
-                    <p class="mt-2">Payment Amount: <strong>{{ number_format($registration->total_amount, 2) }} {{ $registration->currency }}</strong></p>
-                    @if($event->payment_instructions)
-                        <div class="mt-4 p-4 bg-gray-50 rounded">
-                            {!! nl2br(e($event->payment_instructions)) !!}
-                        </div>
-                    @endif
+                    <p>Your payment screenshot has been submitted successfully and is awaiting review by the event team.</p>
+                    <p class="mt-2">Submitted Amount: <strong>{{ number_format($registration->total_amount, 2) }} {{ $registration->currency }}</strong></p>
+                    <p class="mt-2">No further action is required right now. We’ll notify you by email when your payment and registration are confirmed.</p>
                 </div>
             </div>
             @endif
@@ -273,7 +269,7 @@
                         <svg class="w-5 h-5 text-indigo-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
-                        <span class="text-gray-700">Complete your payment to confirm your registration</span>
+                        <span class="text-gray-700">Wait for the event team to verify your submitted payment screenshot</span>
                     </li>
                     @endif
                     <li class="flex items-start">
@@ -287,14 +283,16 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                         <span class="text-gray-700">
-                            {{ $isPaymentPending ? 'Check your email for payment and event details' : 'Check your email for confirmation and event details' }}
+                            {{ $isPaymentPending ? 'Check your email for the payment verification result and registration confirmation' : 'Check your email for confirmation and event details' }}
                         </span>
                     </li>
                     <li class="flex items-start">
                         <svg class="w-5 h-5 text-indigo-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
-                        <span class="text-gray-700">Bring your QR code or registration number on the event day</span>
+                        <span class="text-gray-700">
+                            {{ $isPaymentPending ? 'Your QR code will be available after payment verification' : 'Bring your QR code or registration number on the event day' }}
+                        </span>
                     </li>
                 </ul>
             </div>

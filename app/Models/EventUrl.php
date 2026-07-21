@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Registration\Enums\RegistrationFormat;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -13,6 +14,7 @@ class EventUrl extends Model
         'name',
         'slug',
         'type',
+        'registration_format',
         'is_active',
         'enabled_categories',
         'allow_reprint',
@@ -30,7 +32,14 @@ class EventUrl extends Model
         'enable_barcode_scanner' => 'boolean',
         'enable_manual_input' => 'boolean',
         'enabled_categories' => 'array',
+        'registration_format' => RegistrationFormat::class,
     ];
+
+    public function usesSinglePageRegistration(): bool
+    {
+        return $this->type === 'online'
+            && ($this->registration_format ?? RegistrationFormat::MultiStep) === RegistrationFormat::SinglePage;
+    }
 
     /**
      * Get the event that owns the URL
@@ -55,7 +64,7 @@ class EventUrl extends Model
      */
     public function getFullUrlAttribute(): string
     {
-        return match($this->type) {
+        return match ($this->type) {
             'badge' => "/badge/{$this->slug}",
             'onsite' => "/onsite/{$this->slug}",
             'exhibitors' => "/exhibitors/{$this->slug}",
@@ -72,7 +81,7 @@ class EventUrl extends Model
         if (empty($this->enabled_categories)) {
             return collect();
         }
-        
+
         return RegistrationCategory::whereIn('id', $this->enabled_categories)->get();
     }
 

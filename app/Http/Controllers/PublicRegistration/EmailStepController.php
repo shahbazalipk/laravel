@@ -29,13 +29,13 @@ class EmailStepController extends WizardController
         $draft = $this->draftFromRequest($request, $event);
 
         if ($draft) {
-            $awaitingVerification = $event->email_verification_required && !$draft->isEmailVerified();
-            $targetStep = ($draft->current_step !== RegistrationWizardStep::Email && !$awaitingVerification)
+            $awaitingVerification = $event->email_verification_required && ! $draft->isEmailVerified();
+            $targetStep = ($draft->current_step !== RegistrationWizardStep::Email && ! $awaitingVerification)
                 ? $draft->current_step
                 : RegistrationWizardStep::Email;
 
             // Always keep the encrypted draft key in the URL once a draft exists.
-            if (!$this->draftKeyFromRequest($request) || $targetStep !== RegistrationWizardStep::Email) {
+            if (! $this->draftKeyFromRequest($request) || $targetStep !== RegistrationWizardStep::Email) {
                 return $this->redirectToStep($slug, $targetStep, $draft);
             }
 
@@ -68,10 +68,10 @@ class EmailStepController extends WizardController
         $email = $this->drafts->normalizeEmail($request->validated('email'));
         $existing = $this->draftFromRequest($request, $event);
 
-        if ($existing && $existing->email === $email && !$existing->isExpired()) {
+        if ($existing && $existing->email === $email && ! $existing->isExpired()) {
             $draft = $existing;
             $plainToken = $request->cookie(RegistrationDraftService::COOKIE_NAME);
-            if (!$plainToken) {
+            if (! $plainToken) {
                 $plainToken = $this->drafts->rotateToken($draft);
             }
         } else {
@@ -80,7 +80,7 @@ class EmailStepController extends WizardController
 
         $this->drafts->queueResumeCookie($plainToken);
 
-        if ($event->email_verification_required && !$draft->isEmailVerified()) {
+        if ($event->email_verification_required && ! $draft->isEmailVerified()) {
             try {
                 $resumeUrl = route('online.registration.resume', [
                     'slug' => $slug,
@@ -139,26 +139,45 @@ class EmailStepController extends WizardController
 
     public function resume(Request $request, string $slug, string $token): RedirectResponse
     {
-        [$event] = $this->bootContext($slug);
+        [$event, $eventUrl] = $this->bootContext($slug);
 
         $draft = $this->drafts->findByPlainToken($token, $event);
-        if (!$draft) {
+        if (! $draft) {
+            $fallback = $eventUrl->usesSinglePageRegistration()
+                ? route('online.registration.single', ['slug' => $slug])
+                : route('online.registration.step.email', ['slug' => $slug]);
+
             return redirect()
-                ->route('online.registration.step.email', ['slug' => $slug])
+                ->to($fallback)
                 ->with('error', 'This resume link is invalid or expired. Please start again.');
         }
 
         try {
             $this->drafts->assertAccessible($draft, $event);
         } catch (InvalidArgumentException $exception) {
+            $fallback = $eventUrl->usesSinglePageRegistration()
+                ? route('online.registration.single', ['slug' => $slug])
+                : route('online.registration.step.email', ['slug' => $slug]);
+
             return redirect()
-                ->route('online.registration.step.email', ['slug' => $slug])
+                ->to($fallback)
                 ->with('error', $exception->getMessage());
         }
 
         $this->drafts->queueResumeCookie($token);
 
-        if ($event->email_verification_required && !$draft->isEmailVerified()) {
+        if ($eventUrl->usesSinglePageRegistration()) {
+            return redirect()
+                ->route('online.registration.single.reg', [
+                    'slug' => $slug,
+                    'reg' => $this->drafts->encodeUrlKey($draft),
+                ])
+                ->with('success', $event->email_verification_required && ! $draft->isEmailVerified()
+                    ? 'Welcome back. Enter your verification code to continue.'
+                    : 'Welcome back. Your progress has been restored.');
+        }
+
+        if ($event->email_verification_required && ! $draft->isEmailVerified()) {
             return $this->redirectToStep($slug, RegistrationWizardStep::Email, $draft)
                 ->with('success', 'Welcome back. Enter your verification code to continue.');
         }

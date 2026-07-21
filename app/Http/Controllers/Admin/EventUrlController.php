@@ -7,6 +7,7 @@ use App\Models\EventUrl;
 use App\Models\Partner;
 use App\Models\RegistrationCategory;
 use App\Models\Sponsor;
+use App\Registration\Enums\RegistrationFormat;
 use App\Services\CustomHtmlSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +64,7 @@ class EventUrlController extends Controller
         $organizationId = config('event.org_id');
 
         $validated = $request->validate($this->rules());
+        $validated = $this->normalizeRegistrationFormat($validated);
 
         $validated['event_id'] = $eventId;
         $validated['organization_id'] = $organizationId;
@@ -109,6 +111,7 @@ class EventUrlController extends Controller
     {
         $this->assertCurrentTenant($eventUrl);
         $validated = $request->validate($this->rules($eventUrl));
+        $validated = $this->normalizeRegistrationFormat($validated);
 
         $validated['is_active'] = $request->has('is_active');
         $validated['allow_reprint'] = $request->has('allow_reprint');
@@ -155,6 +158,7 @@ class EventUrlController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', $slugRule],
             'type' => ['required', Rule::in(['online', 'onsite', 'exhibitors', 'groups', 'badge'])],
+            'registration_format' => ['nullable', Rule::enum(RegistrationFormat::class)],
             'is_active' => ['sometimes', 'boolean'],
             'enabled_categories' => ['nullable', 'array'],
             'enabled_categories.*' => [
@@ -189,6 +193,24 @@ class EventUrlController extends Controller
                     ->whereNull('deleted_at'),
             ],
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function normalizeRegistrationFormat(array $validated): array
+    {
+        if (($validated['type'] ?? null) !== 'online') {
+            $validated['registration_format'] = RegistrationFormat::MultiStep->value;
+
+            return $validated;
+        }
+
+        $validated['registration_format'] = $validated['registration_format']
+            ?? RegistrationFormat::MultiStep->value;
+
+        return $validated;
     }
 
     private function assertCurrentTenant(EventUrl $eventUrl): void

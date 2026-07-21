@@ -97,24 +97,32 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {{ $url->type === 'online' ? 'bg-blue-100 text-blue-800' : '' }}
-                                {{ $url->type === 'onsite' ? 'bg-green-100 text-green-800' : '' }}
-                                {{ $url->type === 'exhibitors' ? 'bg-purple-100 text-purple-800' : '' }}
-                                {{ $url->type === 'groups' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                {{ $url->type === 'badge' ? 'bg-orange-100 text-orange-800' : '' }}">
-                                {{ ucfirst($url->type) }}
-                            </span>
-                            @if($url->type === 'badge')
-                                <div class="mt-1 flex gap-1">
-                                    @if($url->allow_reprint)
-                                        <span class="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">Reprint</span>
-                                    @endif
-                                    @if($url->allow_print_from_photo)
-                                        <span class="px-2 py-0.5 text-xs bg-green-50 text-green-700 rounded">Photo</span>
-                                    @endif
-                                </div>
-                            @endif
+                            <div class="flex flex-col gap-1">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {{ $url->type === 'online' ? 'bg-blue-100 text-blue-800' : '' }}
+                                    {{ $url->type === 'onsite' ? 'bg-green-100 text-green-800' : '' }}
+                                    {{ $url->type === 'exhibitors' ? 'bg-purple-100 text-purple-800' : '' }}
+                                    {{ $url->type === 'groups' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                    {{ $url->type === 'badge' ? 'bg-orange-100 text-orange-800' : '' }}">
+                                    {{ ucfirst($url->type) }}
+                                </span>
+                                @if($url->type === 'online')
+                                    <span class="px-2 py-0.5 text-xs rounded {{ $url->usesSinglePageRegistration() ? 'bg-violet-50 text-violet-700' : 'bg-slate-50 text-slate-600' }}"
+                                          data-testid="event-url-format-{{ $url->id }}">
+                                        {{ $url->registration_format?->label() ?? 'Multi-step wizard' }}
+                                    </span>
+                                @endif
+                                @if($url->type === 'badge')
+                                    <div class="flex gap-1">
+                                        @if($url->allow_reprint)
+                                            <span class="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">Reprint</span>
+                                        @endif
+                                        @if($url->allow_print_from_photo)
+                                            <span class="px-2 py-0.5 text-xs bg-green-50 text-green-700 rounded">Photo</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
