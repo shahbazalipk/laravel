@@ -81,6 +81,11 @@ class RegistrationDraft extends Model
         return 'public_id';
     }
 
+    public function displayReference(): string
+    {
+        return 'DRAFT-'.strtoupper(substr((string) $this->public_id, 0, 8));
+    }
+
     public function isExpired(): bool
     {
         return $this->expires_at !== null && $this->expires_at->isPast();

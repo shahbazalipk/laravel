@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\PublicRegistration;
 
+use App\Registration\Rules\UniqueEventRegistrationEmail;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,7 @@ class SinglePageRegistrationRequest extends FormRequest
         $eventId = config('event.event_id');
 
         return [
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', new UniqueEventRegistrationEmail],
             'registration_category_id' => [
                 'required',
                 'integer',
@@ -48,5 +49,14 @@ class SinglePageRegistrationRequest extends FormRequest
             'profile_picture_data' => ['nullable', 'string'],
             'terms_accepted' => ['required', 'accepted'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('email')) {
+            $this->merge([
+                'email' => strtolower(trim((string) $this->input('email'))),
+            ]);
+        }
     }
 }

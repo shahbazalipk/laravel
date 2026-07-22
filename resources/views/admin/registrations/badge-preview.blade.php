@@ -76,7 +76,13 @@
             <!-- QR Code -->
             <div class="px-6 mb-6">
                 <div class="bg-white border-2 border-gray-200 rounded-lg p-4 flex justify-center">
-                    {!! QrCode::size(200)->generate($registration->qr_code) !!}
+                    @if($registration->qr_code)
+                        <img src="data:image/png;base64,{{ $registration->qr_code }}"
+                             alt="QR code for {{ $registration->registration_number }}"
+                             class="h-48 w-48">
+                    @else
+                        {!! QrCode::size(200)->generate((string) $registration->registration_number) !!}
+                    @endif
                 </div>
                 <p class="text-center text-xs text-gray-500 mt-2">{{ $registration->registration_number }}</p>
             </div>

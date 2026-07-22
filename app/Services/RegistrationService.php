@@ -201,19 +201,28 @@ class RegistrationService
     }
 
     /**
-     * Generate QR code for registration
+     * Generate QR code for registration.
+     * Encodes only the registration number so scanners return a stable identifier.
      */
     public function generateQRCode(Registration $registration): string
     {
-        $data = json_encode([
-            'registration_number' => $registration->registration_number,
-            'badge_number' => $registration->badge_number,
-            'name' => $registration->full_name,
-            'email' => $registration->email,
-            'company' => $registration->company_name,
-        ]);
+        return base64_encode(
+            QrCode::format('png')->size(300)->generate((string) $registration->registration_number)
+        );
+    }
 
-        return base64_encode(QrCode::format('png')->size(300)->generate($data));
+    /**
+     * Ensure the stored QR image encodes the registration number (refreshes legacy payloads).
+     */
+    public function ensureRegistrationNumberQrCode(Registration $registration): Registration
+    {
+        $qrCode = $this->generateQRCode($registration);
+
+        if ($registration->qr_code !== $qrCode) {
+            $registration->forceFill(['qr_code' => $qrCode])->saveQuietly();
+        }
+
+        return $registration;
     }
 
     /**

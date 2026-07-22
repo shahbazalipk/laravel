@@ -287,6 +287,20 @@
                                         </svg>
                                     </a>
                                 @endif
+                                @if($row->deleteUrl)
+                                    <button type="button"
+                                            class="text-red-600 transition hover:text-red-900"
+                                            title="{{ $row->kind === 'draft' ? 'Delete draft' : 'Delete registration' }}"
+                                            aria-label="{{ $row->kind === 'draft' ? 'Delete draft' : 'Delete registration' }} {{ $row->reference }}"
+                                            data-testid="open-delete-registration-modal"
+                                            data-delete-url="{{ $row->deleteUrl }}"
+                                            data-registration-reference="{{ $row->reference }}"
+                                            data-delete-kind="{{ $row->kind }}">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h8"></path>
+                                        </svg>
+                                    </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -304,4 +318,131 @@
         Total: {{ $registrations->total() }} record{{ $registrations->total() !== 1 ? 's' : '' }}
     </div>
 @endif
+
+<div id="deleteRegistrationModal"
+     class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm sm:p-6"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="delete-registration-title"
+     data-testid="delete-registration-modal">
+    <div class="flex min-h-full items-start justify-center pt-6 sm:items-center sm:pt-0">
+        <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+            <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path>
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h2 id="delete-registration-title" class="text-lg font-semibold text-slate-900">
+                            Permanently delete?
+                        </h2>
+                        <p class="mt-1 text-sm leading-6 text-slate-500">This action cannot be undone.</p>
+                    </div>
+                    <button type="button"
+                            class="close-delete-registration rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                            aria-label="Close delete dialog">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <form id="deleteRegistrationForm"
+                  method="POST"
+                  class="space-y-5 px-5 py-5 sm:px-6"
+                  data-testid="delete-registration-form">
+                @csrf
+                @method('DELETE')
+
+                <div id="deleteRegistrationWarning"
+                     class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                    This record and related data will be permanently removed.
+                </div>
+
+                <div>
+                    <label for="delete_confirmation" class="block text-sm font-medium text-slate-700">
+                        Enter <span id="deleteRegistrationReference" class="font-mono font-semibold text-slate-950"></span> to confirm
+                    </label>
+                    <input id="delete_confirmation"
+                           name="confirmation"
+                           type="text"
+                           autocomplete="off"
+                           required
+                           class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
+                           data-testid="delete-registration-confirmation">
+                </div>
+
+                <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                    <button type="button"
+                            class="close-delete-registration rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            data-testid="delete-registration-submit">
+                        Permanently Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('deleteRegistrationModal');
+        const form = document.getElementById('deleteRegistrationForm');
+        const title = document.getElementById('delete-registration-title');
+        const warning = document.getElementById('deleteRegistrationWarning');
+        const reference = document.getElementById('deleteRegistrationReference');
+        const confirmation = document.getElementById('delete_confirmation');
+
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            form.reset();
+        };
+
+        document.querySelectorAll('[data-testid="open-delete-registration-modal"]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const kind = button.dataset.deleteKind || 'registration';
+                form.action = button.dataset.deleteUrl;
+                reference.textContent = button.dataset.registrationReference;
+                confirmation.pattern = button.dataset.registrationReference.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                confirmation.title = `Enter ${button.dataset.registrationReference} exactly`;
+
+                if (kind === 'draft') {
+                    title.textContent = 'Permanently delete draft?';
+                    warning.textContent = 'This incomplete or expired draft and any saved answers will be permanently removed.';
+                } else {
+                    title.textContent = 'Permanently delete registration?';
+                    warning.textContent = 'The registration and all related payments, documents, attendee activity, and check-in data will be permanently removed.';
+                }
+
+                modal.classList.remove('hidden');
+                confirmation.focus();
+            });
+        });
+
+        document.querySelectorAll('.close-delete-registration').forEach((button) => {
+            button.addEventListener('click', closeModal);
+        });
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+    });
+</script>
+@endpush

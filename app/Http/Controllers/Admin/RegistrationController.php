@@ -281,6 +281,8 @@ class RegistrationController extends Controller
                 $entry->id => $paymentRecorder->refundableAmountForPayment($registration, $entry),
             ]);
 
+        $this->registrationService->ensureRegistrationNumberQrCode($registration);
+
         return view('admin.registrations.show', compact(
             'registration',
             'statuses',
@@ -463,9 +465,24 @@ class RegistrationController extends Controller
             });
         }
 
-        // QR code search
+        // QR / barcode search — prefer registration number (current QR payload)
         if ($request->filled('qr')) {
-            $query->where('qr_code', $request->qr);
+            $qr = trim((string) $request->qr);
+
+            try {
+                $decoded = json_decode($qr, true, 512, JSON_THROW_ON_ERROR);
+                if (is_array($decoded) && ! empty($decoded['registration_number'])) {
+                    $qr = (string) $decoded['registration_number'];
+                }
+            } catch (\JsonException) {
+                // Plain registration number (or legacy payload) — use as-is.
+            }
+
+            $query->where(function ($q) use ($qr) {
+                $q->where('registration_number', $qr)
+                    ->orWhere('badge_number', $qr)
+                    ->orWhere('email', $qr);
+            });
         }
 
         $registrations = $request->filled('search') || $request->filled('qr')
@@ -569,6 +586,8 @@ class RegistrationController extends Controller
      */
     public function previewBadge(Registration $registration)
     {
+        $this->registrationService->ensureRegistrationNumberQrCode($registration);
+
         return view('admin.registrations.badge-preview', compact('registration'));
     }
 

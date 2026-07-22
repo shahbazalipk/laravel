@@ -441,6 +441,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('registrations', AdminRegistrationController::class);
         Route::get('registration-drafts/{draft}', [RegistrationDraftController::class, 'show'])
             ->name('registration-drafts.show');
+        Route::delete('registration-drafts/{draft}', [RegistrationDraftController::class, 'destroy'])
+            ->name('registration-drafts.destroy');
         Route::get('custom-form-answer-files/{file}/download', CustomFormAnswerFileController::class)
             ->name('custom-form-answer-files.download');
         Route::patch('registrations/{registration}/status', [AdminRegistrationController::class, 'updateStatus'])

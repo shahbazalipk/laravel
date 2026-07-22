@@ -1063,6 +1063,84 @@ class OnlineRegistrationWizardTest extends TestCase
     }
 
     #[Test]
+    public function multi_step_email_rejects_already_registered_email(): void
+    {
+        Registration::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'registration_category_id' => $this->freeCategory->id,
+            'registration_type' => 'individual',
+            'registration_number' => 'REG-TAKEN1',
+            'first_name' => 'Taken',
+            'last_name' => 'Email',
+            'email' => 'taken@example.com',
+            'phone' => '+971500000001',
+            'company_name' => 'Acme',
+            'base_price' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 0,
+            'currency' => 'PKR',
+            'payment_status' => 'paid',
+            'terms_accepted' => true,
+            'terms_accepted_at' => now(),
+        ]);
+
+        $this->from(route('online.registration.step.email', $this->slug))
+            ->post('/online/'.$this->slug.'/step/email', [
+                'email' => 'Taken@Example.com',
+            ])
+            ->assertRedirect(route('online.registration.step.email', $this->slug))
+            ->assertSessionHasErrors([
+                'email' => 'This email is already registered. You cannot use the same email again.',
+            ]);
+    }
+
+    #[Test]
+    public function single_page_rejects_already_registered_email(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        Registration::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'registration_category_id' => $this->freeCategory->id,
+            'registration_type' => 'individual',
+            'registration_number' => 'REG-TAKEN2',
+            'first_name' => 'Taken',
+            'last_name' => 'Again',
+            'email' => 'taken-single@example.com',
+            'phone' => '+971500000002',
+            'company_name' => 'Acme',
+            'base_price' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 0,
+            'currency' => 'PKR',
+            'payment_status' => 'paid',
+            'terms_accepted' => true,
+            'terms_accepted_at' => now(),
+        ]);
+
+        $this->from(route('online.registration.single', $this->slug))
+            ->post(route('online.registration.single.store', $this->slug), [
+                'email' => 'taken-single@example.com',
+                'registration_category_id' => $this->freeCategory->id,
+                'first_name' => 'New',
+                'last_name' => 'Person',
+                'phone' => '+971500000088',
+                'job_title' => 'Attendee',
+                'company_name' => 'Other Co',
+                'industry_id' => $this->industry->id,
+                'terms_accepted' => '1',
+            ])
+            ->assertRedirect(route('online.registration.single', $this->slug))
+            ->assertSessionHasErrors([
+                'email' => 'This email is already registered. You cannot use the same email again.',
+            ]);
+    }
+
+    #[Test]
     public function single_page_resume_shows_start_fresh_and_new_clears_session(): void
     {
         $this->eventUrl->update([

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\PurgeRegistrationDraftRequest;
 use App\Models\RegistrationCategory;
 use App\Registration\Models\RegistrationDraft;
+use App\Services\PurgeRegistrationDraft;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class RegistrationDraftController extends Controller
@@ -36,5 +39,22 @@ class RegistrationDraftController extends Controller
             'payload' => $draft->payload ?? [],
             'category' => $category,
         ]);
+    }
+
+    public function destroy(
+        PurgeRegistrationDraftRequest $request,
+        RegistrationDraft $draft,
+        PurgeRegistrationDraft $purgeRegistrationDraft
+    ): RedirectResponse {
+        if ($draft->isCompleted()) {
+            abort(404);
+        }
+
+        $reference = $draft->displayReference();
+        $purgeRegistrationDraft->execute($draft);
+
+        return redirect()
+            ->route('admin.registrations.index', ['stage' => 'draft'])
+            ->with('success', "Draft {$reference} was permanently deleted.");
     }
 }

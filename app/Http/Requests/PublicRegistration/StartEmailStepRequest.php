@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\PublicRegistration;
 
+use App\Registration\Rules\UniqueEventRegistrationEmail;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StartEmailStepRequest extends FormRequest
@@ -14,7 +15,7 @@ class StartEmailStepRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', new UniqueEventRegistrationEmail],
         ];
     }
 

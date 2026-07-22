@@ -20,6 +20,7 @@ class AdminRegistrationDraftShowTest extends TestCase
         config(['event.event_id' => 1, 'event.org_id' => 1]);
 
         Schema::dropIfExists('registration_drafts');
+        Schema::dropIfExists('custom_form_responses');
         Schema::dropIfExists('events');
 
         Schema::create('events', function (Blueprint $table): void {
@@ -28,6 +29,19 @@ class AdminRegistrationDraftShowTest extends TestCase
             $table->unsignedBigInteger('org_id')->nullable();
             $table->string('name')->nullable();
             $table->timestamps();
+        });
+
+        Schema::create('custom_form_responses', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('event_id');
+            $table->unsignedBigInteger('org_id')->nullable();
+            $table->unsignedBigInteger('custom_form_id')->nullable();
+            $table->string('respondent_type');
+            $table->unsignedBigInteger('respondent_id');
+            $table->string('status')->nullable();
+            $table->timestamp('submitted_at')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('registration_drafts', function (Blueprint $table): void {
@@ -62,6 +76,7 @@ class AdminRegistrationDraftShowTest extends TestCase
     protected function tearDown(): void
     {
         Schema::dropIfExists('registration_drafts');
+        Schema::dropIfExists('custom_form_responses');
         Schema::dropIfExists('events');
         parent::tearDown();
     }
@@ -72,6 +87,7 @@ class AdminRegistrationDraftShowTest extends TestCase
             'admin_logged_in' => true,
             'admin_id' => 1,
             'admin_email' => 'admin@test.com',
+            'admin_is_primary' => true,
             'event_id' => 1,
             'org_id' => 1,
         ]);
@@ -106,5 +122,7 @@ class AdminRegistrationDraftShowTest extends TestCase
         $response->assertSee('data-testid="draft-profile-photo"', false);
         $response->assertSee('storage/'.$path, false);
         $response->assertSee('Draft Photo');
+        $response->assertSee('data-testid="open-delete-draft-modal"', false);
+        $response->assertSee($draft->displayReference());
     }
 }

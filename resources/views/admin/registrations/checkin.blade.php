@@ -202,7 +202,7 @@
             },
             (decodedText, decodedResult) => {
                 // QR code successfully scanned
-                window.location.href = `/admin/registrations/checkin?qr=${decodedText}`;
+                window.location.href = `/admin/registrations/checkin?qr=${encodeURIComponent(decodedText)}`;
             },
             (errorMessage) => {
                 // Scanning error (can be ignored)

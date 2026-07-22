@@ -411,18 +411,17 @@
             document.getElementById('scan-status').classList.remove('hidden');
             
             try {
-                // Try to parse as JSON (from QR code)
+                // Legacy QR codes encoded a JSON payload
                 const data = JSON.parse(decodedText);
                 if (data.registration_number) {
-                    // Search by registration number
                     searchAndPrint(data.registration_number);
                     return;
                 }
             } catch (e) {
-                // Not JSON, might be a URL or hash
+                // Current QR codes encode the plain registration number
             }
             
-            // Extract hash from URL or use directly
+            // Extract hash from URL or use registration number / other search term directly
             let searchTerm = decodedText;
             if (decodedText.includes('/confirmation/')) {
                 searchTerm = decodedText.split('/confirmation/')[1];

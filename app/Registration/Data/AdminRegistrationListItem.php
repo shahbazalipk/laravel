@@ -27,6 +27,7 @@ class AdminRegistrationListItem
         public readonly CarbonInterface $createdAt,
         public readonly string $showUrl,
         public readonly ?string $editUrl,
+        public readonly ?string $deleteUrl,
     ) {}
 
     public static function fromRegistration(Registration $registration): self
@@ -48,6 +49,7 @@ class AdminRegistrationListItem
             createdAt: $registration->created_at,
             showUrl: route('admin.registrations.show', $registration),
             editUrl: route('admin.registrations.edit', $registration),
+            deleteUrl: route('admin.registrations.destroy', $registration),
         );
     }
 
@@ -63,7 +65,7 @@ class AdminRegistrationListItem
         return new self(
             kind: 'draft',
             stage: 'Draft',
-            reference: 'DRAFT-'.strtoupper(substr((string) $draft->public_id, 0, 8)),
+            reference: $draft->displayReference(),
             name: $name !== '' ? $name : '—',
             company: $draft->payloadValue('company_name'),
             email: (string) $draft->email,
@@ -77,6 +79,7 @@ class AdminRegistrationListItem
             createdAt: $draft->created_at,
             showUrl: route('admin.registration-drafts.show', $draft),
             editUrl: null,
+            deleteUrl: route('admin.registration-drafts.destroy', $draft),
         );
     }
 }

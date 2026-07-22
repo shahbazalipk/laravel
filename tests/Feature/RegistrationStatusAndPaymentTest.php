@@ -23,14 +23,21 @@ class RegistrationStatusAndPaymentTest extends TestCase
     {
         parent::setUp();
 
-        config(['event.event_id' => 1, 'event.org_id' => 1]);
+        config([
+            'event.event_id' => 1,
+            'event.org_id' => 1,
+            'app.key' => 'base64:'.base64_encode(random_bytes(32)),
+            'modules.finance.enabled' => false,
+        ]);
 
         Schema::dropIfExists('registration_payment_entries');
         Schema::dropIfExists('registrations');
         Schema::dropIfExists('registration_statuses');
         Schema::dropIfExists('registration_categories');
+        Schema::dropIfExists('registration_drafts');
         Schema::dropIfExists('events');
         Schema::dropIfExists('hash_mappings');
+        Schema::dropIfExists('activity_logs');
 
         Schema::create('hash_mappings', function (Blueprint $table): void {
             $table->id();
@@ -145,6 +152,42 @@ class RegistrationStatusAndPaymentTest extends TestCase
             $table->timestamp('created_at')->useCurrent();
         });
 
+        Schema::create('registration_drafts', function (Blueprint $table): void {
+            $table->id();
+            $table->uuid('public_id')->unique();
+            $table->unsignedBigInteger('event_id');
+            $table->unsignedBigInteger('org_id')->nullable();
+            $table->unsignedBigInteger('event_url_id')->nullable();
+            $table->string('email');
+            $table->string('resume_token_hash', 64);
+            $table->text('payload')->nullable();
+            $table->string('current_step')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('otp_hash', 255)->nullable();
+            $table->timestamp('otp_expires_at')->nullable();
+            $table->unsignedTinyInteger('otp_attempts')->default(0);
+            $table->timestamp('otp_last_sent_at')->nullable();
+            $table->unsignedBigInteger('registration_id')->nullable();
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('activity_logs', function (Blueprint $table): void {
+            $table->id();
+            $table->string('log_name')->nullable();
+            $table->text('description')->nullable();
+            $table->string('subject_type')->nullable();
+            $table->unsignedBigInteger('subject_id')->nullable();
+            $table->string('causer_type')->nullable();
+            $table->unsignedBigInteger('causer_id')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
+            $table->json('properties')->nullable();
+            $table->timestamps();
+        });
+
         $audit = Mockery::mock(AuditService::class);
         $audit->shouldReceive('log')->andReturnNull();
         $this->app->instance(AuditService::class, $audit);
@@ -156,8 +199,10 @@ class RegistrationStatusAndPaymentTest extends TestCase
         Schema::dropIfExists('registrations');
         Schema::dropIfExists('registration_statuses');
         Schema::dropIfExists('registration_categories');
+        Schema::dropIfExists('registration_drafts');
         Schema::dropIfExists('events');
         Schema::dropIfExists('hash_mappings');
+        Schema::dropIfExists('activity_logs');
         Mockery::close();
         parent::tearDown();
     }
@@ -170,6 +215,7 @@ class RegistrationStatusAndPaymentTest extends TestCase
             'admin_name' => 'Test Admin',
             'admin_email' => 'admin@test.com',
             'admin_type' => 'event_admin',
+            'admin_is_primary' => true,
             'event_id' => 1,
             'org_id' => 1,
         ], $overrides));
@@ -488,6 +534,96 @@ class RegistrationStatusAndPaymentTest extends TestCase
             ->assertSessionHasErrors('confirmation');
 
         $this->assertDatabaseHas('registrations', ['id' => $registration->id]);
+    }
+
+    #[Test]
+    public function registration_listing_exposes_permanent_delete_action_for_completed_registrations(): void
+    {
+        $registration = $this->makeRegistration([
+            'registration_number' => 'REG-DELETE-1',
+        ]);
+
+        $response = $this->actingAsAdmin()
+            ->get(route('admin.registrations.index', ['stage' => 'registered']));
+
+        $response->assertOk();
+        $response->assertSee('data-testid="open-delete-registration-modal"', false);
+        $response->assertSee('data-registration-reference="REG-DELETE-1"', false);
+        $response->assertSee('data-delete-kind="registration"', false);
+        $response->assertSee(
+            'data-delete-url="'.route('admin.registrations.destroy', $registration).'"',
+            false
+        );
+    }
+
+    #[Test]
+    public function registration_listing_exposes_permanent_delete_action_for_drafts(): void
+    {
+        $draft = \App\Registration\Models\RegistrationDraft::query()->create([
+            'public_id' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+            'event_id' => 1,
+            'org_id' => 1,
+            'email' => 'draft-delete@example.com',
+            'resume_token_hash' => hash('sha256', 'token'),
+            'payload' => ['email' => 'draft-delete@example.com'],
+            'current_step' => 'email',
+            'expires_at' => now()->subHour(),
+        ]);
+
+        $response = $this->actingAsAdmin()
+            ->get(route('admin.registrations.index', ['stage' => 'draft']));
+
+        $response->assertOk();
+        $response->assertSee('data-delete-kind="draft"', false);
+        $response->assertSee('data-registration-reference="DRAFT-AAAAAAAA"', false);
+        $response->assertSee(
+            'data-delete-url="'.route('admin.registration-drafts.destroy', $draft).'"',
+            false
+        );
+    }
+
+    #[Test]
+    public function it_permanently_deletes_a_registration_draft(): void
+    {
+        $draft = \App\Registration\Models\RegistrationDraft::query()->create([
+            'public_id' => '11111111-2222-3333-4444-555555555555',
+            'event_id' => 1,
+            'org_id' => 1,
+            'email' => 'purge-draft@example.com',
+            'resume_token_hash' => hash('sha256', 'token'),
+            'payload' => ['email' => 'purge-draft@example.com'],
+            'current_step' => 'information',
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $this->actingAsAdmin()
+            ->delete(route('admin.registration-drafts.destroy', $draft), [
+                'confirmation' => $draft->displayReference(),
+            ])
+            ->assertRedirect(route('admin.registrations.index', ['stage' => 'draft']))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('registration_drafts', ['id' => $draft->id]);
+    }
+
+    #[Test]
+    public function registration_qr_code_encodes_registration_number_only(): void
+    {
+        $registration = $this->makeRegistration([
+            'registration_number' => 'REG-QRCODE1',
+            'email' => 'qr-payload@example.com',
+        ]);
+
+        $service = app(\App\Services\RegistrationService::class);
+        $png = base64_decode($service->generateQRCode($registration), true);
+
+        $this->assertNotFalse($png);
+        $this->assertStringContainsString('PNG', substr($png, 1, 3));
+
+        // Ensure we are not embedding the email in the QR image payload chain.
+        $encoded = $service->generateQRCode($registration);
+        $this->assertSame($encoded, $service->ensureRegistrationNumberQrCode($registration)->qr_code);
+        $this->assertSame('REG-QRCODE1', $registration->fresh()->registration_number);
     }
 
     #[Test]
