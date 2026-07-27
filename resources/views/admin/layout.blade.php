@@ -213,7 +213,7 @@
 
                         <!-- Settings -->
                         <div class="dropdown relative">
-                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/files*') || request()->is('admin/memberships*') || request()->is('admin/event-urls*') || request()->is('admin/badge-designs*') || request()->is('admin/gallery*') || request()->is('admin/marketing-assets*') || request()->is('admin/custom-forms*') || request()->is('admin/registration-categories*') || request()->is('admin/sponsors*') || request()->is('admin/partners*') || request()->is('admin/registration-statuses*') || request()->is('admin/personas*') || request()->is('admin/category-types*') || request()->is('admin/product-types*') || request()->is('admin/exhibitor-tags*') || request()->is('admin/booth-types*') || request()->is('admin/exhibitor-types*') || request()->is('admin/industries*') || request()->is('admin/business-activities*') || request()->is('admin/group-types*') ? 'bg-indigo-800' : '' }}">
+                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/mcp*') || request()->is('admin/files*') || request()->is('admin/memberships*') || request()->is('admin/event-urls*') || request()->is('admin/badge-designs*') || request()->is('admin/gallery*') || request()->is('admin/marketing-assets*') || request()->is('admin/custom-forms*') || request()->is('admin/registration-categories*') || request()->is('admin/sponsors*') || request()->is('admin/partners*') || request()->is('admin/registration-statuses*') || request()->is('admin/personas*') || request()->is('admin/category-types*') || request()->is('admin/product-types*') || request()->is('admin/exhibitor-tags*') || request()->is('admin/booth-types*') || request()->is('admin/exhibitor-types*') || request()->is('admin/industries*') || request()->is('admin/business-activities*') || request()->is('admin/group-types*') ? 'bg-indigo-800' : '' }}">
                                 Settings
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -221,6 +221,7 @@
                             </button>
                             <div class="dropdown-menu absolute right-0 z-50 mt-2 hidden max-h-[calc(100vh-6rem)] w-72 overflow-y-auto rounded-xl bg-white py-2 shadow-xl ring-1 ring-black/5">
                                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Event Settings</a>
+                                <a href="{{ route('admin.mcp.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">MCP</a>
                                 <details class="group border-y border-gray-100">
                                     <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-indigo-50">
                                         Categories
@@ -416,6 +417,7 @@
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Settings</p>
                 <a href="{{ route('admin.event-settings.edit') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Event Settings</a>
+                <a href="{{ route('admin.mcp.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">MCP</a>
                 <details class="rounded-lg bg-indigo-900/30">
                     <summary class="flex cursor-pointer list-none items-center justify-between rounded px-3 py-2 text-sm font-semibold hover:bg-indigo-700">
                         Categories

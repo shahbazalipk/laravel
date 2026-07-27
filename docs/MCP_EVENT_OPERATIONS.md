@@ -24,6 +24,8 @@ Configure the MCP client:
 - Transport: Streamable HTTP
 - Header: `Authorization: Bearer <token>`
 
+You can also open **Settings → MCP** in the event admin to copy the URL and generate or revoke tokens for the current event.
+
 The token fixes both the event and organization scope. Clients cannot supply or override those IDs.
 
 ## Available tools

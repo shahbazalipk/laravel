@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\GroupTypeController;
 use App\Http\Controllers\Admin\IndustryController;
 use App\Http\Controllers\Admin\LectureController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\McpSettingsController;
 use App\Http\Controllers\Admin\MembershipController;
 use App\Http\Controllers\Admin\ParameterBulkImportController;
 use App\Http\Controllers\Admin\PartnerController;
@@ -356,6 +357,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('event-settings.edit');
         Route::put('event-settings', [EventSettingsController::class, 'update'])
             ->name('event-settings.update');
+
+        Route::get('mcp', [McpSettingsController::class, 'index'])->name('mcp.index');
+        Route::post('mcp/tokens', [McpSettingsController::class, 'store'])->name('mcp.tokens.store');
+        Route::delete('mcp/tokens/{token}', [McpSettingsController::class, 'revoke'])->name('mcp.tokens.revoke');
 
         // Landing Page Templates
         Route::resource('landing-page-templates', \App\Http\Controllers\Admin\LandingPageTemplateController::class);
