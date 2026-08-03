@@ -23,3 +23,16 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Upload limits for Apache + mod_php (PHP_INI_PERDIR — not settable via ini_set/Laravel).
+# Keep in sync with public/.user.ini and config/uploads.php.
+<IfModule mod_php.c>
+    php_value upload_max_filesize 16M
+    php_value post_max_size 32M
+    php_value max_input_vars 5000
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 16M
+    php_value post_max_size 32M
+    php_value max_input_vars 5000
+</IfModule>

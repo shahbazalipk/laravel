@@ -46,7 +46,8 @@ class SinglePageRegistrationRequest extends FormRequest
                     ->where('is_active', true)),
             ],
             'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'profile_picture_data' => ['nullable', 'string'],
+            // Compressed JPEG data URLs should stay well under ~1.5MB of text.
+            'profile_picture_data' => ['nullable', 'string', 'max:1500000'],
             'promo_code' => ['nullable', 'string', 'max:50'],
             'terms_accepted' => ['required', 'accepted'],
         ];

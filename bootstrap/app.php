@@ -40,5 +40,19 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
+            $message = 'The uploaded photo or form data is too large for the server. Please use a smaller image (under 2MB) and try again.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                    'errors' => ['profile_picture' => [$message]],
+                ], 413);
+            }
+
+            return redirect()
+                ->back()
+                ->withInput($request->except(['profile_picture', 'profile_picture_data', '_token']))
+                ->with('error', $message);
+        });
     })->create();

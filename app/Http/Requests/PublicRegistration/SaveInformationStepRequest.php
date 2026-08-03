@@ -30,7 +30,7 @@ class SaveInformationStepRequest extends FormRequest
                     ->where('is_active', true)),
             ],
             'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'profile_picture_data' => ['nullable', 'string'],
+            'profile_picture_data' => ['nullable', 'string', 'max:1500000'],
         ];
     }
 }

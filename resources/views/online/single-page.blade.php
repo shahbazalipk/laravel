@@ -355,6 +355,7 @@
     </div>
 </div>
 
+@include('online.partials.profile-photo-compress')
 <script>
     let appliedPromoPricing = null;
     let lastSyncedCategoryId = null;
@@ -693,7 +694,7 @@
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        const dataUrl = canvas.toDataURL('image/png');
+        const dataUrl = window.OnlineProfilePhoto.compressCanvas(canvas);
         profilePictureData.value = dataUrl;
         previewImage.src = dataUrl;
         preview.classList.remove('hidden');
@@ -702,16 +703,20 @@
         uploadOptions.classList.remove('hidden');
     });
 
-    fileInput?.addEventListener('change', (event) => {
+    fileInput?.addEventListener('change', async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            previewImage.src = e.target.result;
+        try {
+            const dataUrl = await window.OnlineProfilePhoto.compressFile(file);
+            previewImage.src = dataUrl;
             preview.classList.remove('hidden');
-            profilePictureData.value = '';
-        };
-        reader.readAsDataURL(file);
+            profilePictureData.value = dataUrl;
+            // Prefer compressed payload over the raw multipart file.
+            event.target.value = '';
+        } catch (error) {
+            alert(error?.message || 'Unable to process the selected image.');
+            event.target.value = '';
+        }
     });
 </script>
 </body>

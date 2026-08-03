@@ -360,6 +360,7 @@
         </div>
     </div>
 
+    @include('online.partials.profile-photo-compress')
     <script>
         // Camera and file upload handling
         const video = document.getElementById('video');
@@ -402,13 +403,13 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
-            
-            const dataUrl = canvas.toDataURL('image/png');
+
+            const dataUrl = window.OnlineProfilePhoto.compressCanvas(canvas);
             profilePictureData.value = dataUrl;
-            
+
             previewImage.src = dataUrl;
             preview.classList.remove('hidden');
-            
+
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
             }
@@ -416,16 +417,19 @@
             uploadOptions.classList.remove('hidden');
         });
 
-        // File upload
-        fileInput.addEventListener('change', (e) => {
+        // File upload — compress before submit to avoid PostTooLargeException
+        fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImage.src = e.target.result;
-                    preview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
+            if (!file) return;
+            try {
+                const dataUrl = await window.OnlineProfilePhoto.compressFile(file);
+                previewImage.src = dataUrl;
+                preview.classList.remove('hidden');
+                profilePictureData.value = dataUrl;
+                e.target.value = '';
+            } catch (error) {
+                alert(error?.message || 'Unable to process the selected image.');
+                e.target.value = '';
             }
         });
     </script>
