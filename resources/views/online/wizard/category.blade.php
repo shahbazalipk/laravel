@@ -27,15 +27,14 @@
                                data-needs-password="{{ $category->needs_password ? '1' : '0' }}"
                                data-needs-membership="{{ $category->need_membership_id ? '1' : '0' }}"
                                data-needs-professional="{{ $category->need_professional_student_id ? '1' : '0' }}"
+                               data-professional-message="{{ $category->professional_student_id_message ?? '' }}"
                                {{ (string) old('registration_category_id', $payload['registration_category_id'] ?? '') === (string) $category->id ? 'checked' : '' }}
                                data-testid="wizard-category-{{ $category->id }}">
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
                                     <p class="font-semibold text-slate-900">{{ $category->name }}</p>
-                                    @if($category->description)
-                                        <p class="mt-1 text-sm text-slate-500">{{ $category->description }}</p>
-                                    @endif
+                                    @include('online.partials.category-copy', ['category' => $category])
                                 </div>
                                 <div class="text-left sm:text-right">
                                     <p class="text-lg font-bold text-indigo-700">
@@ -71,6 +70,7 @@
             </div>
             <div id="professionalField" class="hidden">
                 <label class="mb-1 block text-sm font-medium text-slate-700">Professional / Student ID *</label>
+                <p id="professionalIdMessage" class="mb-2 hidden text-sm text-slate-600" data-testid="professional-id-message"></p>
                 <input type="text" name="professional_student_id" value="{{ old('professional_student_id', $payload['professional_student_id'] ?? '') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
         </div>
@@ -109,6 +109,13 @@
         membershipField.classList.toggle('hidden', !needsMembership);
         professionalField.classList.toggle('hidden', !needsProfessional);
         wrap.classList.toggle('hidden', !(needsPassword || needsMembership || needsProfessional));
+
+        const professionalMessage = document.getElementById('professionalIdMessage');
+        if (professionalMessage) {
+            const message = (selected.dataset.professionalMessage || '').trim();
+            professionalMessage.textContent = message;
+            professionalMessage.classList.toggle('hidden', !message || !needsProfessional);
+        }
     }
     document.querySelectorAll('.category-radio').forEach((input) => {
         input.addEventListener('change', syncCategoryExtras);

@@ -18,7 +18,9 @@ use App\Registration\Services\CompleteRegistrationFromDraft;
 use App\Registration\Services\OnlineRegistrationContext;
 use App\Registration\Services\RegistrationDraftService;
 use App\Registration\Services\RegistrationOtpService;
+use App\Services\PromoCodeService;
 use App\Services\RegistrationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +35,7 @@ class SinglePageRegistrationController extends WizardController
         RegistrationDraftService $drafts,
         private CompleteRegistrationFromDraft $completion,
         private RegistrationService $registrationService,
+        private PromoCodeService $promoCodes,
         private FormResolver $forms,
         private FormResponseService $formResponses,
         private DynamicFormValidator $formValidator,
@@ -145,6 +148,63 @@ class SinglePageRegistrationController extends WizardController
         return back()->with('success', 'A new verification code was sent to your email.');
     }
 
+    public function previewPromo(Request $request, string $slug): JsonResponse
+    {
+        [$event, $eventUrl] = $this->bootSinglePage($slug);
+
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+            'registration_category_id' => ['required', 'integer'],
+            'promo_code' => ['required', 'string', 'max:50'],
+        ]);
+
+        $category = RegistrationCategory::query()->find($validated['registration_category_id']);
+        if (! $category) {
+            throw ValidationException::withMessages([
+                'registration_category_id' => 'Select a valid registration category.',
+            ]);
+        }
+
+        try {
+            $this->context->assertCategoryAllowed($category, $event, $eventUrl);
+
+            $pricing = $this->promoCodes->priceWithOptionalPromo(
+                $category,
+                $event,
+                $validated['promo_code'],
+                $this->drafts->normalizeEmail($validated['email']),
+            );
+        } catch (ValidationException $exception) {
+            return response()->json([
+                'message' => collect($exception->errors())->flatten()->first() ?: 'Invalid promo code.',
+                'errors' => $exception->errors(),
+            ], 422);
+        } catch (InvalidArgumentException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['registration_category_id' => [$exception->getMessage()]],
+            ], 422);
+        }
+
+        if (empty($pricing['promo_code'])) {
+            return response()->json([
+                'message' => 'Enter a valid promo code.',
+                'errors' => ['promo_code' => ['Enter a valid promo code.']],
+            ], 422);
+        }
+
+        return response()->json([
+            'pricing' => [
+                'base_price' => (float) $pricing['base_price'],
+                'tax_amount' => (float) $pricing['tax_amount'],
+                'total_amount' => (float) $pricing['total_amount'],
+                'currency' => $pricing['currency'],
+                'discount_amount' => (float) ($pricing['discount_amount'] ?? 0),
+                'promo_code' => $pricing['promo_code'],
+            ],
+        ]);
+    }
+
     /**
      * @return array{0: Event, 1: EventUrl}
      */
@@ -191,7 +251,12 @@ class SinglePageRegistrationController extends WizardController
             throw ValidationException::withMessages($categoryErrors);
         }
 
-        $pricing = $this->registrationService->calculatePrice($category, $event);
+        $pricing = $this->promoCodes->priceWithOptionalPromo(
+            $category,
+            $event,
+            $request->validated('promo_code'),
+            $email,
+        );
         $customForms = $this->forms->activeForAudience(FormAudience::Registration);
         $submittedForms = $request->all('custom_forms')['custom_forms'] ?? [];
 
@@ -304,6 +369,7 @@ class SinglePageRegistrationController extends WizardController
             'eventUrlSponsors' => $eventUrlSponsors,
             'eventUrlPartners' => $eventUrlPartners,
             'storeRoute' => $storeRoute,
+            'promoPreviewUrl' => route('online.registration.single.promo.preview', ['slug' => $slug]),
             'verifyRoute' => $reg
                 ? route('online.registration.single.reg.verify', ['slug' => $slug, 'reg' => $reg])
                 : null,

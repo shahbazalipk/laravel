@@ -156,6 +156,17 @@
                 <span class="text-slate-500">Base price</span>
                 <span class="font-medium text-slate-900">{{ number_format($registration->base_price, 2) }} {{ $currency }}</span>
             </div>
+            @if((float) ($registration->discount_amount ?? 0) > 0)
+                <div class="flex justify-between gap-3">
+                    <span class="text-slate-500">
+                        Discount
+                        @if($registration->promo_code)
+                            <span class="font-mono text-xs text-emerald-700">({{ $registration->promo_code }})</span>
+                        @endif
+                    </span>
+                    <span class="font-medium text-emerald-700">−{{ number_format($registration->discount_amount, 2) }} {{ $currency }}</span>
+                </div>
+            @endif
             @if($registration->tax_amount > 0)
                 <div class="flex justify-between gap-3">
                     <span class="text-slate-500">
@@ -185,6 +196,82 @@
         @endif
         </div>
     </details>
+
+    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4" data-testid="registration-promo-card">
+        <div class="mb-3 flex items-start justify-between gap-3">
+            <div>
+                <h4 class="text-sm font-semibold text-slate-800">Promo code</h4>
+                <p class="mt-0.5 text-xs text-slate-500">Redeem using the same rules as online registration.</p>
+            </div>
+            @if($registration->promo_code)
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 font-mono text-xs font-semibold text-emerald-800"
+                      data-testid="registration-applied-promo">
+                    {{ $registration->promo_code }}
+                </span>
+            @endif
+        </div>
+
+        @if($registration->promo_code)
+            <div class="mb-3 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm text-slate-700">
+                Applied discount:
+                <span class="font-semibold text-emerald-700">
+                    {{ number_format((float) $registration->discount_amount, 2) }} {{ $currency }}
+                </span>
+            </div>
+            <form action="{{ route('admin.registrations.promo.remove', $registration) }}"
+                  method="POST"
+                  onsubmit="return confirm('Remove the applied promo and restore category pricing?');"
+                  class="mb-3">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                        class="inline-flex w-full items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
+                        data-testid="registration-remove-promo">
+                    Remove promo
+                </button>
+            </form>
+        @endif
+
+        <form action="{{ route('admin.registrations.promo.redeem', $registration) }}"
+              method="POST"
+              class="space-y-3"
+              data-testid="registration-redeem-promo-form">
+            @csrf
+            <div>
+                <label for="registration_promo_code" class="mb-1 block text-xs font-medium text-slate-600">
+                    {{ $registration->promo_code ? 'Replace with another code' : 'Enter promo code' }}
+                </label>
+                <input id="registration_promo_code"
+                       type="text"
+                       name="promo_code"
+                       value="{{ old('promo_code') }}"
+                       maxlength="50"
+                       autocomplete="off"
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm uppercase focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 @error('promo_code') border-red-500 @enderror"
+                       placeholder="e.g. RETURNING26"
+                       data-testid="registration-promo-code-input">
+                @error('promo_code')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+            @if($registration->promo_code)
+                <label class="flex items-start gap-2 text-xs text-slate-600">
+                    <input type="checkbox"
+                           name="replace_existing"
+                           value="1"
+                           class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                           data-testid="registration-promo-replace"
+                           {{ old('replace_existing') ? 'checked' : '' }}>
+                    <span>Replace the currently applied promo code</span>
+                </label>
+            @endif
+            <button type="submit"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    data-testid="registration-redeem-promo">
+                Redeem promo code
+            </button>
+        </form>
+    </div>
 
     <button type="button"
             onclick="document.getElementById('logPaymentModal').classList.remove('hidden')"

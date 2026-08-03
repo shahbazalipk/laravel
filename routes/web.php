@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\MembershipController;
 use App\Http\Controllers\Admin\ParameterBulkImportController;
 use App\Http\Controllers\Admin\PartnerController;
 use App\Http\Controllers\Admin\PersonaController;
+use App\Http\Controllers\Admin\PromoCodeController;
 use App\Http\Controllers\Admin\ProductTypeController;
 use App\Http\Controllers\Admin\RecipientUploadController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
@@ -362,6 +363,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('mcp/tokens', [McpSettingsController::class, 'store'])->name('mcp.tokens.store');
         Route::delete('mcp/tokens/{token}', [McpSettingsController::class, 'revoke'])->name('mcp.tokens.revoke');
 
+        Route::resource('promo-codes', PromoCodeController::class);
+        Route::post('promo-codes/{promo_code}/toggle', [PromoCodeController::class, 'toggleActive'])
+            ->name('promo-codes.toggle');
+        Route::post('promo-codes/{promo_code}/clear-emails', [PromoCodeController::class, 'clearEmails'])
+            ->name('promo-codes.clear-emails');
+        Route::post('promo-codes/{promo_code}/emails', [PromoCodeController::class, 'storeEmail'])
+            ->name('promo-codes.emails.store');
+        Route::put('promo-codes/{promo_code}/emails/{promo_code_email}', [PromoCodeController::class, 'updateEmail'])
+            ->name('promo-codes.emails.update');
+        Route::delete('promo-codes/{promo_code}/emails/{promo_code_email}', [PromoCodeController::class, 'destroyEmail'])
+            ->name('promo-codes.emails.destroy');
+
         // Landing Page Templates
         Route::resource('landing-page-templates', \App\Http\Controllers\Admin\LandingPageTemplateController::class);
         Route::post('landing-page-templates/{landingPageTemplate}/toggle-active', [\App\Http\Controllers\Admin\LandingPageTemplateController::class, 'toggleActive'])
@@ -452,6 +465,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('custom-form-answer-files.download');
         Route::patch('registrations/{registration}/status', [AdminRegistrationController::class, 'updateStatus'])
             ->name('registrations.status.update');
+        Route::post('registrations/{registration}/promo', [AdminRegistrationController::class, 'redeemPromo'])
+            ->name('registrations.promo.redeem');
+        Route::delete('registrations/{registration}/promo', [AdminRegistrationController::class, 'removePromo'])
+            ->name('registrations.promo.remove');
         Route::post('registrations/{registration}/payments', [RegistrationPaymentController::class, 'store'])
             ->name('registrations.payments.store');
         Route::post('registrations/{registration}/payments/{payment}/refund', [RegistrationPaymentController::class, 'refund'])

@@ -47,6 +47,7 @@ class SinglePageRegistrationRequest extends FormRequest
             ],
             'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'profile_picture_data' => ['nullable', 'string'],
+            'promo_code' => ['nullable', 'string', 'max:50'],
             'terms_accepted' => ['required', 'accepted'],
         ];
     }
@@ -57,6 +58,14 @@ class SinglePageRegistrationRequest extends FormRequest
             $this->merge([
                 'email' => strtolower(trim((string) $this->input('email'))),
             ]);
+        }
+
+        if ($this->filled('promo_code')) {
+            $this->merge([
+                'promo_code' => strtoupper(trim((string) $this->input('promo_code'))),
+            ]);
+        } else {
+            $this->merge(['promo_code' => null]);
         }
     }
 }

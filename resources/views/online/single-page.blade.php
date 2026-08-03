@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @include('online.partials.seo-meta')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -144,6 +145,7 @@
                                                data-needs-password="{{ $category->needs_password ? '1' : '0' }}"
                                                data-needs-membership="{{ $category->need_membership_id ? '1' : '0' }}"
                                                data-needs-professional="{{ $category->need_professional_student_id ? '1' : '0' }}"
+                                               data-professional-message="{{ $category->professional_student_id_message ?? '' }}"
                                                data-base="{{ $pricing['base_price'] }}"
                                                data-tax="{{ $pricing['tax_amount'] }}"
                                                data-total="{{ $pricing['total_amount'] }}"
@@ -154,9 +156,7 @@
                                             <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                                                 <div>
                                                     <p class="font-semibold text-slate-900">{{ $category->name }}</p>
-                                                    @if($category->description)
-                                                        <p class="mt-1 text-sm text-slate-500">{{ $category->description }}</p>
-                                                    @endif
+                                                    @include('online.partials.category-copy', ['category' => $category])
                                                 </div>
                                                 <div class="text-left sm:text-right">
                                                     <p class="text-lg font-bold text-indigo-700">
@@ -192,6 +192,7 @@
                             </div>
                             <div id="professionalField" class="hidden">
                                 <label class="mb-1 block text-sm font-medium text-slate-700">Professional / Student ID *</label>
+                                <p id="professionalIdMessage" class="mb-2 hidden text-sm text-slate-600" data-testid="professional-id-message"></p>
                                 <input type="text" name="professional_student_id" value="{{ old('professional_student_id', $payload['professional_student_id'] ?? '') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
                         </div>
@@ -302,9 +303,25 @@
                                 <div>
                                     <p class="text-sm text-slate-500">Selected total</p>
                                     <p class="text-xs text-slate-500" id="selectedCategoryHint">Choose a category to see pricing.</p>
+                                    <p class="mt-1 hidden text-xs font-medium text-emerald-700" id="promoDiscountHint" data-testid="single-page-promo-hint"></p>
                                 </div>
                                 <p class="text-2xl font-bold text-indigo-700" data-testid="single-page-total" id="selectedTotal">—</p>
                             </div>
+                        </div>
+
+                        <div id="singlePagePromoMount"
+                             data-preview-url="{{ $promoPreviewUrl }}"
+                             data-initial-promo="{{ old('promo_code', $payload['promo_code'] ?? '') }}">
+                            @include('online.partials.promo-code-field', [
+                                'testidPrefix' => 'single-page',
+                                'appliedPromoCode' => null,
+                                'appliedDiscount' => null,
+                                'currency' => null,
+                                'applyUrl' => null,
+                                'removeUrl' => null,
+                                'inputValue' => old('promo_code', $payload['promo_code'] ?? ''),
+                                'useHiddenWhenApplied' => true,
+                            ])
                         </div>
 
                         <label class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
@@ -339,7 +356,231 @@
 </div>
 
 <script>
-    function syncCategoryExtras() {
+    let appliedPromoPricing = null;
+    let lastSyncedCategoryId = null;
+
+    function csrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            || document.querySelector('input[name="_token"]')?.value
+            || '';
+    }
+
+    function formatMoney(amount, currency) {
+        return `${Number(amount).toFixed(2)} ${currency || ''}`.trim();
+    }
+
+    function setPromoError(message) {
+        const el = document.querySelector('[data-promo-error]');
+        if (!el) return;
+        el.textContent = message || '';
+        el.classList.toggle('hidden', !message);
+    }
+
+    function renderAppliedPromoUi(pricing) {
+        const mount = document.getElementById('singlePagePromoMount');
+        if (!mount || !pricing?.promo_code) return;
+
+        const discount = Number(pricing.discount_amount || 0);
+        const currency = pricing.currency || '';
+        mount.innerHTML = `
+            <div class="space-y-3" data-testid="single-page-promo-card" data-promo-root data-promo-applied="1">
+                <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3" data-testid="single-page-promo-applied">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-emerald-900">
+                                Promo <span class="font-mono">${pricing.promo_code}</span> applied
+                            </p>
+                            ${discount > 0 ? `<p class="mt-0.5 text-xs text-emerald-800">Discount ${discount.toFixed(2)} ${currency}</p>` : ''}
+                        </div>
+                        <button type="button"
+                                class="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 sm:w-auto"
+                                data-promo-remove
+                                data-testid="single-page-promo-remove">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden"
+                       name="promo_code"
+                       value="${pricing.promo_code}"
+                       data-testid="single-page-promo-code"
+                       data-promo-input>
+            </div>
+        `;
+        bindPromoControls();
+    }
+
+    function renderPromoInputUi(value = '') {
+        const mount = document.getElementById('singlePagePromoMount');
+        if (!mount) return;
+
+        const safeValue = String(value || '').replace(/"/g, '&quot;');
+        mount.innerHTML = `
+            <div class="space-y-3" data-testid="single-page-promo-card" data-promo-root>
+                <div>
+                    <label for="single-page_promo_code" class="mb-2 block text-sm font-medium text-slate-700">Promo code</label>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <input id="single-page_promo_code"
+                               type="text"
+                               name="promo_code"
+                               value="${safeValue}"
+                               maxlength="50"
+                               autocomplete="off"
+                               class="w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-sm uppercase focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                               placeholder="Optional"
+                               data-testid="single-page-promo-code"
+                               data-promo-input>
+                        <button type="button"
+                                class="inline-flex shrink-0 items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50"
+                                data-promo-apply
+                                data-testid="single-page-promo-apply">
+                            Apply
+                        </button>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">If you have a returning-attendee or partner code, enter it and click Apply to update the total.</p>
+                    <p class="mt-1 hidden text-sm text-red-600" data-promo-error data-testid="single-page-promo-error"></p>
+                </div>
+            </div>
+        `;
+        bindPromoControls();
+    }
+
+    function applyPricingToSummary(pricing) {
+        const selectedTotal = document.getElementById('selectedTotal');
+        const selectedCategoryHint = document.getElementById('selectedCategoryHint');
+        const promoDiscountHint = document.getElementById('promoDiscountHint');
+        const paymentNotice = document.getElementById('paymentNotice');
+        const submitBtn = document.querySelector('[data-testid="single-page-submit"]');
+        const total = Number(pricing.total_amount || 0);
+        const currency = pricing.currency || '';
+
+        if (selectedTotal) {
+            selectedTotal.textContent = formatMoney(total, currency);
+        }
+        if (selectedCategoryHint) {
+            const discount = Number(pricing.discount_amount || 0);
+            selectedCategoryHint.textContent = total > 0
+                ? `Base ${Number(pricing.base_price || 0).toFixed(2)}${discount > 0 ? ` · Discount ${discount.toFixed(2)}` : ''} + VAT ${Number(pricing.tax_amount || 0).toFixed(2)}`
+                : 'No payment required for this category.';
+        }
+        if (promoDiscountHint) {
+            if (pricing.promo_code && Number(pricing.discount_amount || 0) > 0) {
+                promoDiscountHint.textContent = `Promo ${pricing.promo_code} applied`;
+                promoDiscountHint.classList.remove('hidden');
+            } else {
+                promoDiscountHint.textContent = '';
+                promoDiscountHint.classList.add('hidden');
+            }
+        }
+        paymentNotice?.classList.toggle('hidden', !(total > 0));
+        if (submitBtn) {
+            submitBtn.textContent = total > 0 ? 'Submit registration' : 'Complete registration';
+        }
+    }
+
+    async function applyPromoFromForm() {
+        const email = document.querySelector('input[name="email"]')?.value?.trim();
+        const category = document.querySelector('.category-radio:checked');
+        const input = document.querySelector('[data-promo-input]');
+        const code = (input?.value || '').trim();
+        const previewUrl = document.getElementById('singlePagePromoMount')?.dataset.previewUrl;
+
+        setPromoError('');
+
+        if (!email) {
+            setPromoError('Enter your email before applying a promo code.');
+            return;
+        }
+        if (!category) {
+            setPromoError('Select a category before applying a promo code.');
+            return;
+        }
+        if (!code) {
+            setPromoError('Enter a promo code to apply.');
+            return;
+        }
+        if (!previewUrl) {
+            setPromoError('Promo preview is unavailable. Please refresh and try again.');
+            return;
+        }
+
+        const applyBtn = document.querySelector('[data-promo-apply]');
+        if (applyBtn) {
+            applyBtn.disabled = true;
+            applyBtn.textContent = 'Applying…';
+        }
+
+        try {
+            const response = await fetch(previewUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    email,
+                    registration_category_id: Number(category.value),
+                    promo_code: code,
+                }),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const message = data.message
+                    || data.errors?.promo_code?.[0]
+                    || data.errors?.email?.[0]
+                    || data.errors?.registration_category_id?.[0]
+                    || 'Unable to apply this promo code.';
+                setPromoError(message);
+                return;
+            }
+
+            appliedPromoPricing = data.pricing;
+            lastSyncedCategoryId = category.value;
+            renderAppliedPromoUi(appliedPromoPricing);
+            applyPricingToSummary(appliedPromoPricing);
+        } catch (error) {
+            setPromoError('Unable to apply this promo code. Please try again.');
+        } finally {
+            const btn = document.querySelector('[data-promo-apply]');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Apply';
+            }
+        }
+    }
+
+    function removeAppliedPromo() {
+        appliedPromoPricing = null;
+        renderPromoInputUi('');
+        setPromoError('');
+        syncCategoryExtras({ preservePromo: false });
+    }
+
+    function bindPromoControls() {
+        document.querySelector('[data-promo-apply]')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            applyPromoFromForm();
+        });
+        document.querySelector('[data-promo-remove]')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (confirm('Remove this promo code and restore the original total?')) {
+                removeAppliedPromo();
+            }
+        });
+        document.querySelector('[data-promo-input]')?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (!appliedPromoPricing) {
+                    applyPromoFromForm();
+                }
+            }
+        });
+    }
+
+    function syncCategoryExtras(options = {}) {
         const selected = document.querySelector('.category-radio:checked');
         const wrap = document.getElementById('categoryExtraFields');
         const passwordField = document.getElementById('passwordField');
@@ -349,12 +590,21 @@
         const selectedCategoryHint = document.getElementById('selectedCategoryHint');
         const paymentNotice = document.getElementById('paymentNotice');
         const submitBtn = document.querySelector('[data-testid="single-page-submit"]');
+        const promoDiscountHint = document.getElementById('promoDiscountHint');
+        const categoryId = selected?.value || null;
+        const categoryChanged = lastSyncedCategoryId !== null && categoryId !== null && categoryId !== lastSyncedCategoryId;
 
         if (!selected) {
             wrap?.classList.add('hidden');
             if (selectedTotal) selectedTotal.textContent = '—';
             if (selectedCategoryHint) selectedCategoryHint.textContent = 'Choose a category to see pricing.';
             paymentNotice?.classList.add('hidden');
+            promoDiscountHint?.classList.add('hidden');
+            if (appliedPromoPricing) {
+                appliedPromoPricing = null;
+                renderPromoInputUi('');
+            }
+            lastSyncedCategoryId = null;
             return;
         }
 
@@ -366,6 +616,26 @@
         professionalField?.classList.toggle('hidden', !needsProfessional);
         wrap?.classList.toggle('hidden', !(needsPassword || needsMembership || needsProfessional));
 
+        const professionalMessage = document.getElementById('professionalIdMessage');
+        if (professionalMessage) {
+            const message = (selected.dataset.professionalMessage || '').trim();
+            professionalMessage.textContent = message;
+            professionalMessage.classList.toggle('hidden', !message || !needsProfessional);
+        }
+
+        if (appliedPromoPricing?.promo_code && categoryChanged) {
+            const previousCode = appliedPromoPricing.promo_code;
+            appliedPromoPricing = null;
+            renderPromoInputUi(previousCode);
+            setPromoError('Category changed. Re-apply your promo code to update the total.');
+        } else if (appliedPromoPricing?.promo_code && options.preservePromo !== false) {
+            lastSyncedCategoryId = categoryId;
+            applyPricingToSummary(appliedPromoPricing);
+            return;
+        }
+
+        lastSyncedCategoryId = categoryId;
+
         const total = Number(selected.dataset.total || 0);
         const currency = selected.dataset.currency || '';
         if (selectedTotal) {
@@ -376,6 +646,7 @@
                 ? `Base ${Number(selected.dataset.base || 0).toFixed(2)} + VAT ${Number(selected.dataset.tax || 0).toFixed(2)}`
                 : 'No payment required for this category.';
         }
+        promoDiscountHint?.classList.add('hidden');
         paymentNotice?.classList.toggle('hidden', !(total > 0));
         if (submitBtn) {
             submitBtn.textContent = total > 0 ? 'Submit registration' : 'Complete registration';
@@ -383,8 +654,9 @@
     }
 
     document.querySelectorAll('.category-radio').forEach((input) => {
-        input.addEventListener('change', syncCategoryExtras);
+        input.addEventListener('change', () => syncCategoryExtras());
     });
+    bindPromoControls();
     syncCategoryExtras();
 
     const video = document.getElementById('video');

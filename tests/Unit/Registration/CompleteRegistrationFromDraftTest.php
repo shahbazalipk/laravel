@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Registration;
 
+use App\Forms\Services\FormResponseService;
 use App\Models\Event;
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
@@ -12,6 +13,7 @@ use App\Registration\Models\RegistrationDraft;
 use App\Registration\Services\CompleteRegistrationFromDraft;
 use App\Registration\Services\OnlineRegistrationContext;
 use App\Registration\Services\RegistrationDraftService;
+use App\Services\PromoCodeService;
 use App\Services\RegistrationService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -159,6 +161,8 @@ class CompleteRegistrationFromDraftTest extends TestCase
             Mockery::mock(OnlineRegistrationContext::class),
             Mockery::mock(RegistrationDraftService::class),
             Mockery::mock(RecordRegistrationPayment::class),
+            Mockery::mock(FormResponseService::class),
+            Mockery::mock(PromoCodeService::class),
         );
 
         $result = $service->execute($draft, $event, Request::create('/'));
@@ -171,7 +175,9 @@ class CompleteRegistrationFromDraftTest extends TestCase
     {
         $this->assertTrue(RegistrationWizardStep::Email->canAccessFrom(RegistrationWizardStep::Confirmation));
         $this->assertTrue(RegistrationWizardStep::Information->canAccessFrom(RegistrationWizardStep::Information));
-        $this->assertFalse(RegistrationWizardStep::Category->canAccessFrom(RegistrationWizardStep::Information));
-        $this->assertSame(RegistrationWizardStep::Category, RegistrationWizardStep::Information->next());
+        // Category comes before Information, so revisiting Category from Information is allowed.
+        $this->assertTrue(RegistrationWizardStep::Category->canAccessFrom(RegistrationWizardStep::Information));
+        $this->assertFalse(RegistrationWizardStep::Confirmation->canAccessFrom(RegistrationWizardStep::Category));
+        $this->assertSame(RegistrationWizardStep::Information, RegistrationWizardStep::Category->next());
     }
 }

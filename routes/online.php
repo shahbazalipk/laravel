@@ -34,6 +34,9 @@ Route::get('/{slug}/form', [SinglePageRegistrationController::class, 'show'])
 Route::post('/{slug}/form', [SinglePageRegistrationController::class, 'store'])
     ->middleware('throttle:registration-complete')
     ->name('online.registration.single.store');
+Route::post('/{slug}/form/promo/preview', [SinglePageRegistrationController::class, 'previewPromo'])
+    ->middleware('throttle:registration-draft')
+    ->name('online.registration.single.promo.preview');
 
 Route::prefix('{slug}/{reg}')
     ->where(['reg' => '^(?!step$|resume$|form$).+'])
@@ -72,6 +75,12 @@ Route::get('/{slug}/step/confirmation', [ConfirmationStepController::class, 'sho
 Route::post('/{slug}/step/confirmation', [ConfirmationStepController::class, 'store'])
     ->middleware('throttle:registration-complete')
     ->name('online.registration.step.confirmation.store');
+Route::post('/{slug}/step/confirmation/promo', [ConfirmationStepController::class, 'applyPromo'])
+    ->middleware('throttle:registration-draft')
+    ->name('online.registration.step.confirmation.promo.apply');
+Route::delete('/{slug}/step/confirmation/promo', [ConfirmationStepController::class, 'removePromo'])
+    ->middleware('throttle:registration-draft')
+    ->name('online.registration.step.confirmation.promo.remove');
 
 // Draft-scoped wizard steps (encrypted reg key in the path)
 Route::prefix('{slug}/{reg}')
@@ -106,4 +115,10 @@ Route::prefix('{slug}/{reg}')
         Route::post('/step/confirmation', [ConfirmationStepController::class, 'store'])
             ->middleware('throttle:registration-complete')
             ->name('online.registration.reg.step.confirmation.store');
+        Route::post('/step/confirmation/promo', [ConfirmationStepController::class, 'applyPromo'])
+            ->middleware('throttle:registration-draft')
+            ->name('online.registration.reg.step.confirmation.promo.apply');
+        Route::delete('/step/confirmation/promo', [ConfirmationStepController::class, 'removePromo'])
+            ->middleware('throttle:registration-draft')
+            ->name('online.registration.reg.step.confirmation.promo.remove');
     });

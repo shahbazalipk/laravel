@@ -57,8 +57,14 @@ async function completeThroughCategory(page: Page, email: string): Promise<void>
     await expect(page).toHaveURL(new RegExp(`/online/${slug}/[^/]+/step/category`));
     await expect(page.getByTestId('wizard-category-list')).toBeVisible();
 
-    await page.reload();
-    await expect(page.getByTestId('wizard-category-list')).toBeVisible();
+    const instructions = page.locator('[data-testid^="category-instructions-text-"]');
+    if (await instructions.count()) {
+        await expect(instructions.first()).toBeVisible();
+    }
+    const instructionDescriptions = page.locator('[data-testid^="category-instruction-description-"]');
+    if (await instructionDescriptions.count()) {
+        await expect(instructionDescriptions.first()).toBeVisible();
+    }
 
     const firstCategory = page.locator('input[data-testid^="wizard-category-"]').first();
     await firstCategory.check();
@@ -67,6 +73,8 @@ async function completeThroughCategory(page: Page, email: string): Promise<void>
     await expect(page).toHaveURL(new RegExp(`/online/${slug}/[^/]+/step/confirmation`));
     await expect(page.getByTestId('wizard-review')).toBeVisible();
     await expect(page.getByTestId('wizard-total')).toBeVisible();
+    await expect(page.getByTestId('wizard-promo-code')).toBeVisible();
+    await expect(page.getByTestId('wizard-promo-apply')).toBeVisible();
 }
 
 test.describe.configure({ mode: 'serial' });

@@ -271,9 +271,7 @@
                                                     </span>
                                                 @endif
                                             </div>
-                                            @if($category->description)
-                                                <p class="mt-1 text-sm text-gray-600">{{ $category->description }}</p>
-                                            @endif
+                                            @include('online.partials.category-copy', ['category' => $category])
                                         </div>
                                     </label>
                                 @endforeach

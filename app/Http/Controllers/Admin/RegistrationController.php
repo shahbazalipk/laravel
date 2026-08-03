@@ -19,6 +19,7 @@ use App\Payments\Services\RegistrationPaymentTotals;
 use App\Registration\Enums\RegistrationWizardStep;
 use App\Registration\Services\AdminRegistrationListingService;
 use App\Services\PurgeRegistration;
+use App\Services\PromoCodeService;
 use App\Services\RegistrationService;
 use App\Services\RegistrationStatusService;
 use Illuminate\Http\Request;
@@ -32,7 +33,8 @@ class RegistrationController extends Controller
     public function __construct(
         RegistrationService $registrationService,
         private AdminRegistrationListingService $listingService,
-        private AudienceFormSubmissionService $audienceForms
+        private AudienceFormSubmissionService $audienceForms,
+        private PromoCodeService $promoCodes,
     ) {
         $this->registrationService = $registrationService;
     }
@@ -303,6 +305,46 @@ class RegistrationController extends Controller
         return redirect()
             ->route('admin.registrations.show', $registration)
             ->with('success', 'Registration status updated successfully.');
+    }
+
+    public function redeemPromo(Request $request, Registration $registration)
+    {
+        $validated = $request->validate([
+            'promo_code' => ['required', 'string', 'max:50'],
+            'replace_existing' => ['sometimes', 'boolean'],
+        ]);
+
+        try {
+            $this->promoCodes->redeemOnRegistration(
+                $registration,
+                $validated['promo_code'],
+                $request->boolean('replace_existing'),
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('admin.registrations.show', $registration)
+                ->withInput()
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('admin.registrations.show', $registration)
+            ->with('success', 'Promo code redeemed successfully.');
+    }
+
+    public function removePromo(Registration $registration)
+    {
+        try {
+            $this->promoCodes->removeFromRegistration($registration);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('admin.registrations.show', $registration)
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('admin.registrations.show', $registration)
+            ->with('success', 'Promo code removed. Category pricing restored.');
     }
 
     /**

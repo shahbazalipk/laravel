@@ -10,6 +10,7 @@ use App\Models\RegistrationStatus;
 use App\Payments\Services\RecordRegistrationPayment;
 use App\Registration\Enums\RegistrationWizardStep;
 use App\Registration\Models\RegistrationDraft;
+use App\Services\PromoCodeService;
 use App\Services\RegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,8 @@ class CompleteRegistrationFromDraft
         private OnlineRegistrationContext $context,
         private RegistrationDraftService $drafts,
         private RecordRegistrationPayment $payments,
-        private FormResponseService $formResponses
+        private FormResponseService $formResponses,
+        private PromoCodeService $promoCodes,
     ) {}
 
     public function execute(RegistrationDraft $draft, Event $event, Request $request): Registration
@@ -56,7 +58,13 @@ class CompleteRegistrationFromDraft
             throw new InvalidArgumentException(reset($categoryErrors));
         }
 
-        $pricing = $this->registrationService->calculatePrice($category, $event);
+        $promoCodeInput = $request->input('promo_code', $payload['promo_code'] ?? null);
+        $pricing = $this->promoCodes->priceWithOptionalPromo(
+            $category,
+            $event,
+            is_string($promoCodeInput) ? $promoCodeInput : null,
+            (string) $draft->email,
+        );
 
         return DB::transaction(function () use ($draft, $event, $request, $payload, $category, $pricing) {
             $locked = RegistrationDraft::query()
@@ -67,6 +75,15 @@ class CompleteRegistrationFromDraft
             if ($locked->isCompleted() && $locked->registration_id) {
                 return Registration::query()->findOrFail($locked->registration_id);
             }
+
+            // Re-validate promo under lock so usage limits stay accurate.
+            $promoCodeInput = $request->input('promo_code', $payload['promo_code'] ?? null);
+            $pricing = $this->promoCodes->priceWithOptionalPromo(
+                $category,
+                $event,
+                is_string($promoCodeInput) ? $promoCodeInput : null,
+                (string) $locked->email,
+            );
 
             $paymentStatus = 'pending';
             $paymentDate = null;
@@ -98,10 +115,7 @@ class CompleteRegistrationFromDraft
                 'category_password' => $payload['category_password'] ?? null,
                 'membership_id' => $payload['membership_id'] ?? null,
                 'professional_student_id' => $payload['professional_student_id'] ?? null,
-                'base_price' => $pricing['base_price'],
-                'tax_amount' => $pricing['tax_amount'],
-                'total_amount' => $pricing['total_amount'],
-                'currency' => $pricing['currency'],
+                ...$this->promoCodes->registrationAttributesFromPricing($pricing),
                 'payment_status' => $paymentStatus,
                 'payment_date' => $paymentDate,
                 'terms_accepted' => true,
@@ -117,6 +131,13 @@ class CompleteRegistrationFromDraft
 
             $registration = $this->registrationService->createRegistration($registrationData);
             $this->formResponses->promoteDraftRespondent($locked, $registration);
+
+            if (! empty($pricing['promo_code_id'])) {
+                $promo = \App\Models\PromoCode::query()->find($pricing['promo_code_id']);
+                if ($promo) {
+                    $this->promoCodes->recordRedemption($promo);
+                }
+            }
 
             if ($paymentStatus === 'paid' && (float) $pricing['total_amount'] <= 0) {
                 // Free registrations stay ledger-compatible with an opening paid balance of zero.

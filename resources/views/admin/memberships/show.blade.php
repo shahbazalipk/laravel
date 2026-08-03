@@ -3,10 +3,14 @@
 @section('title', 'Membership Details')
 
 @section('content')
-<div class="mb-6">
-    <div class="flex items-center mb-4">
+@php
+    $identifierLabel = $membership->identifierType()->label();
+    $identifierListLabel = $membership->identifierType()->listLabel();
+@endphp
+<div class="mb-6" data-testid="membership-show-page">
+    <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center">
         <a href="{{ route('admin.memberships.index') }}" 
-           class="text-gray-600 hover:text-gray-900 mr-4">
+           class="text-gray-600 hover:text-gray-900 sm:mr-4">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
@@ -16,36 +20,31 @@
                 <div class="w-4 h-4 rounded-full mr-3" style="background-color: {{ $membership->color }}"></div>
                 <h1 class="text-2xl font-bold text-gray-800">{{ $membership->name }}</h1>
             </div>
-            <p class="text-gray-600 mt-1">Manage membership codes and verification data</p>
+            <p class="text-gray-600 mt-1">Manage {{ $identifierListLabel }} for this verification list</p>
         </div>
         <div class="flex space-x-3">
             <a href="{{ route('admin.memberships.edit', $membership) }}" 
                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-                Edit Membership
+                Edit List
             </a>
         </div>
     </div>
 
     <!-- Membership Info Card -->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Verification Type</h3>
+                <h3 class="text-sm font-medium text-gray-500 mb-1">Identifier Type</h3>
+                <p class="text-sm font-semibold text-gray-900">{{ $identifierLabel }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500 mb-1">Source</h3>
                 @if($membership->verification_type === 'upload_file')
                     <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
-                        Upload File
+                        CSV / TXT list
                     </span>
                 @else
                     <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
                         Third Party API
                     </span>
                 @endif
@@ -63,7 +62,7 @@
                 @endif
             </div>
             <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-1">Total Codes</h3>
+                <h3 class="text-sm font-medium text-gray-500 mb-1">Total {{ $identifierListLabel }}</h3>
                 <p class="text-lg font-semibold text-gray-900">{{ $membership->codes()->count() }}</p>
             </div>
         </div>
@@ -71,6 +70,23 @@
             <div class="mt-4 pt-4 border-t border-gray-200">
                 <h3 class="text-sm font-medium text-gray-500 mb-1">Description</h3>
                 <p class="text-sm text-gray-700">{{ $membership->description }}</p>
+            </div>
+        @endif
+        @if($membership->isThirdPartyApi())
+            <div class="mt-4 grid grid-cols-1 gap-4 border-t border-gray-200 pt-4 lg:grid-cols-2" data-testid="membership-api-samples">
+                <div>
+                    <h3 class="mb-2 text-sm font-medium text-gray-500">API endpoint</h3>
+                    <code class="block break-all rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-800">{{ $membership->api_method ?: 'GET' }} {{ $membership->api_endpoint }}</code>
+                </div>
+                <div></div>
+                <div>
+                    <h3 class="mb-2 text-sm font-medium text-gray-500">Sample request</h3>
+                    <pre class="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">{{ $membership->api_sample_request ?: '—' }}</pre>
+                </div>
+                <div>
+                    <h3 class="mb-2 text-sm font-medium text-gray-500">Sample response</h3>
+                    <pre class="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">{{ $membership->api_sample_response ?: '—' }}</pre>
+                </div>
             </div>
         @endif
     </div>
@@ -85,16 +101,17 @@
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
-            Add Code
+            Add {{ $identifierLabel }}
         </button>
 
         <!-- Import Codes Button -->
         <button onclick="document.getElementById('importModal').classList.remove('hidden')"
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition">
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition"
+                data-testid="membership-import-open">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
-            Import Codes
+            Import CSV
         </button>
     </div>
 
@@ -120,8 +137,8 @@
         <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">No Membership Codes</h3>
-        <p class="text-gray-600 mb-4">Add codes manually or import them from a file.</p>
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">No {{ $identifierListLabel }}</h3>
+        <p class="text-gray-600 mb-4">Add {{ strtolower($identifierLabel) }} values manually or import them from CSV.</p>
     </div>
 @else
     <div class="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -133,7 +150,7 @@
                             ID
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Code
+                            {{ $identifierLabel }}
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Allowed Usage
@@ -226,7 +243,7 @@
 <div id="addCodeModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Add Membership Code</h3>
+            <h3 class="text-lg font-semibold text-gray-900">Add {{ $identifierLabel }}</h3>
             <button onclick="document.getElementById('addCodeModal').classList.add('hidden')" 
                     class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,14 +257,14 @@
             <div class="space-y-4">
                 <div>
                     <label for="code" class="block text-sm font-medium text-gray-700 mb-2">
-                        Code <span class="text-red-500">*</span>
+                        {{ $identifierLabel }} <span class="text-red-500">*</span>
                     </label>
                     <input type="text" 
                            name="code" 
                            id="code" 
                            required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                           placeholder="Enter membership code">
+                           placeholder="{{ $membership->identifierType()->placeholder() }}">
                 </div>
 
                 <div>
@@ -297,7 +314,7 @@
 <div id="importModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Import Membership Codes</h3>
+            <h3 class="text-lg font-semibold text-gray-900">Import {{ $identifierListLabel }}</h3>
             <button onclick="document.getElementById('importModal').classList.add('hidden')" 
                     class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,14 +336,11 @@
                            accept=".txt,.csv"
                            required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">One code per line</p>
-                    <a href="{{ asset('samples/membership-codes-sample.txt') }}" 
+                    <p class="mt-1 text-xs text-gray-500">One {{ strtolower($identifierLabel) }} per line, or CSV with a header column.</p>
+                    <a href="{{ asset('samples/membership-ids-sample.csv') }}" 
                        download
                        class="mt-2 inline-flex items-center text-xs text-indigo-600 hover:text-indigo-800">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Download Sample File
+                        Download Sample CSV
                     </a>
                 </div>
 
@@ -352,7 +366,7 @@
                 </button>
                 <button type="submit" 
                         class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                    Import Codes
+                    Import {{ $identifierListLabel }}
                 </button>
             </div>
         </form>

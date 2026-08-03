@@ -101,6 +101,8 @@ class OnlineRegistrationWizardTest extends TestCase
             'is_active' => true,
             'visible' => true,
             'sort_order' => 1,
+            'instructions_text' => 'Bring your badge to the gate.',
+            'instruction_description' => 'Arrive 30 minutes early for check-in.',
         ]);
 
         $this->paidCategory = RegistrationCategory::query()->create([
@@ -168,6 +170,8 @@ class OnlineRegistrationWizardTest extends TestCase
         Schema::dropIfExists('registration_drafts');
         Schema::dropIfExists('hash_mappings');
         Schema::dropIfExists('registrations');
+        Schema::dropIfExists('promo_code_emails');
+        Schema::dropIfExists('promo_codes');
         Schema::dropIfExists('event_url_partner');
         Schema::dropIfExists('event_url_sponsor');
         Schema::dropIfExists('partners');
@@ -292,6 +296,13 @@ class OnlineRegistrationWizardTest extends TestCase
             $table->string('password')->nullable();
             $table->boolean('membership_required')->default(false);
             $table->boolean('professional_id_required')->default(false);
+            $table->text('description')->nullable();
+            $table->text('instructions_text')->nullable();
+            $table->text('instruction_description')->nullable();
+            $table->boolean('need_professional_student_id')->default(false);
+            $table->text('professional_student_id_message')->nullable();
+            $table->boolean('need_membership_id')->default(false);
+            $table->boolean('needs_password')->default(false);
             $table->integer('max_capacity')->nullable();
             $table->timestamp('registration_start')->nullable();
             $table->timestamp('registration_end')->nullable();
@@ -321,6 +332,36 @@ class OnlineRegistrationWizardTest extends TestCase
             $table->softDeletes();
         });
 
+        Schema::create('promo_codes', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('event_id');
+            $table->unsignedBigInteger('org_id');
+            $table->string('code');
+            $table->string('name')->nullable();
+            $table->text('description')->nullable();
+            $table->string('discount_type', 20);
+            $table->decimal('discount_value', 12, 2);
+            $table->string('currency', 10)->nullable();
+            $table->timestamp('starts_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
+            $table->unsignedInteger('max_total_uses')->nullable();
+            $table->unsignedInteger('max_uses_per_email')->nullable();
+            $table->unsignedInteger('used_count')->default(0);
+            $table->boolean('is_active')->default(true);
+            $table->boolean('restrict_to_email_list')->default(false);
+            $table->timestamps();
+        });
+
+        Schema::create('promo_code_emails', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('promo_code_id');
+            $table->unsignedBigInteger('event_id');
+            $table->unsignedBigInteger('org_id');
+            $table->string('email');
+            $table->timestamps();
+            $table->unique(['promo_code_id', 'email']);
+        });
+
         Schema::create('registrations', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('event_id');
@@ -343,6 +384,9 @@ class OnlineRegistrationWizardTest extends TestCase
             $table->decimal('tax_amount', 12, 2)->default(0);
             $table->decimal('total_amount', 12, 2)->default(0);
             $table->string('currency', 10)->default('PKR');
+            $table->unsignedBigInteger('promo_code_id')->nullable();
+            $table->string('promo_code', 50)->nullable();
+            $table->decimal('discount_amount', 10, 2)->default(0);
             $table->string('payment_status', 32)->default('pending');
             $table->timestamp('payment_date')->nullable();
             $table->boolean('terms_accepted')->default(false);
@@ -1019,7 +1063,25 @@ class OnlineRegistrationWizardTest extends TestCase
             ->assertSee('data-testid="single-page-form"', false)
             ->assertSee('data-testid="single-page-category-list"', false)
             ->assertSee('Free Pass')
+            ->assertSee('Bring your badge to the gate.')
+            ->assertSee('Arrive 30 minutes early for check-in.')
+            ->assertSee('data-testid="category-instructions-text-'.$this->freeCategory->id.'"', false)
+            ->assertSee('data-testid="category-instruction-description-'.$this->freeCategory->id.'"', false)
             ->assertDontSee('data-testid="wizard-progress"', false);
+    }
+
+    #[Test]
+    public function multi_step_category_step_shows_instruction_text_and_description(): void
+    {
+        [$draft] = $this->startDraft('instructions@example.com');
+        $reg = app(RegistrationDraftService::class)->encodeUrlKey($draft);
+
+        $this->get('/online/'.$this->slug.'/'.$reg.'/step/category')
+            ->assertOk()
+            ->assertSee('Bring your badge to the gate.')
+            ->assertSee('Arrive 30 minutes early for check-in.')
+            ->assertSee('data-testid="category-instructions-text-'.$this->freeCategory->id.'"', false)
+            ->assertSee('data-testid="category-instruction-description-'.$this->freeCategory->id.'"', false);
     }
 
     #[Test]
@@ -1206,5 +1268,343 @@ class OnlineRegistrationWizardTest extends TestCase
             ->assertOk()
             ->assertSee('data-testid="registration-format-select"', false)
             ->assertSee('value="single_page"', false);
+    }
+
+    #[Test]
+    public function single_page_form_shows_promo_code_field(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        $this->get(route('online.registration.single', $this->slug))
+            ->assertOk()
+            ->assertSee('data-testid="single-page-promo-code"', false)
+            ->assertSee('data-testid="single-page-promo-apply"', false);
+    }
+
+    #[Test]
+    public function wizard_can_apply_and_remove_promo_on_confirmation(): void
+    {
+        [$draft, $token] = $this->startDraft('alumni@example.com');
+
+        $this->withDraftCookie($token)
+            ->post($this->regStep('category', $draft, 'store'), [
+                'registration_category_id' => $this->paidCategory->id,
+            ])
+            ->assertRedirect($this->regStep('information', $draft));
+
+        $this->withDraftCookie($token)
+            ->post($this->regStep('information', $draft->fresh(), 'store'), [
+                'first_name' => 'Alumni',
+                'last_name' => 'Member',
+                'phone' => '+971500000088',
+                'job_title' => 'Attendee',
+                'company_name' => 'Alumni Co',
+                'industry_id' => $this->industry->id,
+            ])
+            ->assertRedirect($this->regStep('confirmation', $draft));
+
+        $promo = \App\Models\PromoCode::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'code' => 'RETURNING26',
+            'discount_type' => \App\Enums\PromoDiscountType::Percentage,
+            'discount_value' => 10,
+            'max_uses_per_email' => 1,
+            'is_active' => true,
+            'restrict_to_email_list' => true,
+        ]);
+        \App\Models\PromoCodeEmail::query()->create([
+            'promo_code_id' => $promo->id,
+            'event_id' => 1,
+            'org_id' => 1,
+            'email' => 'alumni@example.com',
+        ]);
+
+        $draft = $draft->fresh();
+
+        $this->withDraftCookie($token)
+            ->get($this->regStep('confirmation', $draft))
+            ->assertOk()
+            ->assertSee('data-testid="wizard-promo-apply"', false)
+            ->assertSee('1,050.00', false);
+
+        $this->withDraftCookie($token)
+            ->from($this->regStep('confirmation', $draft))
+            ->post($this->regStep('confirmation', $draft, 'promo.apply'), [
+                'promo_code' => 'returning26',
+            ])
+            ->assertRedirect($this->regStep('confirmation', $draft))
+            ->assertSessionHas('success');
+
+        $this->assertSame('RETURNING26', $draft->fresh()->payload['promo_code'] ?? null);
+
+        $this->withDraftCookie($token)
+            ->get($this->regStep('confirmation', $draft->fresh()))
+            ->assertOk()
+            ->assertSee('data-testid="wizard-promo-applied"', false)
+            ->assertSee('data-testid="wizard-promo-remove"', false)
+            ->assertSee('945.00', false);
+
+        $this->withDraftCookie($token)
+            ->from($this->regStep('confirmation', $draft->fresh()))
+            ->delete($this->regStep('confirmation', $draft->fresh(), 'promo.remove'))
+            ->assertRedirect($this->regStep('confirmation', $draft))
+            ->assertSessionHas('success');
+
+        $this->assertEmpty($draft->fresh()->payload['promo_code'] ?? null);
+
+        $this->withDraftCookie($token)
+            ->get($this->regStep('confirmation', $draft->fresh()))
+            ->assertOk()
+            ->assertSee('data-testid="wizard-promo-apply"', false)
+            ->assertSee('1,050.00', false)
+            ->assertDontSee('data-testid="wizard-promo-applied"', false);
+    }
+
+    #[Test]
+    public function single_page_promo_preview_returns_discounted_pricing_and_rejects_invalid(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        $promo = \App\Models\PromoCode::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'code' => 'RETURNING26',
+            'discount_type' => \App\Enums\PromoDiscountType::Percentage,
+            'discount_value' => 10,
+            'is_active' => true,
+            'restrict_to_email_list' => true,
+        ]);
+        \App\Models\PromoCodeEmail::query()->create([
+            'promo_code_id' => $promo->id,
+            'event_id' => 1,
+            'org_id' => 1,
+            'email' => 'alumni@example.com',
+        ]);
+
+        $this->postJson(route('online.registration.single.promo.preview', $this->slug), [
+            'email' => 'alumni@example.com',
+            'registration_category_id' => $this->paidCategory->id,
+            'promo_code' => 'returning26',
+        ])
+            ->assertOk()
+            ->assertJsonPath('pricing.promo_code', 'RETURNING26')
+            ->assertJsonPath('pricing.discount_amount', 100)
+            ->assertJsonPath('pricing.total_amount', 945);
+
+        $this->postJson(route('online.registration.single.promo.preview', $this->slug), [
+            'email' => 'outsider@example.com',
+            'registration_category_id' => $this->paidCategory->id,
+            'promo_code' => 'RETURNING26',
+        ])
+            ->assertStatus(422)
+            ->assertJsonStructure(['errors' => ['promo_code']]);
+    }
+
+    #[Test]
+    public function single_page_applies_email_restricted_promo_discount(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        RegistrationStatus::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'name' => 'Confirmed',
+            'slug' => 'confirmed',
+            'is_active' => true,
+        ]);
+
+        $promo = \App\Models\PromoCode::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'code' => 'RETURNING26',
+            'discount_type' => \App\Enums\PromoDiscountType::Percentage,
+            'discount_value' => 10,
+            'max_uses_per_email' => 1,
+            'is_active' => true,
+            'restrict_to_email_list' => true,
+        ]);
+        \App\Models\PromoCodeEmail::query()->create([
+            'promo_code_id' => $promo->id,
+            'event_id' => 1,
+            'org_id' => 1,
+            'email' => 'alumni@example.com',
+        ]);
+
+        // Paid category is 1000 + 5% VAT = 1050; 10% off base => base 900, tax 45, total 945
+        $response = $this->post(route('online.registration.single.store', $this->slug), [
+            'email' => 'alumni@example.com',
+            'registration_category_id' => $this->paidCategory->id,
+            'first_name' => 'Alumni',
+            'last_name' => 'Member',
+            'phone' => '+971500000088',
+            'job_title' => 'Attendee',
+            'company_name' => 'Alumni Co',
+            'industry_id' => $this->industry->id,
+            'promo_code' => 'returning26',
+            'terms_accepted' => '1',
+        ]);
+
+        $registration = Registration::query()->where('email', 'alumni@example.com')->first();
+        $this->assertNotNull($registration);
+        $this->assertSame('RETURNING26', $registration->promo_code);
+        $this->assertEquals(100.0, (float) $registration->discount_amount);
+        $this->assertEquals(900.0, (float) $registration->base_price);
+        $this->assertEquals(45.0, (float) $registration->tax_amount);
+        $this->assertEquals(945.0, (float) $registration->total_amount);
+        $this->assertSame(1, (int) $promo->fresh()->used_count);
+        $response->assertRedirect(route('registration.confirmation', $registration->hash));
+    }
+
+    #[Test]
+    public function single_page_rejects_promo_for_email_not_on_allowlist(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        $promo = \App\Models\PromoCode::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'code' => 'RETURNING26',
+            'discount_type' => \App\Enums\PromoDiscountType::Percentage,
+            'discount_value' => 10,
+            'is_active' => true,
+            'restrict_to_email_list' => true,
+        ]);
+        \App\Models\PromoCodeEmail::query()->create([
+            'promo_code_id' => $promo->id,
+            'event_id' => 1,
+            'org_id' => 1,
+            'email' => 'alumni@example.com',
+        ]);
+
+        $this->from(route('online.registration.single', $this->slug))
+            ->post(route('online.registration.single.store', $this->slug), [
+                'email' => 'outsider@example.com',
+                'registration_category_id' => $this->paidCategory->id,
+                'first_name' => 'Out',
+                'last_name' => 'Sider',
+                'phone' => '+971500000077',
+                'company_name' => 'Other Co',
+                'industry_id' => $this->industry->id,
+                'promo_code' => 'RETURNING26',
+                'terms_accepted' => '1',
+            ])
+            ->assertRedirect(route('online.registration.single', $this->slug))
+            ->assertSessionHasErrors('promo_code');
+
+        $this->assertNull(Registration::query()->where('email', 'outsider@example.com')->first());
+    }
+
+    #[Test]
+    public function single_page_unrestricted_promo_works_without_allowlist(): void
+    {
+        $this->eventUrl->update([
+            'registration_format' => \App\Registration\Enums\RegistrationFormat::SinglePage,
+        ]);
+
+        RegistrationStatus::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'name' => 'Confirmed',
+            'slug' => 'confirmed',
+            'is_active' => true,
+        ]);
+
+        \App\Models\PromoCode::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'code' => 'OPEN20',
+            'discount_type' => \App\Enums\PromoDiscountType::Fixed,
+            'discount_value' => 200,
+            'currency' => 'PKR',
+            'is_active' => true,
+            'restrict_to_email_list' => false,
+        ]);
+
+        // 1000 - 200 = 800 base, +5% VAT = 840
+        $this->post(route('online.registration.single.store', $this->slug), [
+            'email' => 'anyone@example.com',
+            'registration_category_id' => $this->paidCategory->id,
+            'first_name' => 'Any',
+            'last_name' => 'One',
+            'phone' => '+971500000066',
+            'company_name' => 'Any Co',
+            'industry_id' => $this->industry->id,
+            'promo_code' => 'OPEN20',
+            'terms_accepted' => '1',
+        ])->assertRedirect();
+
+        $registration = Registration::query()->where('email', 'anyone@example.com')->first();
+        $this->assertNotNull($registration);
+        $this->assertEquals(200.0, (float) $registration->discount_amount);
+        $this->assertEquals(800.0, (float) $registration->base_price);
+        $this->assertEquals(840.0, (float) $registration->total_amount);
+    }
+
+    #[Test]
+    public function promo_service_enforces_max_total_and_per_email_limits(): void
+    {
+        $promo = \App\Models\PromoCode::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'code' => 'LIMITED',
+            'discount_type' => \App\Enums\PromoDiscountType::Percentage,
+            'discount_value' => 5,
+            'max_uses_per_email' => 1,
+            'max_total_uses' => 1,
+            'used_count' => 0,
+            'is_active' => true,
+            'restrict_to_email_list' => false,
+        ]);
+
+        $service = app(\App\Services\PromoCodeService::class);
+        $this->assertSame('LIMITED', $service->findUsable('LIMITED', $this->event, 'first@example.com')->code);
+
+        Registration::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'registration_category_id' => $this->paidCategory->id,
+            'registration_type' => 'individual',
+            'registration_number' => 'REG-LIM1',
+            'badge_number' => 'BDG-LIM1',
+            'first_name' => 'First',
+            'last_name' => 'User',
+            'email' => 'first@example.com',
+            'phone' => '+971500000044',
+            'company_name' => 'Limit Co',
+            'base_price' => 950,
+            'tax_amount' => 47.5,
+            'total_amount' => 997.5,
+            'currency' => 'PKR',
+            'promo_code_id' => $promo->id,
+            'promo_code' => 'LIMITED',
+            'discount_amount' => 50,
+            'payment_status' => 'pending',
+            'terms_accepted' => true,
+        ]);
+
+        try {
+            $service->findUsable('LIMITED', $this->event, 'first@example.com');
+            $this->fail('Expected per-email limit validation failure.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey('promo_code', $exception->errors());
+        }
+
+        $promo->update(['used_count' => 1]);
+
+        try {
+            $service->findUsable('LIMITED', $this->event, 'second@example.com');
+            $this->fail('Expected total usage limit validation failure.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey('promo_code', $exception->errors());
+        }
     }
 }

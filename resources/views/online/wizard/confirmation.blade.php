@@ -3,6 +3,10 @@
 @section('title', 'Confirmation')
 
 @section('content')
+    @php
+        $appliedPromo = ! empty($pricing['promo_code']) ? $pricing['promo_code'] : null;
+    @endphp
+
     <div class="mb-6">
         <h2 class="text-xl font-semibold text-slate-900">Confirm & pay</h2>
         <p class="mt-1 text-sm text-slate-500">Review your details before submitting. Paid categories will show pending payment instructions.</p>
@@ -53,6 +57,9 @@
                     @if($pricing)
                         <p class="mt-1 text-xs text-slate-500">
                             Base {{ number_format($pricing['base_price'], 2) }}
+                            @if(($pricing['discount_amount'] ?? 0) > 0)
+                                · Discount {{ number_format($pricing['discount_amount'], 2) }}
+                            @endif
                             @if($pricing['tax_amount'] > 0)
                                 + VAT {{ number_format($pricing['tax_amount'], 2) }}
                             @endif
@@ -68,11 +75,28 @@
         </div>
     </div>
 
+    <div class="mb-5">
+        @include('online.partials.promo-code-field', [
+            'testidPrefix' => 'wizard',
+            'appliedPromoCode' => $appliedPromo,
+            'appliedDiscount' => $pricing['discount_amount'] ?? 0,
+            'currency' => $pricing['currency'] ?? ($event->currency ?? ''),
+            'applyUrl' => $wizardStepRoute('confirmation', 'promo.apply'),
+            'removeUrl' => $wizardStepRoute('confirmation', 'promo.remove'),
+            'inputValue' => old('promo_code', $payload['promo_code'] ?? ''),
+            'useHiddenWhenApplied' => false,
+        ])
+    </div>
+
     <form method="POST"
           action="{{ $wizardStepRoute('confirmation', 'store') }}"
           class="space-y-5"
           data-testid="wizard-confirmation-form">
         @csrf
+
+        @if($appliedPromo)
+            <input type="hidden" name="promo_code" value="{{ $appliedPromo }}">
+        @endif
 
         <label class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
             <input type="checkbox"

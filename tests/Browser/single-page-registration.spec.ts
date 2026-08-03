@@ -61,6 +61,8 @@ test('single-page registration form is complete and responsive', async ({ page }
     const firstCategory = page.locator('input[data-testid^="single-page-category-"]').first();
     await firstCategory.check();
     await expect(page.getByTestId('single-page-total')).not.toHaveText('—');
+    await expect(page.getByTestId('single-page-promo-code')).toBeVisible();
+    await expect(page.getByTestId('single-page-promo-apply')).toBeVisible();
 
     await page.getByTestId('single-page-terms').check();
     await page.getByTestId('single-page-submit').click();
