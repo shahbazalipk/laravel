@@ -15,7 +15,9 @@ use App\Http\Controllers\Admin\EmailProviderConfigController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\EmailWebhookController;
 use App\Http\Controllers\Admin\EventSettingsController;
+use App\Http\Controllers\EventUrlTrackingController;
 use App\Http\Controllers\Admin\EventUrlController;
+use App\Http\Controllers\Admin\EventUrlStatsController;
 use App\Http\Controllers\Admin\ExhibitorController;
 use App\Http\Controllers\Admin\ExhibitorTagController;
 use App\Http\Controllers\Admin\ExhibitorTypeController;
@@ -166,6 +168,11 @@ Route::prefix('register')->name('registration.')->group(function () {
 
 // Online Registration Routes (separate file)
 Route::prefix('online')->group(base_path('routes/online.php'));
+
+// Public Event URL analytics beacons (CSRF exempt)
+Route::post('/track/event-url/{slug}', [EventUrlTrackingController::class, 'track'])
+    ->middleware('throttle:120,1')
+    ->name('event-url.track');
 
 // Badge Printing Routes
 Route::prefix('badge')->name('badge.')->group(function () {
@@ -396,6 +403,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Event URLs
         Route::resource('event-urls', EventUrlController::class);
+        Route::get('event-urls/{event_url}/stats', [EventUrlStatsController::class, 'show'])
+            ->name('event-urls.stats');
 
         // Badge Designs
         Route::resource('badge-designs', \App\Http\Controllers\Admin\BadgeDesignController::class);

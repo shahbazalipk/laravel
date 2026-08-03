@@ -4,12 +4,14 @@ namespace App\Registration\Services;
 
 use App\Forms\Services\FormResponseService;
 use App\Models\Event;
+use App\Models\EventUrl;
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
 use App\Models\RegistrationStatus;
 use App\Payments\Services\RecordRegistrationPayment;
 use App\Registration\Enums\RegistrationWizardStep;
 use App\Registration\Models\RegistrationDraft;
+use App\Services\EventUrlAnalyticsService;
 use App\Services\PromoCodeService;
 use App\Services\RegistrationService;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class CompleteRegistrationFromDraft
         private RecordRegistrationPayment $payments,
         private FormResponseService $formResponses,
         private PromoCodeService $promoCodes,
+        private EventUrlAnalyticsService $analytics,
     ) {}
 
     public function execute(RegistrationDraft $draft, Event $event, Request $request): Registration
@@ -151,6 +154,13 @@ class CompleteRegistrationFromDraft
             ])->save();
 
             $this->drafts->clearResumeCookie();
+
+            if ($locked->event_url_id) {
+                $eventUrl = EventUrl::query()->find($locked->event_url_id);
+                if ($eventUrl) {
+                    $this->analytics->markRegisteredForRequest($request, $eventUrl, $registration);
+                }
+            }
 
             return $registration;
         });

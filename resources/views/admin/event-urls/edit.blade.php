@@ -4,7 +4,8 @@
 
 @section('content')
 <div class="mb-6">
-    <div class="flex items-center mb-4">
+        <div class="flex items-center mb-4 justify-between gap-4">
+        <div class="flex items-center">
         <a href="{{ route('admin.event-urls.index') }}" class="text-gray-600 hover:text-gray-900 mr-4">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -14,6 +15,12 @@
             <h1 class="text-2xl font-bold text-gray-800">Edit Event URL</h1>
             <p class="text-gray-600 mt-1">Update registration URL settings</p>
         </div>
+        </div>
+        <a href="{{ route('admin.event-urls.stats', $eventUrl) }}"
+           class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+           data-testid="event-url-edit-stats">
+            View stats
+        </a>
     </div>
 </div>
 

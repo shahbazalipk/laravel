@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @include('online.partials.seo-meta')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -82,6 +83,15 @@
         @include('online.partials.contact-footer')
     </div>
 </div>
+@if(isset($eventUrl) && !empty($slug))
+    <div id="event-url-analytics"
+         class="hidden"
+         data-endpoint="{{ route('event-url.track', ['slug' => $slug]) }}"
+         data-step="{{ isset($activeStep) ? $activeStep->value : 'entry' }}"
+         data-event-type="step_view"
+         data-testid="event-url-analytics"></div>
+    @include('online.partials.event-url-analytics')
+@endif
 @stack('scripts')
 </body>
 </html>

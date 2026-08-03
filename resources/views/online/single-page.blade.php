@@ -355,6 +355,16 @@
     </div>
 </div>
 
+@if(isset($eventUrl) && !empty($slug))
+    <div id="event-url-analytics"
+         class="hidden"
+         data-endpoint="{{ route('event-url.track', ['slug' => $slug]) }}"
+         data-step="{{ !empty($awaitingVerification) ? 'otp' : 'form' }}"
+         data-event-type="step_view"
+         data-testid="event-url-analytics"></div>
+    @include('online.partials.event-url-analytics')
+@endif
+
 @include('online.partials.profile-photo-compress')
 <script>
     let appliedPromoPricing = null;

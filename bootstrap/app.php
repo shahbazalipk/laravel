@@ -27,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
             ],
         );
 
+        $middleware->validateCsrfTokens(except: [
+            'track/event-url/*',
+        ]);
+
         // Register middleware aliases
         $middleware->alias([
             'event.admin' => \App\Http\Middleware\EventAdmin::class,

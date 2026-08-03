@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\EventService;
+use App\Services\EventUrlAnalyticsService;
 use App\Models\Registration;
 use App\Models\Exhibitor;
 use App\Models\Session;
@@ -15,7 +16,8 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     public function __construct(
-        private EventService $eventService
+        private EventService $eventService,
+        private EventUrlAnalyticsService $urlAnalytics,
     ) {}
     
     public function index()
@@ -140,6 +142,8 @@ class DashboardController extends Controller
             ->where('registration_categories.org_id', config('event.org_id'))
             ->groupBy('registration_categories.id', 'registration_categories.name')
             ->get();
+
+        $urlTraffic = $this->urlAnalytics->dashboardSummary(now()->subDays(29)->startOfDay(), now()->endOfDay());
         
         $stats = [
             'total_registrations' => $totalRegistrations,
@@ -160,7 +164,8 @@ class DashboardController extends Controller
             'topSpeakers',
             'topCategories',
             'trendData',
-            'categoryDistribution'
+            'categoryDistribution',
+            'urlTraffic'
         ));
     }
 }

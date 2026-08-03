@@ -85,6 +85,92 @@
     </div>
 </div>
 
+<!-- Event URL traffic (last 30 days) -->
+@if(($urlTraffic['enabled'] ?? false))
+<div class="mb-8" data-testid="dashboard-url-traffic">
+    <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h2 class="text-lg font-semibold text-gray-900">Registration URL traffic</h2>
+            <p class="text-sm text-gray-500">Views and conversions by Event URL · last 30 days</p>
+        </div>
+        <a href="{{ route('admin.event-urls.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Manage URLs →</a>
+    </div>
+
+    <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">URL visits</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900" data-testid="dashboard-url-visits">{{ number_format($urlTraffic['total_visits']) }}</p>
+            <p class="mt-1 text-xs text-slate-500">+{{ number_format($urlTraffic['today_visits']) }} today</p>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Page views</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900" data-testid="dashboard-url-pageviews">{{ number_format($urlTraffic['total_pageviews']) }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ number_format($urlTraffic['unique_visitors']) }} unique visitors</p>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">URL registrations</p>
+            <p class="mt-1 text-2xl font-bold text-emerald-700" data-testid="dashboard-url-registrations">{{ number_format($urlTraffic['registrations']) }}</p>
+            <p class="mt-1 text-xs text-slate-500">From tracked sessions</p>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Conversion</p>
+            <p class="mt-1 text-2xl font-bold text-indigo-700" data-testid="dashboard-url-conversion">{{ $urlTraffic['conversion_rate'] }}%</p>
+            <p class="mt-1 text-xs text-slate-500">Visits → registered</p>
+        </div>
+    </div>
+
+    <div class="overflow-hidden rounded-lg bg-white shadow-lg">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" data-testid="dashboard-url-views-table">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">URL</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Visits</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Views</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Unique</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Registered</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Conv.</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    @forelse($urlTraffic['urls'] as $row)
+                        <tr class="hover:bg-gray-50" data-testid="dashboard-url-row-{{ $row['id'] }}">
+                            <td class="px-4 py-3">
+                                <div class="text-sm font-medium text-gray-900">{{ $row['name'] }}</div>
+                                <div class="font-mono text-xs text-gray-500">{{ $row['full_url'] }}</div>
+                            </td>
+                            <td class="px-4 py-3 text-sm capitalize text-gray-600">{{ $row['type'] }}</td>
+                            <td class="px-4 py-3 text-right text-sm font-semibold text-gray-900">{{ number_format($row['visits']) }}</td>
+                            <td class="px-4 py-3 text-right text-sm text-gray-700">{{ number_format($row['pageviews']) }}</td>
+                            <td class="px-4 py-3 text-right text-sm text-gray-700">{{ number_format($row['unique_visitors']) }}</td>
+                            <td class="px-4 py-3 text-right text-sm text-emerald-700">{{ number_format($row['registrations']) }}</td>
+                            <td class="px-4 py-3 text-right text-sm text-indigo-700">{{ $row['conversion_rate'] }}%</td>
+                            <td class="px-4 py-3 text-right text-sm">
+                                <a href="{{ route('admin.event-urls.stats', $row['id']) }}"
+                                   class="font-medium text-indigo-600 hover:text-indigo-800"
+                                   data-testid="dashboard-url-stats-{{ $row['id'] }}">
+                                    Stats
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">
+                                No Event URLs yet.
+                                <a href="{{ route('admin.event-urls.create') }}" class="font-medium text-indigo-600 hover:underline">Create one</a>
+                                to start tracking visits.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
+
 <!-- Charts Row -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <!-- Registration Trend Chart -->

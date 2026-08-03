@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Registration\Enums\RegistrationFormat;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EventUrl extends Model
 {
@@ -57,6 +58,11 @@ class EventUrl extends Model
     public function partners(): BelongsToMany
     {
         return $this->belongsToMany(Partner::class, 'event_url_partner');
+    }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(EventUrlVisit::class);
     }
 
     /**

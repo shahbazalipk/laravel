@@ -162,10 +162,13 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('admin.event-urls.edit', $url) }}" 
+                            <a href="{{ route('admin.event-urls.stats', $url) }}"
+                               class="mr-3 text-emerald-600 hover:text-emerald-900"
+                               data-testid="event-url-stats-{{ $url->id }}">Stats</a>
+                            <a href="{{ route('admin.event-urls.edit', $url) }}"
                                class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                            <form action="{{ route('admin.event-urls.destroy', $url) }}" 
-                                  method="POST" 
+                            <form action="{{ route('admin.event-urls.destroy', $url) }}"
+                                  method="POST"
                                   class="inline"
                                   onsubmit="return confirm('Are you sure you want to delete this URL?');">
                                 @csrf

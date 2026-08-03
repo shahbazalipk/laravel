@@ -13,6 +13,7 @@ use App\Registration\Models\RegistrationDraft;
 use App\Registration\Services\CompleteRegistrationFromDraft;
 use App\Registration\Services\OnlineRegistrationContext;
 use App\Registration\Services\RegistrationDraftService;
+use App\Services\EventUrlAnalyticsService;
 use App\Services\PromoCodeService;
 use App\Services\RegistrationService;
 use Illuminate\Database\Schema\Blueprint;
@@ -163,6 +164,7 @@ class CompleteRegistrationFromDraftTest extends TestCase
             Mockery::mock(RecordRegistrationPayment::class),
             Mockery::mock(FormResponseService::class),
             Mockery::mock(PromoCodeService::class),
+            Mockery::mock(EventUrlAnalyticsService::class),
         );
 
         $result = $service->execute($draft, $event, Request::create('/'));
