@@ -35,6 +35,7 @@ use App\Http\Controllers\Admin\PersonaController;
 use App\Http\Controllers\Admin\PromoCodeController;
 use App\Http\Controllers\Admin\ProductTypeController;
 use App\Http\Controllers\Admin\RecipientUploadController;
+use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\RegistrationDraftController;
 use App\Http\Controllers\Admin\RegistrationPaymentController;
@@ -506,6 +507,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('registrations.export-page');
         Route::post('registrations-export', [AdminRegistrationController::class, 'export'])
             ->name('registrations.export');
+
+        // Reports
+        Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
+        Route::get('reports/categories', [ReportsController::class, 'categories'])->name('reports.categories');
+        Route::get('reports/categories/export', [ReportsController::class, 'exportCategories'])->name('reports.categories.export');
+        Route::get('reports/payments', [ReportsController::class, 'payments'])->name('reports.payments');
+        Route::get('reports/payments/export', [ReportsController::class, 'exportPayments'])->name('reports.payments.export');
+        Route::get('reports/questions', [ReportsController::class, 'questions'])->name('reports.questions');
+        Route::get('reports/questions/export', [ReportsController::class, 'exportQuestions'])->name('reports.questions.export');
 
         // Other actions
         Route::post('registrations/{registration}/resend-verification', [AdminRegistrationController::class, 'resendVerification'])

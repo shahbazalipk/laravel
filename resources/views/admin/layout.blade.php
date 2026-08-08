@@ -211,6 +211,24 @@
                             </div>
                         </div>
 
+                        <!-- Reports -->
+                        <div class="dropdown relative">
+                            <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/reports*') ? 'bg-indigo-800' : '' }}"
+                                    data-testid="nav-reports">
+                                Reports
+                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu hidden absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                                <a href="{{ route('admin.reports.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-index">All Reports</a>
+                                <a href="{{ route('admin.reports.categories') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-categories">Category Report</a>
+                                <a href="{{ route('admin.reports.payments') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-payments">Payments Report</a>
+                                <a href="{{ route('admin.reports.questions') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-questions">Custom Questions</a>
+                                <a href="{{ route('admin.registrations.export-page') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Registration Export</a>
+                            </div>
+                        </div>
+
                         <!-- Settings -->
                         <div class="dropdown relative">
                             <button class="px-3 py-2 rounded-lg hover:bg-indigo-800 transition text-sm flex items-center {{ request()->is('admin/event-settings*') || request()->is('admin/mcp*') || request()->is('admin/promo-codes*') || request()->is('admin/files*') || request()->is('admin/memberships*') || request()->is('admin/event-urls*') || request()->is('admin/badge-designs*') || request()->is('admin/gallery*') || request()->is('admin/marketing-assets*') || request()->is('admin/custom-forms*') || request()->is('admin/registration-categories*') || request()->is('admin/sponsors*') || request()->is('admin/partners*') || request()->is('admin/registration-statuses*') || request()->is('admin/personas*') || request()->is('admin/category-types*') || request()->is('admin/product-types*') || request()->is('admin/exhibitor-tags*') || request()->is('admin/booth-types*') || request()->is('admin/exhibitor-types*') || request()->is('admin/industries*') || request()->is('admin/business-activities*') || request()->is('admin/group-types*') ? 'bg-indigo-800' : '' }}">
@@ -414,6 +432,13 @@
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Agenda</p>
                 <a href="{{ route('admin.categories.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Tracks</a>
                 <a href="{{ route('admin.agenda.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Sessions</a>
+
+                <div class="border-t border-indigo-700 my-2"></div>
+                <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Reports</p>
+                <a href="{{ route('admin.reports.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">All Reports</a>
+                <a href="{{ route('admin.reports.categories') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Category Report</a>
+                <a href="{{ route('admin.reports.payments') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Payments Report</a>
+                <a href="{{ route('admin.reports.questions') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Custom Questions</a>
                 
                 <div class="border-t border-indigo-700 my-2"></div>
                 <p class="px-3 py-1 text-xs text-indigo-300 uppercase">Settings</p>

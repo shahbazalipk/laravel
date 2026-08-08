@@ -205,7 +205,6 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -251,17 +250,6 @@
                                     {{ $row->paymentStatus === 'failed' ? 'bg-red-100 text-red-800' : '' }}
                                     {{ $row->paymentStatus === 'refunded' ? 'bg-gray-100 text-gray-800' : '' }}">
                                     {{ ucfirst($row->paymentStatus) }}
-                                </span>
-                            @else
-                                <span class="text-sm text-gray-400">—</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($row->stepLabel)
-                                <span class="text-sm text-violet-700">{{ $row->stepLabel }}</span>
-                            @elseif($row->checkInLabel)
-                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $row->checkInLabel === 'Checked In' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
-                                    {{ $row->checkInLabel }}
                                 </span>
                             @else
                                 <span class="text-sm text-gray-400">—</span>
