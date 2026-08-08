@@ -7,6 +7,7 @@ use App\Payments\Events\RegistrationPaymentRecorded;
 use App\Payments\Models\RegistrationPaymentEntry;
 use App\Services\EventContextService;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
+use Illuminate\Support\Facades\Log;
 
 class ProjectRegistrationPaymentToFinance implements ShouldQueueAfterCommit
 {
@@ -17,7 +18,14 @@ class ProjectRegistrationPaymentToFinance implements ShouldQueueAfterCommit
 
     public function handle(RegistrationPaymentRecorded $event): void
     {
-        if (config('modules.finance.enabled') !== true) {
+        if (! filter_var(config('modules.finance.enabled'), FILTER_VALIDATE_BOOLEAN)) {
+            Log::info('Skipping registration payment finance projection because the Finance module is disabled.', [
+                'payment_entry_public_id' => $event->paymentEntryPublicId,
+                'event_id' => $event->eventId,
+                'org_id' => $event->organizationId,
+                'finance_enabled_raw' => config('modules.finance.enabled'),
+            ]);
+
             return;
         }
 
@@ -27,6 +35,16 @@ class ProjectRegistrationPaymentToFinance implements ShouldQueueAfterCommit
             ->where('public_id', $event->paymentEntryPublicId)
             ->firstOrFail();
 
-        $this->projector->project($entry);
+        $transaction = $this->projector->project($entry);
+
+        Log::info('Projected registration payment into finance ledger.', [
+            'payment_entry_public_id' => $entry->public_id,
+            'finance_transaction_id' => $transaction->id,
+            'finance_transaction_number' => $transaction->number,
+            'amount' => $transaction->amount,
+            'currency' => $transaction->currency,
+            'event_id' => $event->eventId,
+            'org_id' => $event->organizationId,
+        ]);
     }
 }

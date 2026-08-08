@@ -292,6 +292,85 @@ class FinanceFoundationTest extends TestCase
     }
 
     #[Test]
+    public function registration_payment_listener_projects_when_finance_enabled_is_stringy_truthy(): void
+    {
+        config(['modules.finance.enabled' => '1']);
+
+        app(FinanceAccountService::class)->create([
+            'name' => 'Registration Gateway',
+            'type' => 'payment_gateway',
+            'currency' => 'USD',
+            'is_default' => true,
+        ]);
+
+        $entry = RegistrationPaymentEntry::query()->create([
+            'registration_id' => 501,
+            'type' => PaymentEntryType::Payment,
+            'status' => PaymentEntryStatus::Succeeded,
+            'amount' => '40.00',
+            'currency' => 'USD',
+            'method' => 'card',
+            'reference' => 'gateway-stringy',
+            'occurred_at' => now(),
+        ]);
+
+        app(\App\Finance\Listeners\ProjectRegistrationPaymentToFinance::class)->handle(
+            new \App\Payments\Events\RegistrationPaymentRecorded(
+                $entry->public_id,
+                10,
+                20,
+            )
+        );
+
+        $this->assertSame(1, FinanceTransaction::query()->where('source_type', 'registration_payment_entry')->count());
+        $this->assertDatabaseHas('finance_transactions', [
+            'source_key' => 'registration-payment:'.$entry->public_id,
+            'amount' => '40.0000',
+        ]);
+    }
+
+    #[Test]
+    public function finance_project_registration_payments_command_backfills_missing_ledger_rows(): void
+    {
+        config(['modules.finance.enabled' => true]);
+
+        app(FinanceAccountService::class)->create([
+            'name' => 'Registration Gateway',
+            'type' => 'payment_gateway',
+            'currency' => 'USD',
+            'is_default' => true,
+        ]);
+
+        $entry = RegistrationPaymentEntry::query()->create([
+            'registration_id' => 502,
+            'type' => PaymentEntryType::Payment,
+            'status' => PaymentEntryStatus::Succeeded,
+            'amount' => '55.00',
+            'currency' => 'USD',
+            'method' => 'bank',
+            'reference' => 'backfill-me',
+            'occurred_at' => now(),
+        ]);
+
+        $this->artisan('finance:project-registration-payments', [
+            '--event' => 10,
+            '--org' => 20,
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('finance_transactions', [
+            'source_key' => 'registration-payment:'.$entry->public_id,
+            'amount' => '55.0000',
+        ]);
+
+        $this->artisan('finance:project-registration-payments', [
+            '--event' => 10,
+            '--org' => 20,
+        ])->assertSuccessful();
+
+        $this->assertSame(1, FinanceTransaction::query()->where('source_type', 'registration_payment_entry')->count());
+    }
+
+    #[Test]
     public function invoices_bills_approvals_payments_refunds_and_budget_alerts_are_controlled(): void
     {
         $account = app(FinanceAccountService::class)->create([

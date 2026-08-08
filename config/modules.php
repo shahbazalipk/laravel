@@ -2,11 +2,11 @@
 
 return [
     'finance' => [
-        'enabled' => env('FINANCE_MODULE_ENABLED', true),
+        'enabled' => filter_var(env('FINANCE_MODULE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
     'projects' => [
-        'enabled' => env('PROJECTS_MODULE_ENABLED', true),
+        'enabled' => filter_var(env('PROJECTS_MODULE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
     'attachments' => [
