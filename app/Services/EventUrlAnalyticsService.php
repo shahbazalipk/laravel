@@ -211,7 +211,7 @@ class EventUrlAnalyticsService
      *   platforms: array<string, int>,
      *   utm_sources: array<string, int>,
      *   countries: array<string, int>,
-     *   daily: list<array{date: string, visits: int, registrations: int}>
+     *   monthly: list<array{month: string, label: string, visits: int, registrations: int}>
      * }
      */
     public function summarize(EventUrl $eventUrl, ?CarbonInterface $from = null, ?CarbonInterface $to = null): array
@@ -251,15 +251,28 @@ class EventUrlAnalyticsService
             ->take(10)
             ->all();
 
-        $fromDay = $from ? Carbon::parse($from)->startOfDay() : ($visits->min('started_at') ? Carbon::parse($visits->min('started_at'))->startOfDay() : now()->subDays(13)->startOfDay());
-        $toDay = $to ? Carbon::parse($to)->startOfDay() : now()->startOfDay();
-        $dailyMap = $visits->groupBy(fn (EventUrlVisit $v) => optional($v->started_at)->toDateString() ?: 'unknown');
-        $daily = [];
-        for ($day = $fromDay->copy(); $day->lte($toDay); $day->addDay()) {
-            $key = $day->toDateString();
-            $bucket = $dailyMap->get($key, collect());
-            $daily[] = [
-                'date' => $key,
+        $fromMonth = $from
+            ? Carbon::parse($from)->startOfMonth()
+            : ($visits->min('started_at')
+                ? Carbon::parse($visits->min('started_at'))->startOfMonth()
+                : now()->subMonths(5)->startOfMonth());
+        $toMonth = $to
+            ? Carbon::parse($to)->startOfMonth()
+            : now()->startOfMonth();
+
+        $monthlyMap = $visits->groupBy(function (EventUrlVisit $v) {
+            $startedAt = $v->started_at;
+
+            return $startedAt ? Carbon::parse($startedAt)->format('Y-m') : 'unknown';
+        });
+
+        $monthly = [];
+        for ($month = $fromMonth->copy(); $month->lte($toMonth); $month->addMonth()) {
+            $key = $month->format('Y-m');
+            $bucket = $monthlyMap->get($key, collect());
+            $monthly[] = [
+                'month' => $key,
+                'label' => $month->format('M Y'),
                 'visits' => $bucket->count(),
                 'registrations' => $bucket->where('registered', true)->count(),
             ];
@@ -280,7 +293,7 @@ class EventUrlAnalyticsService
             'platforms' => $groupCount($visits, 'platform'),
             'utm_sources' => $groupCount($visits->filter(fn ($v) => filled($v->utm_source)), 'utm_source'),
             'countries' => $groupCount($visits->filter(fn ($v) => filled($v->country_code)), 'country_code'),
-            'daily' => $daily,
+            'monthly' => $monthly,
         ];
     }
 

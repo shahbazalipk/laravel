@@ -189,28 +189,16 @@
         </div>
     @endif
 
-    <div class="mb-6 rounded-xl bg-white p-5 shadow-sm" data-testid="event-url-daily">
-        <h2 class="text-lg font-semibold text-gray-800">Daily trend</h2>
-        <div class="mt-4 overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead>
-                    <tr class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
-                        <th class="px-2 py-2">Date</th>
-                        <th class="px-2 py-2">Visits</th>
-                        <th class="px-2 py-2">Registrations</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach(array_reverse($summary['daily']) as $day)
-                        <tr class="border-b border-gray-50">
-                            <td class="px-2 py-2 text-gray-700">{{ $day['date'] }}</td>
-                            <td class="px-2 py-2 font-medium text-gray-900">{{ $day['visits'] }}</td>
-                            <td class="px-2 py-2 text-emerald-700">{{ $day['registrations'] }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+    <div class="mb-6 rounded-xl bg-white p-5 shadow-sm" data-testid="event-url-monthly">
+        <h2 class="text-lg font-semibold text-gray-800">Monthly trend</h2>
+        <p class="mt-1 text-sm text-gray-500">Visits and registrations by month for the selected range</p>
+        @if(empty($summary['monthly']))
+            <p class="mt-8 text-center text-sm text-gray-500">No visit data in this range.</p>
+        @else
+            <div class="relative mt-4 h-72" data-testid="event-url-monthly-chart">
+                <canvas id="eventUrlMonthlyChart" aria-label="Monthly visits and registrations chart"></canvas>
+            </div>
+        @endif
     </div>
 
     <div class="rounded-xl bg-white shadow-sm" data-testid="event-url-visits-table">
@@ -288,4 +276,60 @@
         @endif
     </div>
 </div>
+@endsection
+
+@section('scripts')
+@if(!empty($summary['monthly']))
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const monthlyLabels = @json(collect($summary['monthly'])->pluck('label'));
+    const monthlyVisits = @json(collect($summary['monthly'])->pluck('visits'));
+    const monthlyRegistrations = @json(collect($summary['monthly'])->pluck('registrations'));
+    const monthlyCanvas = document.getElementById('eventUrlMonthlyChart');
+
+    if (monthlyCanvas && typeof Chart !== 'undefined') {
+        new Chart(monthlyCanvas, {
+            type: 'bar',
+            data: {
+                labels: monthlyLabels,
+                datasets: [
+                    {
+                        label: 'Visits',
+                        data: monthlyVisits,
+                        backgroundColor: 'rgba(99, 102, 241, 0.85)',
+                        borderRadius: 6,
+                        maxBarThickness: 42,
+                    },
+                    {
+                        label: 'Registrations',
+                        data: monthlyRegistrations,
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        borderRadius: 6,
+                        maxBarThickness: 42,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, padding: 16 },
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 },
+                    },
+                },
+            },
+        });
+    }
+</script>
+@endif
 @endsection

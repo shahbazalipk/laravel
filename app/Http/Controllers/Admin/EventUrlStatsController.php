@@ -22,7 +22,7 @@ class EventUrlStatsController extends Controller
 
         $from = $request->filled('from')
             ? Carbon::parse($request->query('from'))->startOfDay()
-            : now()->subDays(29)->startOfDay();
+            : now()->subMonths(11)->startOfMonth();
         $to = $request->filled('to')
             ? Carbon::parse($request->query('to'))->endOfDay()
             : now()->endOfDay();

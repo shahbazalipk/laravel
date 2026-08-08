@@ -229,6 +229,9 @@ class EventUrlAnalyticsTest extends TestCase
             ->assertOk()
             ->assertSee('data-testid="event-url-stats-page"', false)
             ->assertSee('data-testid="stats-visits"', false)
+            ->assertSee('data-testid="event-url-monthly"', false)
+            ->assertSee('data-testid="event-url-monthly-chart"', false)
+            ->assertSee('Monthly trend')
             ->assertSee('203.0.113.10')
             ->assertSee('Chrome');
 
@@ -236,6 +239,49 @@ class EventUrlAnalyticsTest extends TestCase
             ->get(route('admin.event-urls.index'))
             ->assertOk()
             ->assertSee('data-testid="event-url-stats-'.$this->eventUrl->id.'"', false);
+    }
+
+    #[Test]
+    public function summarize_builds_monthly_trend_buckets(): void
+    {
+        EventUrlVisit::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'event_url_id' => $this->eventUrl->id,
+            'visitor_uuid' => (string) Str::uuid(),
+            'session_key' => bin2hex(random_bytes(16)),
+            'pageview_count' => 1,
+            'registered' => true,
+            'is_bounce' => false,
+            'started_at' => now()->subMonths(2)->startOfMonth()->addDays(3),
+            'last_seen_at' => now()->subMonths(2)->startOfMonth()->addDays(3),
+        ]);
+        EventUrlVisit::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'event_url_id' => $this->eventUrl->id,
+            'visitor_uuid' => (string) Str::uuid(),
+            'session_key' => bin2hex(random_bytes(16)),
+            'pageview_count' => 2,
+            'registered' => false,
+            'is_bounce' => true,
+            'started_at' => now()->startOfMonth()->addDay(),
+            'last_seen_at' => now()->startOfMonth()->addDay(),
+        ]);
+
+        $summary = app(EventUrlAnalyticsService::class)->summarize(
+            $this->eventUrl,
+            now()->subMonths(2)->startOfMonth(),
+            now()->endOfMonth(),
+        );
+
+        $this->assertArrayHasKey('monthly', $summary);
+        $this->assertCount(3, $summary['monthly']);
+        $this->assertSame(1, $summary['monthly'][0]['visits']);
+        $this->assertSame(1, $summary['monthly'][0]['registrations']);
+        $this->assertSame(0, $summary['monthly'][1]['visits']);
+        $this->assertSame(1, $summary['monthly'][2]['visits']);
+        $this->assertSame(0, $summary['monthly'][2]['registrations']);
     }
 
     #[Test]
