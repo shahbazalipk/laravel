@@ -189,16 +189,59 @@
         </div>
     @endif
 
-    <div class="mb-6 rounded-xl bg-white p-5 shadow-sm" data-testid="event-url-monthly">
-        <h2 class="text-lg font-semibold text-gray-800">Monthly trend</h2>
-        <p class="mt-1 text-sm text-gray-500">Visits and registrations by month for the selected range</p>
-        @if(empty($summary['monthly']))
-            <p class="mt-8 text-center text-sm text-gray-500">No visit data in this range.</p>
-        @else
-            <div class="relative mt-4 h-72" data-testid="event-url-monthly-chart">
-                <canvas id="eventUrlMonthlyChart" aria-label="Monthly visits and registrations chart"></canvas>
+    <div class="mb-6 rounded-xl bg-white p-5 shadow-sm" data-testid="event-url-trend-tabs">
+        <div class="mb-4 flex flex-col gap-3 border-b border-gray-100 pb-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Traffic trends</h2>
+                <p class="mt-1 text-sm text-gray-500">Switch between long-range monthly view and this month’s daily activity</p>
             </div>
-        @endif
+            <div class="inline-flex rounded-lg bg-slate-100 p-1" role="tablist" aria-label="Traffic trend period">
+                <button type="button"
+                        class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                        role="tab"
+                        aria-selected="true"
+                        data-trend-tab="monthly"
+                        data-testid="event-url-tab-monthly">
+                    Monthly trend
+                </button>
+                <button type="button"
+                        class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                        role="tab"
+                        aria-selected="false"
+                        data-trend-tab="current"
+                        data-testid="event-url-tab-current-month">
+                    {{ $summary['current_month']['label'] }}
+                </button>
+            </div>
+        </div>
+
+        <div data-trend-panel="monthly" data-testid="event-url-monthly">
+            <p class="text-sm text-gray-500">Visits and registrations by month for the selected range</p>
+            @if(empty($summary['monthly']))
+                <p class="mt-8 text-center text-sm text-gray-500">No visit data in this range.</p>
+            @else
+                <div class="relative mt-4 h-72" data-testid="event-url-monthly-chart">
+                    <canvas id="eventUrlMonthlyChart" aria-label="Monthly visits and registrations chart"></canvas>
+                </div>
+            @endif
+        </div>
+
+        <div class="hidden" data-trend-panel="current" data-testid="event-url-current-month">
+            <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <p class="text-sm text-gray-500">Daily visits and registrations in {{ $summary['current_month']['label'] }}</p>
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold text-indigo-700">{{ number_format($summary['current_month']['visits']) }}</span> visits ·
+                    <span class="font-semibold text-emerald-700">{{ number_format($summary['current_month']['registrations']) }}</span> registrations
+                </p>
+            </div>
+            @if(empty($summary['current_month']['days']))
+                <p class="mt-8 text-center text-sm text-gray-500">No days to display for the current month.</p>
+            @else
+                <div class="relative mt-4 h-72" data-testid="event-url-current-month-chart">
+                    <canvas id="eventUrlCurrentMonthChart" aria-label="Current month daily visits chart"></canvas>
+                </div>
+            @endif
+        </div>
     </div>
 
     <div class="rounded-xl bg-white shadow-sm" data-testid="event-url-visits-table">
@@ -279,57 +322,115 @@
 @endsection
 
 @section('scripts')
-@if(!empty($summary['monthly']))
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    const monthlyLabels = @json(collect($summary['monthly'])->pluck('label'));
-    const monthlyVisits = @json(collect($summary['monthly'])->pluck('visits'));
-    const monthlyRegistrations = @json(collect($summary['monthly'])->pluck('registrations'));
-    const monthlyCanvas = document.getElementById('eventUrlMonthlyChart');
+    let currentMonthChart = null;
 
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { boxWidth: 12, padding: 16 },
+            },
+        },
+        scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true, ticks: { precision: 0 } },
+        },
+    };
+
+    @if(!empty($summary['monthly']))
+    const monthlyCanvas = document.getElementById('eventUrlMonthlyChart');
     if (monthlyCanvas && typeof Chart !== 'undefined') {
         new Chart(monthlyCanvas, {
             type: 'bar',
             data: {
-                labels: monthlyLabels,
+                labels: @json(collect($summary['monthly'])->pluck('label')),
                 datasets: [
                     {
                         label: 'Visits',
-                        data: monthlyVisits,
+                        data: @json(collect($summary['monthly'])->pluck('visits')),
                         backgroundColor: 'rgba(99, 102, 241, 0.85)',
                         borderRadius: 6,
                         maxBarThickness: 42,
                     },
                     {
                         label: 'Registrations',
-                        data: monthlyRegistrations,
+                        data: @json(collect($summary['monthly'])->pluck('registrations')),
                         backgroundColor: 'rgba(16, 185, 129, 0.85)',
                         borderRadius: 6,
                         maxBarThickness: 42,
                     },
                 ],
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { boxWidth: 12, padding: 16 },
-                    },
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { precision: 0 },
-                    },
-                },
-            },
+            options: chartOptions,
         });
     }
+    @endif
+
+    @if(!empty($summary['current_month']['days']))
+    const currentMonthCanvas = document.getElementById('eventUrlCurrentMonthChart');
+    if (currentMonthCanvas && typeof Chart !== 'undefined') {
+        currentMonthChart = new Chart(currentMonthCanvas, {
+            type: 'line',
+            data: {
+                labels: @json(collect($summary['current_month']['days'])->pluck('label')),
+                datasets: [
+                    {
+                        label: 'Visits',
+                        data: @json(collect($summary['current_month']['days'])->pluck('visits')),
+                        borderColor: 'rgb(99, 102, 241)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 2,
+                    },
+                    {
+                        label: 'Registrations',
+                        data: @json(collect($summary['current_month']['days'])->pluck('registrations')),
+                        borderColor: 'rgb(16, 185, 129)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 2,
+                    },
+                ],
+            },
+            options: chartOptions,
+        });
+    }
+    @endif
+
+    (function () {
+        const tabs = document.querySelectorAll('[data-trend-tab]');
+        const panels = document.querySelectorAll('[data-trend-panel]');
+
+        const activate = (name) => {
+            tabs.forEach((tab) => {
+                const active = tab.getAttribute('data-trend-tab') === name;
+                tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                tab.classList.toggle('bg-white', active);
+                tab.classList.toggle('text-indigo-700', active);
+                tab.classList.toggle('shadow-sm', active);
+                tab.classList.toggle('text-slate-600', !active);
+            });
+
+            panels.forEach((panel) => {
+                panel.classList.toggle('hidden', panel.getAttribute('data-trend-panel') !== name);
+            });
+
+            if (name === 'current' && currentMonthChart) {
+                currentMonthChart.resize();
+            }
+        };
+
+        tabs.forEach((tab) => {
+            tab.addEventListener('click', () => activate(tab.getAttribute('data-trend-tab')));
+        });
+
+        activate('monthly');
+    })();
 </script>
-@endif
 @endsection

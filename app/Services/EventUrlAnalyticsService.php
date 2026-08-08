@@ -211,7 +211,14 @@ class EventUrlAnalyticsService
      *   platforms: array<string, int>,
      *   utm_sources: array<string, int>,
      *   countries: array<string, int>,
-     *   monthly: list<array{month: string, label: string, visits: int, registrations: int}>
+     *   monthly: list<array{month: string, label: string, visits: int, registrations: int}>,
+     *   current_month: array{
+     *     month: string,
+     *     label: string,
+     *     visits: int,
+     *     registrations: int,
+     *     days: list<array{date: string, label: string, visits: int, registrations: int}>
+     *   }
      * }
      */
     public function summarize(EventUrl $eventUrl, ?CarbonInterface $from = null, ?CarbonInterface $to = null): array
@@ -294,9 +301,51 @@ class EventUrlAnalyticsService
             'utm_sources' => $groupCount($visits->filter(fn ($v) => filled($v->utm_source)), 'utm_source'),
             'countries' => $groupCount($visits->filter(fn ($v) => filled($v->country_code)), 'country_code'),
             'monthly' => $monthly,
+            'current_month' => $this->currentMonthTrend($eventUrl),
         ];
     }
 
+    /**
+     * @return array{
+     *   month: string,
+     *   label: string,
+     *   visits: int,
+     *   registrations: int,
+     *   days: list<array{date: string, label: string, visits: int, registrations: int}>
+     * }
+     */
+    private function currentMonthTrend(EventUrl $eventUrl): array
+    {
+        $monthStart = now()->startOfMonth();
+        $monthEnd = now()->endOfMonth();
+        $through = now()->lt($monthEnd) ? now()->startOfDay() : $monthEnd->copy()->startOfDay();
+
+        $visits = EventUrlVisit::query()
+            ->where('event_url_id', $eventUrl->id)
+            ->whereBetween('started_at', [$monthStart, $monthEnd])
+            ->get();
+
+        $dailyMap = $visits->groupBy(fn (EventUrlVisit $v) => optional($v->started_at)->toDateString() ?: 'unknown');
+        $days = [];
+        for ($day = $monthStart->copy(); $day->lte($through); $day->addDay()) {
+            $key = $day->toDateString();
+            $bucket = $dailyMap->get($key, collect());
+            $days[] = [
+                'date' => $key,
+                'label' => $day->format('j'),
+                'visits' => $bucket->count(),
+                'registrations' => $bucket->where('registered', true)->count(),
+            ];
+        }
+
+        return [
+            'month' => $monthStart->format('Y-m'),
+            'label' => $monthStart->format('F Y'),
+            'visits' => $visits->count(),
+            'registrations' => $visits->where('registered', true)->count(),
+            'days' => $days,
+        ];
+    }
     /**
      * Aggregate URL traffic for the admin dashboard.
      *

@@ -229,9 +229,14 @@ class EventUrlAnalyticsTest extends TestCase
             ->assertOk()
             ->assertSee('data-testid="event-url-stats-page"', false)
             ->assertSee('data-testid="stats-visits"', false)
+            ->assertSee('data-testid="event-url-trend-tabs"', false)
+            ->assertSee('data-testid="event-url-tab-monthly"', false)
+            ->assertSee('data-testid="event-url-tab-current-month"', false)
             ->assertSee('data-testid="event-url-monthly"', false)
             ->assertSee('data-testid="event-url-monthly-chart"', false)
+            ->assertSee('data-testid="event-url-current-month"', false)
             ->assertSee('Monthly trend')
+            ->assertSee(now()->format('F Y'))
             ->assertSee('203.0.113.10')
             ->assertSee('Chrome');
 
@@ -276,12 +281,16 @@ class EventUrlAnalyticsTest extends TestCase
         );
 
         $this->assertArrayHasKey('monthly', $summary);
+        $this->assertArrayHasKey('current_month', $summary);
         $this->assertCount(3, $summary['monthly']);
         $this->assertSame(1, $summary['monthly'][0]['visits']);
         $this->assertSame(1, $summary['monthly'][0]['registrations']);
         $this->assertSame(0, $summary['monthly'][1]['visits']);
         $this->assertSame(1, $summary['monthly'][2]['visits']);
         $this->assertSame(0, $summary['monthly'][2]['registrations']);
+        $this->assertSame(now()->format('Y-m'), $summary['current_month']['month']);
+        $this->assertSame(1, $summary['current_month']['visits']);
+        $this->assertNotEmpty($summary['current_month']['days']);
     }
 
     #[Test]
