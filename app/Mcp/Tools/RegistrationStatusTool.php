@@ -14,7 +14,7 @@ use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
 #[Name('get_registration_status')]
-#[Description('Looks up one registration by registration number and returns workflow, payment, and check-in status without contact details.')]
+#[Description('Looks up one registration by registration number and returns workflow, payment, check-in status, and website profile fields (name, photo, job title, company, LinkedIn from existing/custom answers). Does not expose email or phone.')]
 #[IsReadOnly]
 #[IsIdempotent]
 class RegistrationStatusTool extends ReadOnlyEventTool

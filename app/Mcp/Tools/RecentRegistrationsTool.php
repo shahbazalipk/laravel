@@ -14,7 +14,7 @@ use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
 #[Name('recent_registrations')]
-#[Description('Lists recent event registrations with operational status fields and no attendee contact details.')]
+#[Description('Lists recent event registrations with operational status plus website profile fields (name, photo, job title, company, LinkedIn from existing/custom answers). Does not expose email or phone.')]
 #[IsReadOnly]
 #[IsIdempotent]
 class RecentRegistrationsTool extends ReadOnlyEventTool
