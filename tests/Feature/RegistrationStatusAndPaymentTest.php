@@ -547,6 +547,8 @@ class RegistrationStatusAndPaymentTest extends TestCase
             ->get(route('admin.registrations.index', ['stage' => 'registered']));
 
         $response->assertOk();
+        $response->assertSee('value="partially_paid"', false);
+        $response->assertSee('Partially Paid');
         $response->assertSee('data-testid="open-delete-registration-modal"', false);
         $response->assertSee('data-registration-reference="REG-DELETE-1"', false);
         $response->assertSee('data-delete-kind="registration"', false);

@@ -203,4 +203,39 @@ class AdminRegistrationListingServiceTest extends TestCase
             fn ($row) => $row->kind === 'draft'
         ));
     }
+
+    #[Test]
+    public function it_filters_registrations_by_partially_paid_status(): void
+    {
+        Registration::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'registration_number' => 'REG-PAID',
+            'first_name' => 'Fully',
+            'last_name' => 'Paid',
+            'email' => 'paid@example.com',
+            'registration_type' => 'individual',
+            'payment_status' => 'paid',
+        ]);
+        Registration::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'registration_number' => 'REG-PARTIAL',
+            'first_name' => 'Partial',
+            'last_name' => 'Paid',
+            'email' => 'partial@example.com',
+            'registration_type' => 'individual',
+            'payment_status' => 'partially_paid',
+        ]);
+
+        $service = new AdminRegistrationListingService(app(RegistrationService::class));
+        $results = $service->paginate([
+            'stage' => 'registered',
+            'payment_status' => 'partially_paid',
+        ]);
+
+        $this->assertSame(1, $results->total());
+        $this->assertSame('partial@example.com', $results->first()->email);
+        $this->assertSame('partially_paid', $results->first()->paymentStatus);
+    }
 }

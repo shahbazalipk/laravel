@@ -153,6 +153,7 @@
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 <option value="">All Statuses</option>
                 <option value="paid" {{ ($filters['payment_status'] ?? '') == 'paid' ? 'selected' : '' }}>Paid</option>
+                <option value="partially_paid" {{ ($filters['payment_status'] ?? '') == 'partially_paid' ? 'selected' : '' }}>Partially Paid</option>
                 <option value="pending" {{ ($filters['payment_status'] ?? '') == 'pending' ? 'selected' : '' }}>Pending</option>
                 <option value="failed" {{ ($filters['payment_status'] ?? '') == 'failed' ? 'selected' : '' }}>Failed</option>
                 <option value="refunded" {{ ($filters['payment_status'] ?? '') == 'refunded' ? 'selected' : '' }}>Refunded</option>
@@ -244,12 +245,11 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($row->paymentStatus)
-                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                                    {{ $row->paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : '' }}
-                                    {{ $row->paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                    {{ $row->paymentStatus === 'failed' ? 'bg-red-100 text-red-800' : '' }}
-                                    {{ $row->paymentStatus === 'refunded' ? 'bg-gray-100 text-gray-800' : '' }}">
-                                    {{ ucfirst($row->paymentStatus) }}
+                                @php
+                                    $paymentSummaryStatus = \App\Payments\Enums\RegistrationPaymentSummaryStatus::tryFrom($row->paymentStatus);
+                                @endphp
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $paymentSummaryStatus?->badgeClasses() ?? 'bg-gray-100 text-gray-800' }}">
+                                    {{ $paymentSummaryStatus?->label() ?? ucfirst(str_replace('_', ' ', $row->paymentStatus)) }}
                                 </span>
                             @else
                                 <span class="text-sm text-gray-400">—</span>
