@@ -143,7 +143,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div id="exhibitor_field" style="display: none;">
                 <label for="exhibitor_id" class="block text-sm font-medium text-gray-700 mb-2">
-                    Exhibitor
+                    Exhibitor <span class="text-red-500">*</span>
                 </label>
                 <select name="exhibitor_id" 
                         id="exhibitor_id"
@@ -159,7 +159,7 @@
 
             <div id="group_field" style="display: none;">
                 <label for="group_id" class="block text-sm font-medium text-gray-700 mb-2">
-                    Group
+                    Group <span class="text-red-500">*</span>
                 </label>
                 <select name="group_id" 
                         id="group_id"
@@ -379,9 +379,13 @@
     document.getElementById('registration_type').addEventListener('change', function() {
         const exhibitorField = document.getElementById('exhibitor_field');
         const groupField = document.getElementById('group_field');
+        const exhibitorSelect = document.getElementById('exhibitor_id');
+        const groupSelect = document.getElementById('group_id');
         
         exhibitorField.style.display = this.value === 'exhibitor' ? 'block' : 'none';
         groupField.style.display = this.value === 'group' ? 'block' : 'none';
+        exhibitorSelect.required = this.value === 'exhibitor';
+        groupSelect.required = this.value === 'group';
     });
 
     // Show/hide category-specific fields based on selected category

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Forms\Models\CustomFormResponse;
 use App\Traits\HasEventScope;
@@ -26,6 +27,12 @@ class Group extends Model
         'website_url',
         'allowed_attendees',
         'invoice_number',
+        'total_amount',
+        'currency',
+        'payment_status',
+        'payment_method',
+        'payment_reference',
+        'payment_date',
         'primary_contact_name',
         'primary_contact_email',
         'primary_contact_phone',
@@ -48,9 +55,41 @@ class Group extends Model
         'is_vip' => 'boolean',
         'sort_order' => 'integer',
         'allowed_attendees' => 'integer',
+        'total_amount' => 'decimal:2',
+        'payment_date' => 'datetime',
     ];
 
     // Relationships
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(Registration::class, 'group_id')->orderBy('last_name')->orderBy('first_name');
+    }
+
+    public function paymentEntries(): HasMany
+    {
+        return $this->hasMany(\App\Payments\Models\GroupPaymentEntry::class, 'event_group_id');
+    }
+
+    public function billingTotal(): float
+    {
+        if ($this->total_amount !== null && (float) $this->total_amount > 0) {
+            return round((float) $this->total_amount, 2);
+        }
+
+        return round((float) $this->registrations()->sum('total_amount'), 2);
+    }
+
+    public function billingCurrency(): string
+    {
+        if ($this->currency) {
+            return strtoupper($this->currency);
+        }
+
+        $memberCurrency = $this->registrations()->value('currency');
+
+        return $memberCurrency ? strtoupper($memberCurrency) : 'AED';
+    }
+
     public function groupType()
     {
         return $this->belongsTo(GroupType::class);

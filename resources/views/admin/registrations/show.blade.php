@@ -254,7 +254,9 @@
             'customFormResponses' => $registration->customFormResponses,
         ])
 
-        @include('admin.registrations.partials.payment-history')
+        @if(!($registration->registration_type === 'group' && $registration->group))
+            @include('admin.registrations.partials.payment-history')
+        @endif
 
         @include('admin.registrations.partials.notes')
     </div>
@@ -309,13 +311,19 @@
                 @if($registration->exhibitor)
                 <div>
                     <p class="text-sm text-gray-600">Exhibitor</p>
-                    <p class="font-medium text-gray-900">{{ $registration->exhibitor->company_name }}</p>
+                    <a href="{{ route('admin.exhibitors.show', $registration->exhibitor) }}"
+                       class="font-medium text-indigo-600 hover:text-indigo-800">
+                        {{ $registration->exhibitor->company_name }}
+                    </a>
                 </div>
                 @endif
                 @if($registration->group)
                 <div>
                     <p class="text-sm text-gray-600">Group</p>
-                    <p class="font-medium text-gray-900">{{ $registration->group->group_name }}</p>
+                    <a href="{{ route('admin.groups.show', $registration->group) }}"
+                       class="font-medium text-indigo-600 hover:text-indigo-800">
+                        {{ $registration->group->group_name }}
+                    </a>
                 </div>
                 @endif
                 <div>
@@ -327,7 +335,20 @@
 
         @include('admin.registrations.partials.status-management')
 
-        @include('admin.registrations.partials.payment-summary')
+        @if($registration->registration_type === 'group' && $registration->group)
+            <div class="rounded-2xl border border-indigo-200 bg-indigo-50 p-5" data-testid="group-payment-notice">
+                <h3 class="text-base font-semibold text-indigo-900">Group billing</h3>
+                <p class="mt-1 text-sm text-indigo-800">
+                    Payments for this registration are managed on the linked group page.
+                </p>
+                <a href="{{ route('admin.groups.show', $registration->group) }}#group-payments"
+                   class="mt-3 inline-flex items-center text-sm font-semibold text-indigo-700 hover:text-indigo-900">
+                    View group payments →
+                </a>
+            </div>
+        @else
+            @include('admin.registrations.partials.payment-summary')
+        @endif
 
         @if($registration->checked_in)
         <div class="bg-white rounded-lg shadow-sm p-6">
@@ -349,7 +370,9 @@
     </div>
 </div>
 
-@include('admin.registrations.partials.payment-modals')
+@if(!($registration->registration_type === 'group' && $registration->group))
+    @include('admin.registrations.partials.payment-modals')
+@endif
 
 <div id="deleteRegistrationModal"
      class="{{ $errors->has('confirmation') ? '' : 'hidden' }} fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm sm:p-6"

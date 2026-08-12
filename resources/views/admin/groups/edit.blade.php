@@ -150,6 +150,22 @@
                 </div>
 
                 <div>
+                    <label for="total_amount" class="block text-sm font-medium text-gray-700 mb-2">Group billing total</label>
+                    <input type="number" step="0.01" min="0" name="total_amount" id="total_amount"
+                           value="{{ old('total_amount', $group->total_amount) }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Optional. Leave blank to sum linked registration totals.</p>
+                </div>
+
+                <div>
+                    <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                    <input type="text" name="currency" id="currency" maxlength="10"
+                           value="{{ old('currency', $group->currency) }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                           placeholder="AED">
+                </div>
+
+                <div>
                     <label for="website_url" class="block text-sm font-medium text-gray-700 mb-2">
                         Website URL
                     </label>

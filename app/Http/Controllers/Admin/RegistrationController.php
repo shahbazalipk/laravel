@@ -131,8 +131,8 @@ class RegistrationController extends Controller
             'registration_category_id' => 'required|exists:registration_categories,id',
             'registration_status_id' => 'nullable|exists:registration_statuses,id',
             'registration_type' => 'required|in:individual,exhibitor,group',
-            'exhibitor_id' => 'nullable|exists:exhibitors,id',
-            'group_id' => 'nullable|exists:groups,id',
+            'exhibitor_id' => 'required_if:registration_type,exhibitor|nullable|exists:exhibitors,id',
+            'group_id' => 'required_if:registration_type,group|nullable|exists:event_groups,id',
             'category_password' => 'nullable|string',
             'membership_id' => 'nullable|string|max:255',
             'professional_student_id' => 'nullable|string|max:255',
@@ -163,6 +163,11 @@ class RegistrationController extends Controller
             'areas_of_interest' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
+
+        $validated = $this->normalizeRegistrationAffiliation($validated);
+        if ($affiliationErrors = $this->validateRegistrationAffiliation($validated)) {
+            return back()->withErrors($affiliationErrors)->withInput();
+        }
 
         // Get category and validate requirements
         $category = RegistrationCategory::findOrFail($validated['registration_category_id']);
@@ -402,8 +407,8 @@ class RegistrationController extends Controller
             'registration_category_id' => 'required|exists:registration_categories,id',
             'registration_status_id' => 'nullable|exists:registration_statuses,id',
             'registration_type' => 'required|in:individual,exhibitor,group',
-            'exhibitor_id' => 'nullable|exists:exhibitors,id',
-            'group_id' => 'nullable|exists:groups,id',
+            'exhibitor_id' => 'required_if:registration_type,exhibitor|nullable|exists:exhibitors,id',
+            'group_id' => 'required_if:registration_type,group|nullable|exists:event_groups,id',
             'salutation' => 'nullable|string|max:20',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -425,6 +430,11 @@ class RegistrationController extends Controller
             'notes' => 'nullable|string',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+        $validated = $this->normalizeRegistrationAffiliation($validated);
+        if ($affiliationErrors = $this->validateRegistrationAffiliation($validated, $registration)) {
+            return back()->withErrors($affiliationErrors)->withInput();
+        }
 
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
@@ -1045,5 +1055,49 @@ class RegistrationController extends Controller
     {
         // TODO: Implement email sending
         return back()->with('success', 'Verification email sent.');
+    }
+
+    private function normalizeRegistrationAffiliation(array $validated): array
+    {
+        $type = $validated['registration_type'] ?? 'individual';
+
+        if ($type === 'individual') {
+            $validated['exhibitor_id'] = null;
+            $validated['group_id'] = null;
+        } elseif ($type === 'exhibitor') {
+            $validated['group_id'] = null;
+        } elseif ($type === 'group') {
+            $validated['exhibitor_id'] = null;
+        }
+
+        return $validated;
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    private function validateRegistrationAffiliation(array $validated, ?Registration $registration = null): ?array
+    {
+        if (($validated['registration_type'] ?? '') !== 'group' || empty($validated['group_id'])) {
+            return null;
+        }
+
+        $group = Group::query()->find($validated['group_id']);
+        if (! $group) {
+            return null;
+        }
+
+        $memberCount = $group->registrations()->count();
+        if ($registration && (int) $registration->group_id === (int) $group->id) {
+            $memberCount--;
+        }
+
+        if ($memberCount >= $group->allowed_attendees) {
+            return [
+                'group_id' => "Group has reached its capacity of {$group->allowed_attendees} attendees.",
+            ];
+        }
+
+        return null;
     }
 }

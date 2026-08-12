@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Exhibitor extends Model
@@ -125,6 +126,11 @@ class Exhibitor extends Model
     public function customFormResponses(): MorphMany
     {
         return $this->morphMany(CustomFormResponse::class, 'respondent');
+    }
+
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(Registration::class)->orderBy('last_name')->orderBy('first_name');
     }
 
     // Scopes

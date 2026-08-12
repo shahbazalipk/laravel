@@ -58,9 +58,9 @@
                         id="registration_type"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('registration_type') border-red-500 @enderror"
                         required>
-                    <option value="individual" {{ old('registration_type') == 'individual' ? 'selected' : '' }}>Individual</option>
-                    <option value="exhibitor" {{ old('registration_type') == 'exhibitor' ? 'selected' : '' }}>Exhibitor</option>
-                    <option value="group" {{ old('registration_type') == 'group' ? 'selected' : '' }}>Group</option>
+                    <option value="individual" {{ old('registration_type', request('registration_type', 'individual')) == 'individual' ? 'selected' : '' }}>Individual</option>
+                    <option value="exhibitor" {{ old('registration_type', request('registration_type')) == 'exhibitor' ? 'selected' : '' }}>Exhibitor</option>
+                    <option value="group" {{ old('registration_type', request('registration_type')) == 'group' ? 'selected' : '' }}>Group</option>
                 </select>
                 @error('registration_type')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -142,7 +142,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div id="exhibitor_field" style="display: none;">
                 <label for="exhibitor_id" class="block text-sm font-medium text-gray-700 mb-2">
-                    Exhibitor
+                    Exhibitor <span class="text-red-500">*</span>
                 </label>
                 <select name="exhibitor_id" 
                         id="exhibitor_id"
@@ -158,14 +158,14 @@
 
             <div id="group_field" style="display: none;">
                 <label for="group_id" class="block text-sm font-medium text-gray-700 mb-2">
-                    Group
+                    Group <span class="text-red-500">*</span>
                 </label>
                 <select name="group_id" 
                         id="group_id"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     <option value="">Select group</option>
                     @foreach($groups as $group)
-                        <option value="{{ $group->id }}" {{ old('group_id') == $group->id ? 'selected' : '' }}>
+                        <option value="{{ $group->id }}" {{ old('group_id', request('group_id')) == $group->id ? 'selected' : '' }}>
                             {{ $group->group_name }}
                         </option>
                     @endforeach
@@ -355,9 +355,13 @@
     document.getElementById('registration_type').addEventListener('change', function() {
         const exhibitorField = document.getElementById('exhibitor_field');
         const groupField = document.getElementById('group_field');
+        const exhibitorSelect = document.getElementById('exhibitor_id');
+        const groupSelect = document.getElementById('group_id');
         
         exhibitorField.style.display = this.value === 'exhibitor' ? 'block' : 'none';
         groupField.style.display = this.value === 'group' ? 'block' : 'none';
+        exhibitorSelect.required = this.value === 'exhibitor';
+        groupSelect.required = this.value === 'group';
     });
 
     // Show/hide category-specific fields based on selected category

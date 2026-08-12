@@ -333,6 +333,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('groups.toggle-active');
         Route::patch('groups/{group}/toggle-vip', [GroupController::class, 'toggleVip'])
             ->name('groups.toggle-vip');
+        Route::post('groups/{group}/payments', [\App\Http\Controllers\Admin\GroupPaymentController::class, 'store'])
+            ->name('groups.payments.store');
+        Route::post('groups/{group}/payments/{payment}/refund', [\App\Http\Controllers\Admin\GroupPaymentController::class, 'refund'])
+            ->name('groups.payments.refund');
+        Route::post('groups/{group}/payments/{payment}/reverse', [\App\Http\Controllers\Admin\GroupPaymentController::class, 'reverse'])
+            ->name('groups.payments.reverse');
+        Route::post('groups/{group}/registrations', [\App\Http\Controllers\Admin\GroupRegistrationController::class, 'store'])
+            ->name('groups.registrations.store');
+        Route::delete('groups/{group}/registrations/{registration}', [\App\Http\Controllers\Admin\GroupRegistrationController::class, 'destroy'])
+            ->name('groups.registrations.destroy');
 
         // Exhibitors
         Route::resource('exhibitors', ExhibitorController::class);

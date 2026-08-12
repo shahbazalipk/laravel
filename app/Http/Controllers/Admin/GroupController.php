@@ -9,6 +9,9 @@ use App\Models\ExhibitorTag;
 use App\Models\Group;
 use App\Models\GroupType;
 use App\Models\Industry;
+use App\Models\Registration;
+use App\Payments\Services\GroupPaymentTotals;
+use App\Payments\Services\RecordGroupPayment;
 use App\Services\GroupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,6 +59,8 @@ class GroupController extends Controller
             'website_url' => 'nullable|url|max:255',
             'allowed_attendees' => 'required|integer|min:1',
             'invoice_number' => 'nullable|string|max:255',
+            'total_amount' => 'nullable|numeric|min:0',
+            'currency' => 'nullable|string|max:10',
             'primary_contact_name' => 'required|string|max:255',
             'primary_contact_email' => 'required|email|max:255',
             'primary_contact_phone' => 'required|string|max:50',
@@ -97,12 +102,15 @@ class GroupController extends Controller
             ->with('success', 'Group created successfully.');
     }
 
-    public function show(Group $group)
+    public function show(Group $group, GroupPaymentTotals $paymentTotals)
     {
         $group->load([
             'groupType',
             'industry',
             'tags',
+            'paymentEntries',
+            'registrations.registrationCategory',
+            'registrations.registrationStatus',
             'customFormResponses' => fn ($query) => $query
                 ->where('status', 'submitted')
                 ->orderBy('submitted_at')
@@ -113,7 +121,27 @@ class GroupController extends Controller
                 ]),
         ]);
 
-        return view('admin.groups.show', compact('group'));
+        $paymentSummary = $paymentTotals->calculate($group, $group->paymentEntries);
+        $paymentRecorder = app(RecordGroupPayment::class);
+        $refundableByPayment = $group->paymentEntries
+            ->mapWithKeys(fn ($entry) => [
+                $entry->id => $paymentRecorder->refundableAmountForPayment($group, $entry),
+            ]);
+
+        $availableRegistrations = Registration::query()
+            ->whereNull('group_id')
+            ->where('event_id', $group->event_id)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->limit(200)
+            ->get(['id', 'registration_number', 'first_name', 'last_name', 'email']);
+
+        return view('admin.groups.show', compact(
+            'group',
+            'paymentSummary',
+            'refundableByPayment',
+            'availableRegistrations'
+        ));
     }
 
     public function edit(Group $group)
@@ -145,6 +173,8 @@ class GroupController extends Controller
             'website_url' => 'nullable|url|max:255',
             'allowed_attendees' => 'required|integer|min:1',
             'invoice_number' => 'nullable|string|max:255',
+            'total_amount' => 'nullable|numeric|min:0',
+            'currency' => 'nullable|string|max:10',
             'primary_contact_name' => 'required|string|max:255',
             'primary_contact_email' => 'required|email|max:255',
             'primary_contact_phone' => 'required|string|max:50',
