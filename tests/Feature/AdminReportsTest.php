@@ -26,6 +26,7 @@ class AdminReportsTest extends TestCase
             'event.currency' => 'AED',
         ]);
 
+        Schema::dropIfExists('registration_payment_entries');
         Schema::dropIfExists('registrations');
         Schema::dropIfExists('registration_categories');
         Schema::dropIfExists('hash_mappings');
@@ -71,6 +72,8 @@ class AdminReportsTest extends TestCase
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('mobile_phone')->nullable();
             $table->decimal('base_price', 12, 2)->default(0);
             $table->decimal('tax_amount', 12, 2)->default(0);
             $table->decimal('total_amount', 12, 2)->default(0);
@@ -81,6 +84,21 @@ class AdminReportsTest extends TestCase
             $table->boolean('checked_in')->default(false);
             $table->timestamps();
             $table->softDeletes();
+        });
+
+        Schema::create('registration_payment_entries', function (Blueprint $table): void {
+            $table->id();
+            $table->uuid('public_id')->unique();
+            $table->unsignedBigInteger('event_id')->index();
+            $table->unsignedBigInteger('org_id')->index();
+            $table->unsignedBigInteger('registration_id')->index();
+            $table->string('type', 32);
+            $table->string('status', 32);
+            $table->decimal('amount', 12, 2);
+            $table->string('currency', 10);
+            $table->string('method', 100)->nullable();
+            $table->timestamp('occurred_at');
+            $table->timestamp('created_at')->useCurrent();
         });
 
         Event::query()->create([
@@ -118,6 +136,7 @@ class AdminReportsTest extends TestCase
             'first_name' => 'Paid',
             'last_name' => 'User',
             'email' => 'paid@example.com',
+            'phone' => '+971 50 111 1111',
             'base_price' => 1000,
             'tax_amount' => 50,
             'total_amount' => 1050,
@@ -128,6 +147,20 @@ class AdminReportsTest extends TestCase
             'checked_in' => true,
             'created_at' => now()->subDay(),
         ]);
+
+        \Illuminate\Support\Facades\DB::table('registration_payment_entries')->insert([
+            'public_id' => (string) \Illuminate\Support\Str::uuid(),
+            'event_id' => 1,
+            'org_id' => 1,
+            'registration_id' => 1,
+            'type' => 'payment',
+            'status' => 'succeeded',
+            'amount' => 1050,
+            'currency' => 'AED',
+            'method' => 'card',
+            'occurred_at' => now()->subDay(),
+        ]);
+
         Registration::query()->create([
             'event_id' => 1,
             'org_id' => 1,
@@ -136,6 +169,7 @@ class AdminReportsTest extends TestCase
             'first_name' => 'Pending',
             'last_name' => 'User',
             'email' => 'pending@example.com',
+            'phone' => '+971 50 222 2222',
             'base_price' => 1000,
             'tax_amount' => 50,
             'total_amount' => 945,
@@ -163,10 +197,43 @@ class AdminReportsTest extends TestCase
             'checked_in' => false,
             'created_at' => now()->subHours(2),
         ]);
+
+        $partialRegistration = Registration::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'registration_category_id' => $this->paidCategory->id,
+            'registration_number' => 'REG-4',
+            'first_name' => 'Partial',
+            'last_name' => 'User',
+            'email' => 'partial@example.com',
+            'phone' => '+971 50 333 3333',
+            'base_price' => 1000,
+            'tax_amount' => 50,
+            'total_amount' => 1050,
+            'discount_amount' => 0,
+            'currency' => 'AED',
+            'payment_status' => 'partially_paid',
+            'checked_in' => false,
+            'created_at' => now()->subHour(),
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('registration_payment_entries')->insert([
+            'public_id' => (string) \Illuminate\Support\Str::uuid(),
+            'event_id' => 1,
+            'org_id' => 1,
+            'registration_id' => $partialRegistration->id,
+            'type' => 'payment',
+            'status' => 'succeeded',
+            'amount' => 500,
+            'currency' => 'AED',
+            'method' => 'bank',
+            'occurred_at' => now()->subHour(),
+        ]);
     }
 
     protected function tearDown(): void
     {
+        Schema::dropIfExists('registration_payment_entries');
         Schema::dropIfExists('registrations');
         Schema::dropIfExists('registration_categories');
         Schema::dropIfExists('hash_mappings');
@@ -195,6 +262,7 @@ class AdminReportsTest extends TestCase
             ->assertSee('data-testid="reports-index-page"', false)
             ->assertSee('data-testid="reports-card-categories"', false)
             ->assertSee('data-testid="reports-card-payments"', false)
+            ->assertSee('data-testid="reports-card-payment-status"', false)
             ->assertSee('data-testid="reports-card-questions"', false);
 
         $this->actingAsAdmin()
@@ -204,7 +272,7 @@ class AdminReportsTest extends TestCase
             ->assertSee('data-testid="reports-categories-charts"', false)
             ->assertSee('VIP Pass')
             ->assertSee('Guest Pass')
-            ->assertSee('1,995.00');
+            ->assertSee('3,045.00');
     }
 
     #[Test]
@@ -234,5 +302,36 @@ class AdminReportsTest extends TestCase
 
         $this->assertStringContainsString('Paid', $paymentsCsv);
         $this->assertStringContainsString('Pending', $paymentsCsv);
+    }
+
+    #[Test]
+    public function payment_status_detail_report_groups_registrations_with_paid_and_pending_amounts(): void
+    {
+        $this->actingAsAdmin()
+            ->get(route('admin.reports.payment-status'))
+            ->assertOk()
+            ->assertSee('data-testid="reports-payment-status-page"', false)
+            ->assertSee('data-testid="reports-payment-status-group-paid"', false)
+            ->assertSee('data-testid="reports-payment-status-group-pending"', false)
+            ->assertSee('data-testid="reports-payment-status-group-partially_paid"', false)
+            ->assertSee('Paid User')
+            ->assertSee('Pending User')
+            ->assertSee('Partial User')
+            ->assertSee('+971 50 111 1111')
+            ->assertSee('+971 50 222 2222')
+            ->assertSee('+971 50 333 3333')
+            ->assertSee('VIP Pass')
+            ->assertSee('500.00')
+            ->assertSee('550.00');
+
+        $csv = $this->actingAsAdmin()
+            ->get(route('admin.reports.payment-status.export'))
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertStringContainsString('Payment status', $csv);
+        $this->assertStringContainsString('Partial User', $csv);
+        $this->assertStringContainsString('Partially Paid', $csv);
+        $this->assertStringContainsString('500.00', $csv);
     }
 }

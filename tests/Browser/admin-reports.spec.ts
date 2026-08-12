@@ -32,6 +32,10 @@ test('reports menu opens category, payments, and custom questions reports', asyn
     await expect(page.getByTestId('reports-payments-page')).toBeVisible();
     await expect(page.getByTestId('reports-payments-summary')).toBeVisible();
 
+    await page.goto('/admin/reports/payment-status');
+    await expect(page.getByTestId('reports-payment-status-page')).toBeVisible();
+    await expect(page.getByTestId('reports-payment-status-summary')).toBeVisible();
+
     await page.goto('/admin/reports/questions');
     await expect(page.getByTestId('reports-questions-page')).toBeVisible();
     await expect(page.getByTestId('reports-questions-summary')).toBeVisible();

@@ -46,6 +46,18 @@ class ReportsController extends Controller
         ]);
     }
 
+    public function paymentStatus(Request $request): View
+    {
+        [$from, $to] = $this->rangeFromRequest($request);
+        $report = $this->reports->paymentStatusDetailReport($from, $to);
+
+        return view('admin.reports.payment-status', [
+            'report' => $report,
+            'from' => $report['from'],
+            'to' => $report['to'],
+        ]);
+    }
+
     public function questions(Request $request): View
     {
         [$from, $to] = $this->rangeFromRequest($request);
@@ -74,6 +86,16 @@ class ReportsController extends Controller
         $report = $this->reports->paymentsReport($from, $to);
         $csv = $this->reports->paymentsReportCsv($report);
         $filename = 'payments-report-'.$report['from'].'-to-'.$report['to'].'.csv';
+
+        return $this->csvDownload($filename, $csv);
+    }
+
+    public function exportPaymentStatus(Request $request): StreamedResponse
+    {
+        [$from, $to] = $this->rangeFromRequest($request);
+        $report = $this->reports->paymentStatusDetailReport($from, $to);
+        $csv = $this->reports->paymentStatusDetailReportCsv($report);
+        $filename = 'payment-status-report-'.$report['from'].'-to-'.$report['to'].'.csv';
 
         return $this->csvDownload($filename, $csv);
     }

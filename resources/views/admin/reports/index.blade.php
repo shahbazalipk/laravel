@@ -8,7 +8,7 @@
     <p class="mt-2 text-gray-600">Registration insights by category, payments, custom questions, and more.</p>
 </div>
 
-<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-2">
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
     <a href="{{ route('admin.reports.categories') }}"
        class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-indigo-300 hover:shadow-md"
        data-testid="reports-card-categories">
@@ -33,6 +33,19 @@
         <h2 class="text-lg font-semibold text-gray-900">Payments report</h2>
         <p class="mt-2 text-sm text-gray-600">Collected vs pending revenue, payment status mix, methods, and daily payment trends.</p>
         <span class="mt-4 inline-flex items-center text-sm font-medium text-emerald-700">Open report →</span>
+    </a>
+
+    <a href="{{ route('admin.reports.payment-status') }}"
+       class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-violet-300 hover:shadow-md"
+       data-testid="reports-card-payment-status">
+        <div class="mb-4 inline-flex rounded-xl bg-violet-50 p-3 text-violet-700 group-hover:bg-violet-100">
+            <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-900">Payment status</h2>
+        <p class="mt-2 text-sm text-gray-600">Name, phone, category, total price, paid, and pending amounts grouped by payment status.</p>
+        <span class="mt-4 inline-flex items-center text-sm font-medium text-violet-700">Open report →</span>
     </a>
 
     <a href="{{ route('admin.reports.questions') }}"

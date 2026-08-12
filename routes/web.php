@@ -514,6 +514,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('reports/categories/export', [ReportsController::class, 'exportCategories'])->name('reports.categories.export');
         Route::get('reports/payments', [ReportsController::class, 'payments'])->name('reports.payments');
         Route::get('reports/payments/export', [ReportsController::class, 'exportPayments'])->name('reports.payments.export');
+        Route::get('reports/payment-status', [ReportsController::class, 'paymentStatus'])->name('reports.payment-status');
+        Route::get('reports/payment-status/export', [ReportsController::class, 'exportPaymentStatus'])->name('reports.payment-status.export');
         Route::get('reports/questions', [ReportsController::class, 'questions'])->name('reports.questions');
         Route::get('reports/questions/export', [ReportsController::class, 'exportQuestions'])->name('reports.questions.export');
 

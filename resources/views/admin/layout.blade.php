@@ -224,6 +224,7 @@
                                 <a href="{{ route('admin.reports.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-index">All Reports</a>
                                 <a href="{{ route('admin.reports.categories') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-categories">Category Report</a>
                                 <a href="{{ route('admin.reports.payments') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-payments">Payments Report</a>
+                                <a href="{{ route('admin.reports.payment-status') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-payment-status">Payment Status</a>
                                 <a href="{{ route('admin.reports.questions') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50" data-testid="nav-reports-questions">Custom Questions</a>
                                 <a href="{{ route('admin.registrations.export-page') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50">Registration Export</a>
                             </div>
@@ -438,6 +439,7 @@
                 <a href="{{ route('admin.reports.index') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">All Reports</a>
                 <a href="{{ route('admin.reports.categories') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Category Report</a>
                 <a href="{{ route('admin.reports.payments') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Payments Report</a>
+                <a href="{{ route('admin.reports.payment-status') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Payment Status</a>
                 <a href="{{ route('admin.reports.questions') }}" class="block px-3 py-2 rounded text-sm hover:bg-indigo-700">Custom Questions</a>
                 
                 <div class="border-t border-indigo-700 my-2"></div>

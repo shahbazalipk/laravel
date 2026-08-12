@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
+use App\Payments\Enums\RegistrationPaymentSummaryStatus;
+use App\Payments\Services\RegistrationPaymentTotals;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -12,6 +14,9 @@ use Illuminate\Support\Facades\Schema;
 
 class RegistrationReportService
 {
+    public function __construct(
+        private RegistrationPaymentTotals $paymentTotals,
+    ) {}
     /**
      * @return array{
      *   from: string,
@@ -229,6 +234,158 @@ class RegistrationReportService
             'daily' => $daily,
             'top_categories' => $topCategories,
         ];
+    }
+
+    /**
+     * @return array{
+     *   from: string,
+     *   to: string,
+     *   currency: string,
+     *   totals: array{
+     *     registrations: int,
+     *     total_price: float,
+     *     paid: float,
+     *     pending: float
+     *   },
+     *   groups: list<array{
+     *     status: string,
+     *     label: string,
+     *     badge_classes: string,
+     *     count: int,
+     *     total_price: float,
+     *     paid: float,
+     *     pending: float,
+     *     rows: list<array{
+     *       registration_id: int,
+     *       registration_number: string|null,
+     *       name: string,
+     *       phone: string,
+     *       category_name: string,
+     *       total_price: float,
+     *       paid: float,
+     *       pending: float,
+     *       currency: string,
+     *       payment_status: string,
+     *       payment_status_label: string,
+     *       show_url: string
+     *     }>
+     *   }>
+     * }
+     */
+    public function paymentStatusDetailReport(?CarbonInterface $from = null, ?CarbonInterface $to = null): array
+    {
+        [$from, $to] = $this->normalizeRange($from, $to);
+
+        $registrations = $this->registrationsQuery($from, $to)
+            ->with(['registrationCategory', 'paymentEntries'])
+            ->orderBy('created_at')
+            ->get();
+
+        $rows = $registrations->map(function (Registration $registration): array {
+            $payment = $this->paymentTotals->calculate($registration);
+
+            return [
+                'registration_id' => (int) $registration->id,
+                'registration_number' => $registration->registration_number,
+                'name' => trim((string) $registration->full_name) ?: '—',
+                'phone' => filled($registration->phone)
+                    ? (string) $registration->phone
+                    : (filled($registration->mobile_phone) ? (string) $registration->mobile_phone : '—'),
+                'category_name' => $registration->registrationCategory?->name ?? 'Unassigned',
+                'total_price' => $payment['registration_total'],
+                'paid' => $payment['net_paid'],
+                'pending' => $payment['balance_due'],
+                'currency' => $payment['currency'],
+                'payment_status' => $payment['summary_status']->value,
+                'payment_status_label' => $payment['summary_status']->label(),
+                'show_url' => route('admin.registrations.show', $registration),
+            ];
+        });
+
+        $statusOrder = collect(RegistrationPaymentSummaryStatus::cases())
+            ->mapWithKeys(fn (RegistrationPaymentSummaryStatus $status, int $index) => [$status->value => $index]);
+
+        $groups = $rows
+            ->groupBy('payment_status')
+            ->map(function (Collection $groupRows, string $status) {
+                $summaryStatus = RegistrationPaymentSummaryStatus::from($status);
+
+                return [
+                    'status' => $status,
+                    'label' => $summaryStatus->label(),
+                    'badge_classes' => $summaryStatus->badgeClasses(),
+                    'count' => $groupRows->count(),
+                    'total_price' => round((float) $groupRows->sum('total_price'), 2),
+                    'paid' => round((float) $groupRows->sum('paid'), 2),
+                    'pending' => round((float) $groupRows->sum('pending'), 2),
+                    'rows' => $groupRows->values()->all(),
+                ];
+            })
+            ->sortBy(fn (array $group) => $statusOrder[$group['status']] ?? 999)
+            ->values()
+            ->all();
+
+        $currency = $rows->pluck('currency')->filter()->first() ?: $this->defaultCurrency();
+
+        return [
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'currency' => $currency,
+            'totals' => [
+                'registrations' => $rows->count(),
+                'total_price' => round((float) $rows->sum('total_price'), 2),
+                'paid' => round((float) $rows->sum('paid'), 2),
+                'pending' => round((float) $rows->sum('pending'), 2),
+            ],
+            'groups' => $groups,
+        ];
+    }
+
+    /**
+     * @param  array{from: string, to: string, currency: string, totals: array<string, mixed>, groups: list<array<string, mixed>>}  $report
+     */
+    public function paymentStatusDetailReportCsv(array $report): string
+    {
+        $lines = [];
+        $lines[] = $this->csvLine([
+            'Payment status',
+            'Registration #',
+            'Name',
+            'Phone',
+            'Category',
+            'Total price',
+            'Paid',
+            'Pending',
+            'Currency',
+        ]);
+
+        foreach ($report['groups'] as $group) {
+            foreach ($group['rows'] as $row) {
+                $lines[] = $this->csvLine([
+                    $group['label'],
+                    $row['registration_number'] ?? '',
+                    $row['name'],
+                    $row['phone'],
+                    $row['category_name'],
+                    number_format($row['total_price'], 2, '.', ''),
+                    number_format($row['paid'], 2, '.', ''),
+                    number_format($row['pending'], 2, '.', ''),
+                    $row['currency'],
+                ]);
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = $this->csvLine(['Summary', 'Value']);
+        $lines[] = $this->csvLine(['From', $report['from']]);
+        $lines[] = $this->csvLine(['To', $report['to']]);
+        $lines[] = $this->csvLine(['Registrations', $report['totals']['registrations']]);
+        $lines[] = $this->csvLine(['Total price', number_format($report['totals']['total_price'], 2, '.', '')]);
+        $lines[] = $this->csvLine(['Paid', number_format($report['totals']['paid'], 2, '.', '')]);
+        $lines[] = $this->csvLine(['Pending', number_format($report['totals']['pending'], 2, '.', '')]);
+        $lines[] = $this->csvLine(['Currency', $report['currency']]);
+
+        return implode("\n", $lines)."\n";
     }
 
     /**
