@@ -21,10 +21,20 @@ class PurgeRegistration
      */
     public function execute(Registration $registration): void
     {
-        $files = array_filter([
-            $registration->profile_picture,
-            $registration->professional_id_document_path,
-        ]);
+        $noteImages = $registration->registrationNotes()
+            ->withTrashed()
+            ->pluck('image_path')
+            ->filter()
+            ->values()
+            ->all();
+
+        $files = array_merge(
+            array_filter([
+                $registration->profile_picture,
+                $registration->professional_id_document_path,
+            ]),
+            $noteImages
+        );
 
         DB::transaction(function () use ($registration): void {
             $registration->refresh();

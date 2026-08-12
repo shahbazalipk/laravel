@@ -257,6 +257,7 @@ class RegistrationController extends Controller
             'industry',
             'businessActivity',
             'paymentEntries',
+            'registrationNotes',
             'event',
             'customFormResponses' => fn ($query) => $query
                 ->where('status', 'submitted')

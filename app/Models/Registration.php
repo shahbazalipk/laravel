@@ -6,6 +6,7 @@ use App\Forms\Models\CustomFormResponse;
 use App\Traits\HasEventScope;
 use App\Traits\HasHashedRoutes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -141,6 +142,11 @@ class Registration extends Model
     public function businessActivity()
     {
         return $this->belongsTo(BusinessActivity::class);
+    }
+
+    public function registrationNotes(): HasMany
+    {
+        return $this->hasMany(RegistrationNote::class)->latest();
     }
 
     public function paymentEntries()

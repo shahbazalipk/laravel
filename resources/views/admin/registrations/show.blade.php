@@ -255,6 +255,8 @@
         ])
 
         @include('admin.registrations.partials.payment-history')
+
+        @include('admin.registrations.partials.notes')
     </div>
 
     <!-- Sidebar -->

@@ -486,6 +486,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('registrations/{registration}/payments/{payment}/reverse', [RegistrationPaymentController::class, 'reverse'])
             ->name('registrations.payments.reverse');
 
+        // Registration notes
+        Route::post('registrations/{registration}/notes', [\App\Http\Controllers\Admin\RegistrationNoteController::class, 'store'])
+            ->name('registrations.notes.store');
+        Route::delete('registrations/{registration}/notes/{note}', [\App\Http\Controllers\Admin\RegistrationNoteController::class, 'destroy'])
+            ->name('registrations.notes.destroy');
+
         // Check-in
         Route::get('registrations-checkin', [AdminRegistrationController::class, 'showCheckin'])
             ->name('registrations.checkin');
