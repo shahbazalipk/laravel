@@ -17,6 +17,8 @@ class EventUrl extends Model
         'type',
         'registration_format',
         'is_active',
+        'expires_at',
+        'registration_closed_message',
         'enabled_categories',
         'allow_reprint',
         'allow_print_from_photo',
@@ -28,6 +30,7 @@ class EventUrl extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'expires_at' => 'datetime',
         'allow_reprint' => 'boolean',
         'allow_print_from_photo' => 'boolean',
         'enable_barcode_scanner' => 'boolean',
@@ -40,6 +43,25 @@ class EventUrl extends Model
     {
         return $this->type === 'online'
             && ($this->registration_format ?? RegistrationFormat::MultiStep) === RegistrationFormat::SinglePage;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at !== null && now()->greaterThan($this->expires_at);
+    }
+
+    public function isRegistrationOpen(): bool
+    {
+        return $this->is_active && ! $this->isExpired();
+    }
+
+    public function registrationClosedMessage(): string
+    {
+        if ($this->registration_closed_message) {
+            return $this->registration_closed_message;
+        }
+
+        return 'Registration for this link is now closed.';
     }
 
     /**

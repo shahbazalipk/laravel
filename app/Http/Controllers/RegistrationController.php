@@ -31,12 +31,19 @@ class RegistrationController extends Controller
         $allowedCategories = null;
 
         if ($slug) {
-            $eventUrl = \App\Models\EventUrl::where('slug', $slug)
-                ->where('is_active', true)
-                ->first();
+            $context = app(\App\Registration\Services\OnlineRegistrationContext::class);
+            $eventUrl = $context->findEventUrl($slug, $event);
 
             if (! $eventUrl) {
                 abort(404, 'Registration URL not found or inactive');
+            }
+
+            if (! $eventUrl->isRegistrationOpen()) {
+                return view('event.registration-closed', [
+                    'event' => $event,
+                    'eventUrl' => $eventUrl,
+                    'closedMessage' => $eventUrl->registrationClosedMessage(),
+                ]);
             }
 
             // Get allowed categories for this URL

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration Closed - {{ $event->title }}</title>
+    <title>Registration Closed{{ $event ? ' - '.$event->title : '' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
@@ -11,7 +11,7 @@
         <div class="max-w-2xl w-full">
             <!-- Header -->
             <div class="text-center mb-8">
-                @if($event->logo)
+                @if($event?->logo)
                     <img src="{{ storage_public_url($event->logo) }}" alt="{{ $event->title }}" class="h-20 mx-auto mb-6">
                 @endif
                 <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
@@ -20,14 +20,19 @@
                     </svg>
                 </div>
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Registration Closed</h1>
-                <p class="text-lg text-gray-600">{{ $event->title }}</p>
+                @if($event)
+                    <p class="text-lg text-gray-600">{{ $event->title }}</p>
+                @endif
             </div>
 
             <!-- Closed Message Card -->
             <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-                @if($event->closed_message)
+                @php
+                    $displayMessage = $closedMessage ?? ($event?->closed_message);
+                @endphp
+                @if($displayMessage)
                     <div class="prose prose-lg max-w-none text-gray-700">
-                        {!! nl2br(e($event->closed_message)) !!}
+                        {!! nl2br(e($displayMessage)) !!}
                     </div>
                 @else
                     <div class="text-center">
@@ -62,6 +67,7 @@
             </div>
 
             <!-- Event Information -->
+            @if($event)
             <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4">Event Information</h2>
                 <div class="space-y-4">
@@ -126,9 +132,10 @@
                     @endif
                 </div>
             </div>
+            @endif
 
             <!-- Contact Information -->
-            @if($event->manager_email || $event->manager_phone)
+            @if($event && ($event->manager_email || $event->manager_phone))
             <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-indigo-900 mb-3">Have Questions?</h3>
                 <p class="text-sm text-indigo-800 mb-3">
@@ -168,6 +175,7 @@
             @endif
 
             <!-- Action Buttons -->
+            @if($event)
             <div class="text-center space-y-3">
                 @if($event->website)
                 <a href="{{ $event->website }}" class="block w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center">
@@ -181,6 +189,7 @@
                 </a>
                 @endif
             </div>
+            @endif
         </div>
     </div>
 </body>

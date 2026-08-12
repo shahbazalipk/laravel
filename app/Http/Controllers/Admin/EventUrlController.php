@@ -65,6 +65,7 @@ class EventUrlController extends Controller
 
         $validated = $request->validate($this->rules());
         $validated = $this->normalizeRegistrationFormat($validated);
+        $validated = $this->normalizeExpiryFields($validated);
 
         $validated['event_id'] = $eventId;
         $validated['organization_id'] = $organizationId;
@@ -112,6 +113,7 @@ class EventUrlController extends Controller
         $this->assertCurrentTenant($eventUrl);
         $validated = $request->validate($this->rules($eventUrl));
         $validated = $this->normalizeRegistrationFormat($validated);
+        $validated = $this->normalizeExpiryFields($validated);
 
         $validated['is_active'] = $request->has('is_active');
         $validated['allow_reprint'] = $request->has('allow_reprint');
@@ -160,6 +162,8 @@ class EventUrlController extends Controller
             'type' => ['required', Rule::in(['online', 'onsite', 'exhibitors', 'groups', 'badge'])],
             'registration_format' => ['nullable', Rule::enum(RegistrationFormat::class)],
             'is_active' => ['sometimes', 'boolean'],
+            'expires_at' => ['nullable', 'date'],
+            'registration_closed_message' => ['nullable', 'string', 'max:5000'],
             'enabled_categories' => ['nullable', 'array'],
             'enabled_categories.*' => [
                 Rule::exists('registration_categories', 'id')
@@ -209,6 +213,19 @@ class EventUrlController extends Controller
 
         $validated['registration_format'] = $validated['registration_format']
             ?? RegistrationFormat::MultiStep->value;
+
+        return $validated;
+    }
+
+    private function normalizeExpiryFields(array $validated): array
+    {
+        if (array_key_exists('expires_at', $validated) && blank($validated['expires_at'])) {
+            $validated['expires_at'] = null;
+        }
+
+        if (array_key_exists('registration_closed_message', $validated) && blank($validated['registration_closed_message'])) {
+            $validated['registration_closed_message'] = null;
+        }
 
         return $validated;
     }

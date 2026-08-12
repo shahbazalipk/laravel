@@ -44,6 +44,20 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->renderable(function (\App\Registration\Exceptions\RegistrationUrlClosedException $exception, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $exception->closedMessage(),
+                ], 403);
+            }
+
+            return response()->view('event.registration-closed', [
+                'event' => $exception->event,
+                'eventUrl' => $exception->eventUrl,
+                'closedMessage' => $exception->closedMessage(),
+            ]);
+        });
+
         $exceptions->renderable(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
             $message = 'The uploaded photo or form data is too large for the server. Please use a smaller image (under 2MB) and try again.';
 

@@ -23,12 +23,7 @@ abstract class WizardController extends Controller
 
     protected function bootContext(string $slug): array
     {
-        try {
-            $event = $this->context->resolveEvent();
-        } catch (InvalidArgumentException $exception) {
-            abort(403, $exception->getMessage());
-        }
-
+        $event = $this->context->resolveEvent();
         $eventUrl = $this->context->resolveEventUrl($slug, $event);
 
         return [$event, $eventUrl];

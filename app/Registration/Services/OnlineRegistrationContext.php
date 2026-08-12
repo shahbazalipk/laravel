@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\EventUrl;
 use App\Models\Industry;
 use App\Models\RegistrationCategory;
+use App\Registration\Exceptions\RegistrationUrlClosedException;
 use App\Services\RegistrationService;
 use Illuminate\Database\Eloquent\Collection;
 use InvalidArgumentException;
@@ -21,11 +22,11 @@ class OnlineRegistrationContext
         $event = Event::getCurrentEvent();
 
         if (!$event || !$event->registration_form_active) {
-            throw new InvalidArgumentException('Registration is currently closed.');
+            throw new RegistrationUrlClosedException($event);
         }
 
         if ($event->online_reg_close && now()->greaterThan($event->online_reg_close)) {
-            throw new InvalidArgumentException('Online registration has closed for this event.');
+            throw new RegistrationUrlClosedException($event, null, 'Online registration has closed for this event.');
         }
 
         return $event;
@@ -33,9 +34,22 @@ class OnlineRegistrationContext
 
     public function resolveEventUrl(string $slug, Event $event): EventUrl
     {
-        $query = EventUrl::query()
-            ->where('slug', $slug)
-            ->where('is_active', true);
+        $eventUrl = $this->findEventUrl($slug, $event);
+
+        if (!$eventUrl) {
+            abort(404, 'Registration URL not found or inactive');
+        }
+
+        if (!$eventUrl->isRegistrationOpen()) {
+            throw new RegistrationUrlClosedException($event, $eventUrl);
+        }
+
+        return $eventUrl;
+    }
+
+    public function findEventUrl(string $slug, Event $event): ?EventUrl
+    {
+        $query = EventUrl::query()->where('slug', $slug);
 
         $eventUrl = (clone $query)
             ->where('event_id', $event->id)
@@ -48,12 +62,12 @@ class OnlineRegistrationContext
         }
 
         if (!$eventUrl) {
-            abort(404, 'Registration URL not found or inactive');
+            return null;
         }
 
         $orgId = $event->organization_id ?? $event->org_id ?? null;
         if ($orgId && $eventUrl->organization_id && (int) $eventUrl->organization_id !== (int) $orgId) {
-            abort(404, 'Registration URL not found or inactive');
+            return null;
         }
 
         return $eventUrl;

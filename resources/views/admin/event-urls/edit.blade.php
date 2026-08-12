@@ -102,6 +102,38 @@
             </div>
         </div>
 
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="expires_at" class="block text-sm font-medium text-gray-700 mb-2">
+                    Expiry date
+                </label>
+                <input type="datetime-local"
+                       name="expires_at"
+                       id="expires_at"
+                       value="{{ old('expires_at', $eventUrl->expires_at?->format('Y-m-d\TH:i')) }}"
+                       class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <p class="mt-1 text-xs text-gray-500">After this date and time, visitors see the registration closed message instead of the form.</p>
+                @error('expires_at')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="registration_closed_message" class="block text-sm font-medium text-gray-700 mb-2">
+                    Registration closed message
+                </label>
+                <textarea name="registration_closed_message"
+                          id="registration_closed_message"
+                          rows="4"
+                          class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                          placeholder="Thank you for your interest. Registration for this link is now closed.">{{ old('registration_closed_message', $eventUrl->registration_closed_message) }}</textarea>
+                <p class="mt-1 text-xs text-gray-500">Shown when the URL is inactive or past its expiry date.</p>
+                @error('registration_closed_message')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+        </div>
+
         @php
             $selectedFormat = old(
                 'registration_format',
