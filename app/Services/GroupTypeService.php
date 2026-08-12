@@ -27,9 +27,12 @@ class GroupTypeService
 
         $groupType = GroupType::create($data);
 
-        $this->auditService->log('group_type_created', GroupType::class, $groupType->id, [
-            'name' => $groupType->name,
-        ]);
+        $this->auditService->log(
+            'created',
+            $groupType,
+            ['name' => $groupType->name],
+            "Created group type: {$groupType->name}"
+        );
 
         return $groupType;
     }
@@ -44,19 +47,24 @@ class GroupTypeService
 
         $groupType->update($data);
 
-        $this->auditService->log('group_type_updated', GroupType::class, $groupType->id, [
-            'old' => $oldData,
-            'new' => $groupType->fresh()->toArray(),
-        ]);
+        $this->auditService->log(
+            'updated',
+            $groupType,
+            ['old' => $oldData, 'new' => $groupType->fresh()->toArray()],
+            "Updated group type: {$groupType->name}"
+        );
 
         return $groupType;
     }
 
     public function deleteGroupType(GroupType $groupType): bool
     {
-        $this->auditService->log('group_type_deleted', GroupType::class, $groupType->id, [
-            'name' => $groupType->name,
-        ]);
+        $this->auditService->log(
+            'deleted',
+            $groupType,
+            ['name' => $groupType->name],
+            "Deleted group type: {$groupType->name}"
+        );
 
         return $groupType->delete();
     }
@@ -66,9 +74,12 @@ class GroupTypeService
         $groupType->is_active = !$groupType->is_active;
         $groupType->save();
 
-        $this->auditService->log('group_type_toggled', GroupType::class, $groupType->id, [
-            'is_active' => $groupType->is_active,
-        ]);
+        $this->auditService->log(
+            'toggled',
+            $groupType,
+            ['is_active' => $groupType->is_active],
+            "Toggled group type active status: {$groupType->name}"
+        );
 
         return $groupType;
     }

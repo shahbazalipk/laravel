@@ -33,9 +33,12 @@ class GroupService
             $group->tags()->sync($tags);
         }
 
-        $this->auditService->log('group_created', Group::class, $group->id, [
-            'group_name' => $group->group_name,
-        ]);
+        $this->auditService->log(
+            'created',
+            $group,
+            ['group_name' => $group->group_name],
+            "Created group: {$group->group_name}"
+        );
 
         return $group->load(['groupType', 'industry', 'tags']);
     }
@@ -53,19 +56,24 @@ class GroupService
         // Sync tags
         $group->tags()->sync($tags);
 
-        $this->auditService->log('group_updated', Group::class, $group->id, [
-            'old' => $oldData,
-            'new' => $group->fresh()->toArray(),
-        ]);
+        $this->auditService->log(
+            'updated',
+            $group,
+            ['old' => $oldData, 'new' => $group->fresh()->toArray()],
+            "Updated group: {$group->group_name}"
+        );
 
         return $group->load(['groupType', 'industry', 'tags']);
     }
 
     public function deleteGroup(Group $group): bool
     {
-        $this->auditService->log('group_deleted', Group::class, $group->id, [
-            'group_name' => $group->group_name,
-        ]);
+        $this->auditService->log(
+            'deleted',
+            $group,
+            ['group_name' => $group->group_name],
+            "Deleted group: {$group->group_name}"
+        );
 
         return $group->delete();
     }
@@ -75,9 +83,12 @@ class GroupService
         $group->is_active = !$group->is_active;
         $group->save();
 
-        $this->auditService->log('group_toggled', Group::class, $group->id, [
-            'is_active' => $group->is_active,
-        ]);
+        $this->auditService->log(
+            'toggled',
+            $group,
+            ['is_active' => $group->is_active],
+            "Toggled group active status: {$group->group_name}"
+        );
 
         return $group;
     }
@@ -87,9 +98,12 @@ class GroupService
         $group->is_vip = !$group->is_vip;
         $group->save();
 
-        $this->auditService->log('group_vip_toggled', Group::class, $group->id, [
-            'is_vip' => $group->is_vip,
-        ]);
+        $this->auditService->log(
+            'toggled',
+            $group,
+            ['is_vip' => $group->is_vip],
+            "Toggled group VIP status: {$group->group_name}"
+        );
 
         return $group;
     }
