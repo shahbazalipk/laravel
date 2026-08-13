@@ -10,7 +10,7 @@ class CustomFormAnswerFileController extends Controller
 {
     public function __invoke(CustomFormAnswerFile $file)
     {
-        $file->loadMissing('answer.response');
+        $file->loadMissing('answer.response.respondent');
         $response = $file->answer?->response;
 
         abort_unless(
@@ -24,6 +24,6 @@ class CustomFormAnswerFileController extends Controller
 
         abort_unless(Storage::disk($file->disk)->exists($file->path), 404);
 
-        return Storage::disk($file->disk)->download($file->path, $file->original_name);
+        return Storage::disk($file->disk)->download($file->path, $file->downloadName());
     }
 }
