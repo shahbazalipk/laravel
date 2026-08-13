@@ -477,6 +477,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Registrations Management
         Route::resource('registrations', AdminRegistrationController::class);
+        Route::post('registrations-views', [\App\Http\Controllers\Admin\RegistrationSavedViewController::class, 'store'])
+            ->name('registrations.views.store');
+        Route::get('registrations-views/export', [\App\Http\Controllers\Admin\RegistrationSavedViewController::class, 'export'])
+            ->name('registrations.views.export');
+        Route::put('registrations-views/{view}', [\App\Http\Controllers\Admin\RegistrationSavedViewController::class, 'update'])
+            ->name('registrations.views.update');
+        Route::delete('registrations-views/{view}', [\App\Http\Controllers\Admin\RegistrationSavedViewController::class, 'destroy'])
+            ->name('registrations.views.destroy');
         Route::get('registration-drafts/{draft}', [RegistrationDraftController::class, 'show'])
             ->name('registration-drafts.show');
         Route::delete('registration-drafts/{draft}', [RegistrationDraftController::class, 'destroy'])

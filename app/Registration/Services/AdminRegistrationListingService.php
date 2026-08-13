@@ -19,25 +19,27 @@ class AdminRegistrationListingService
 
     /**
      * @param  array<string, mixed>  $filters
+     * @param  array<int, string>  $columnKeys
      * @return LengthAwarePaginator<int, AdminRegistrationListItem>
      */
-    public function paginate(array $filters = [], int $perPage = 50): LengthAwarePaginator
+    public function paginate(array $filters = [], int $perPage = 50, array $columnKeys = []): LengthAwarePaginator
     {
         $stage = $filters['stage'] ?? 'all';
         $page = max(1, (int) request()->input('page', 1));
         $hasStepFilter = !empty($filters['abandoned_step']);
+        $withCustomAnswers = $this->needsCustomAnswers($columnKeys);
 
         if ($stage === 'registered' && !$hasStepFilter) {
-            return $this->paginateRegistrations($filters, $perPage);
+            return $this->paginateRegistrations($filters, $perPage, $withCustomAnswers);
         }
 
         if ($stage === 'registered') {
             $items = collect();
         } elseif ($stage === 'draft' || $hasStepFilter) {
-            $items = $this->draftItems($filters);
+            $items = $this->draftItems($filters, $withCustomAnswers);
         } else {
-            $items = $this->draftItems($filters)
-                ->concat($this->registrationItems($filters))
+            $items = $this->draftItems($filters, $withCustomAnswers)
+                ->concat($this->registrationItems($filters, $withCustomAnswers))
                 ->sortByDesc(fn (AdminRegistrationListItem $item) => $item->createdAt->getTimestamp())
                 ->values();
         }
@@ -59,6 +61,35 @@ class AdminRegistrationListingService
 
     /**
      * @param  array<string, mixed>  $filters
+     * @param  array<int, string>  $columnKeys
+     * @return Collection<int, AdminRegistrationListItem>
+     */
+    public function all(array $filters = [], array $columnKeys = []): Collection
+    {
+        $stage = $filters['stage'] ?? 'all';
+        $hasStepFilter = ! empty($filters['abandoned_step']);
+        $withCustomAnswers = $this->needsCustomAnswers($columnKeys);
+
+        if ($stage === 'registered' && ! $hasStepFilter) {
+            return $this->registrationItems($filters, $withCustomAnswers);
+        }
+
+        if ($stage === 'registered') {
+            return collect();
+        }
+
+        if ($stage === 'draft' || $hasStepFilter) {
+            return $this->draftItems($filters, $withCustomAnswers);
+        }
+
+        return $this->draftItems($filters, $withCustomAnswers)
+            ->concat($this->registrationItems($filters, $withCustomAnswers))
+            ->sortByDesc(fn (AdminRegistrationListItem $item) => $item->createdAt->getTimestamp())
+            ->values();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
      * @return array<string, int>
      */
     public function statistics(array $filters = []): array
@@ -73,9 +104,14 @@ class AdminRegistrationListingService
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, AdminRegistrationListItem>
      */
-    private function paginateRegistrations(array $filters, int $perPage): LengthAwarePaginator
+    private function paginateRegistrations(array $filters, int $perPage, bool $withCustomAnswers = false): LengthAwarePaginator
     {
         $paginator = $this->registrations->getAllRegistrations($this->registrationFilters($filters));
+
+        if ($withCustomAnswers) {
+            $paginator->getCollection()->load($this->customAnswerRelations());
+        }
+
         $paginator->setCollection(
             $paginator->getCollection()->map(
                 fn (Registration $registration) => AdminRegistrationListItem::fromRegistration($registration)
@@ -89,17 +125,23 @@ class AdminRegistrationListingService
      * @param  array<string, mixed>  $filters
      * @return Collection<int, AdminRegistrationListItem>
      */
-    private function registrationItems(array $filters): Collection
+    private function registrationItems(array $filters, bool $withCustomAnswers = false): Collection
     {
         $registrationFilters = $this->registrationFilters($filters);
-        $query = Registration::with([
+        $relations = [
             'registrationCategory',
             'registrationStatus',
             'exhibitor',
             'group',
             'industry',
             'businessActivity',
-        ]);
+        ];
+
+        if ($withCustomAnswers) {
+            $relations = array_merge($relations, $this->customAnswerRelations());
+        }
+
+        $query = Registration::with($relations);
 
         if (!empty($registrationFilters['category_id'])) {
             $query->where('registration_category_id', $registrationFilters['category_id']);
@@ -137,13 +179,17 @@ class AdminRegistrationListingService
      * @param  array<string, mixed>  $filters
      * @return Collection<int, AdminRegistrationListItem>
      */
-    private function draftItems(array $filters): Collection
+    private function draftItems(array $filters, bool $withCustomAnswers = false): Collection
     {
         if ($this->excludesDraftsDueToFilters($filters)) {
             return collect();
         }
 
-        $drafts = $this->activeDraftsQuery()->orderByDesc('created_at')->get();
+        $query = $this->activeDraftsQuery()->orderByDesc('created_at');
+        if ($withCustomAnswers) {
+            $query->with($this->customAnswerRelations());
+        }
+        $drafts = $query->get();
         $search = strtolower(trim((string) ($filters['search'] ?? '')));
         $categoryFilter = !empty($filters['category_id']) ? (int) $filters['category_id'] : null;
         $stepFilter = trim((string) ($filters['abandoned_step'] ?? ''));
@@ -228,5 +274,34 @@ class AdminRegistrationListingService
             ->except('stage', 'abandoned_step')
             ->filter(fn ($value) => $value !== null && $value !== '')
             ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $columnKeys
+     */
+    private function needsCustomAnswers(array $columnKeys): bool
+    {
+        foreach ($columnKeys as $key) {
+            if (str_starts_with((string) $key, 'q:')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function customAnswerRelations(): array
+    {
+        return [
+            'customFormResponses' => fn ($query) => $query
+                ->where('status', 'submitted')
+                ->with([
+                    'answers.files',
+                    'answers.question.options',
+                ]),
+        ];
     }
 }

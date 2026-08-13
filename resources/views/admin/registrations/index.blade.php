@@ -18,6 +18,8 @@
     </a>
 </div>
 
+@include('admin.registrations.partials.saved-views')
+
 <!-- Statistics Cards -->
 <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
     <div class="bg-white rounded-lg shadow-sm p-6">
@@ -94,6 +96,9 @@
 <!-- Filters -->
 <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
     <form method="GET" action="{{ route('admin.registrations.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7" data-testid="registrations-filters">
+        @if($activeView)
+            <input type="hidden" name="view" value="{{ $activeView->public_id }}">
+        @endif
         <div class="sm:col-span-2 lg:col-span-1">
             <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input type="text"
@@ -176,7 +181,7 @@
             <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                 Apply
             </button>
-            <a href="{{ route('admin.registrations.index') }}"
+            <a href="{{ route('admin.registrations.index', array_filter(['view' => $activeView?->public_id])) }}"
                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                aria-label="Clear filters">
                 Clear
@@ -200,61 +205,54 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                        @foreach($visibleColumns as $column)
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                data-testid="column-header-{{ $column['key'] }}">
+                                {{ $column['label'] }}
+                            </th>
+                        @endforeach
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($registrations as $row)
                     <tr class="hover:bg-gray-50 transition" data-testid="registration-row-{{ $row->kind }}" data-stage="{{ $row->stage }}">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ $row->reference }}</div>
-                            <div class="text-xs text-gray-500">{{ $row->createdAt->format('M d, Y') }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ $row->name }}</div>
-                            <div class="text-xs text-gray-500">{{ $row->company ?: '—' }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $row->email }}</div>
-                            <div class="text-xs text-gray-500">{{ $row->phone ?: '—' }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $row->categoryName ?: '—' }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($row->kind === 'draft')
-                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-violet-100 text-violet-800" data-testid="draft-stage-badge">
-                                    Draft
-                                </span>
-                                @if($row->isExpired)
-                                    <span class="mt-1 block px-2 py-0.5 inline-flex text-[11px] leading-4 font-semibold rounded-full bg-red-50 text-red-700">
-                                        Expired
-                                    </span>
+                        @foreach($visibleColumns as $column)
+                            <td class="px-6 py-4 text-sm text-gray-900 {{ str_starts_with($column['key'], 'q:') ? '' : 'whitespace-nowrap' }}">
+                                @if($column['key'] === 'std:reference')
+                                    <div class="font-medium text-gray-900">{{ $row->reference }}</div>
+                                    <div class="text-xs text-gray-500">{{ $row->createdAt->format('M d, Y') }}</div>
+                                @elseif($column['key'] === 'std:name')
+                                    <div class="font-medium text-gray-900">{{ $row->name }}</div>
+                                    <div class="text-xs text-gray-500">{{ $row->company ?: '—' }}</div>
+                                @elseif($column['key'] === 'std:email')
+                                    <div>{{ $row->email }}</div>
+                                    <div class="text-xs text-gray-500">{{ $row->phone ?: '—' }}</div>
+                                @elseif($column['key'] === 'std:stage')
+                                    @if($row->kind === 'draft')
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-violet-100 text-violet-800" data-testid="draft-stage-badge">Draft</span>
+                                        @if($row->isExpired)
+                                            <span class="mt-1 block px-2 py-0.5 inline-flex text-[11px] leading-4 font-semibold rounded-full bg-red-50 text-red-700">Expired</span>
+                                        @endif
+                                    @else
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">Registered</span>
+                                    @endif
+                                @elseif($column['key'] === 'std:payment')
+                                    @if($row->paymentStatus)
+                                        @php
+                                            $paymentSummaryStatus = \App\Payments\Enums\RegistrationPaymentSummaryStatus::tryFrom($row->paymentStatus);
+                                        @endphp
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $paymentSummaryStatus?->badgeClasses() ?? 'bg-gray-100 text-gray-800' }}">
+                                            {{ $paymentSummaryStatus?->label() ?? ucfirst(str_replace('_', ' ', $row->paymentStatus)) }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
+                                @else
+                                    <span class="max-w-xs truncate block" title="{{ $row->valueFor($column['key']) }}">{{ $row->valueFor($column['key']) }}</span>
                                 @endif
-                            @else
-                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
-                                    Registered
-                                </span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($row->paymentStatus)
-                                @php
-                                    $paymentSummaryStatus = \App\Payments\Enums\RegistrationPaymentSummaryStatus::tryFrom($row->paymentStatus);
-                                @endphp
-                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $paymentSummaryStatus?->badgeClasses() ?? 'bg-gray-100 text-gray-800' }}">
-                                    {{ $paymentSummaryStatus?->label() ?? ucfirst(str_replace('_', ' ', $row->paymentStatus)) }}
-                                </span>
-                            @else
-                                <span class="text-sm text-gray-400">—</span>
-                            @endif
-                        </td>
+                            </td>
+                        @endforeach
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end space-x-2">
                                 <a href="{{ $row->showUrl }}"

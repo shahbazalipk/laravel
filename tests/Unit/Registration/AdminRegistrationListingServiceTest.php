@@ -161,7 +161,7 @@ class AdminRegistrationListingServiceTest extends TestCase
         $drafts = $service->paginate(['stage' => 'draft']);
         $this->assertSame(1, $drafts->total());
         $this->assertSame('Draft', $drafts->first()->stage);
-        $this->assertSame('Step 2: Information', $drafts->first()->stepLabel);
+        $this->assertSame('Step 3: Information', $drafts->first()->stepLabel);
 
         $registered = $service->paginate(['stage' => 'registered']);
         $this->assertSame(1, $registered->total());
@@ -169,6 +169,11 @@ class AdminRegistrationListingServiceTest extends TestCase
 
         $stats = $service->statistics();
         $this->assertSame(1, $stats['drafts']);
+
+        $unpaged = $service->all(['stage' => 'all']);
+        $this->assertCount(2, $unpaged);
+        $this->assertTrue($unpaged->contains(fn ($row) => $row->kind === 'draft'));
+        $this->assertTrue($unpaged->contains(fn ($row) => $row->kind === 'registration'));
     }
 
     #[Test]
@@ -198,7 +203,7 @@ class AdminRegistrationListingServiceTest extends TestCase
 
         $this->assertSame(1, $results->total());
         $this->assertSame('category@example.com', $results->first()->email);
-        $this->assertSame('Step 3: Category', $results->first()->stepLabel);
+        $this->assertSame('Step 2: Category', $results->first()->stepLabel);
         $this->assertTrue($results->getCollection()->every(
             fn ($row) => $row->kind === 'draft'
         ));

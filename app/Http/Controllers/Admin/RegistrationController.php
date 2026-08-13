@@ -18,6 +18,8 @@ use App\Payments\Services\RecordRegistrationPayment;
 use App\Payments\Services\RegistrationPaymentTotals;
 use App\Registration\Enums\RegistrationWizardStep;
 use App\Registration\Services\AdminRegistrationListingService;
+use App\Registration\Services\RegistrationListColumnCatalog;
+use App\Registration\Services\RegistrationSavedViewService;
 use App\Services\PurgeRegistration;
 use App\Services\PromoCodeService;
 use App\Services\RegistrationService;
@@ -35,6 +37,8 @@ class RegistrationController extends Controller
         private AdminRegistrationListingService $listingService,
         private AudienceFormSubmissionService $audienceForms,
         private PromoCodeService $promoCodes,
+        private RegistrationSavedViewService $savedViews,
+        private RegistrationListColumnCatalog $columnCatalog,
     ) {
         $this->registrationService = $registrationService;
     }
@@ -55,7 +59,13 @@ class RegistrationController extends Controller
             'search' => $request->search,
         ];
 
-        $registrations = $this->listingService->paginate($filters);
+        $adminId = (int) session('admin_id');
+        $savedViewList = $this->savedViews->viewsFor($adminId);
+        $activeView = $this->savedViews->resolve($request->input('view'), $adminId);
+        $visibleColumns = $this->columnCatalog->resolve($activeView?->columns);
+        $visibleColumnKeys = array_column($visibleColumns, 'key');
+
+        $registrations = $this->listingService->paginate($filters, 50, $visibleColumnKeys);
 
         $categories = RegistrationCategory::where('is_active', true)
             ->orderBy('name')
@@ -67,6 +77,10 @@ class RegistrationController extends Controller
 
         $statistics = $this->listingService->statistics($filters);
         $registrationSteps = RegistrationWizardStep::ordered();
+        $columnGroups = $this->columnCatalog->grouped();
+        $eventAdministrators = $this->savedViews->eventAdministrators()
+            ->reject(fn ($admin) => (int) $admin->id === $adminId)
+            ->values();
 
         return view('admin.registrations.index', compact(
             'registrations',
@@ -74,7 +88,12 @@ class RegistrationController extends Controller
             'statuses',
             'statistics',
             'filters',
-            'registrationSteps'
+            'registrationSteps',
+            'savedViewList',
+            'activeView',
+            'visibleColumns',
+            'columnGroups',
+            'eventAdministrators'
         ));
     }
 
