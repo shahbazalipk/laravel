@@ -8,6 +8,7 @@ use App\Forms\Enums\FormConditionOperator;
 use App\Forms\Enums\FormQuestionType;
 use App\Forms\Enums\FormResponseStatus;
 use App\Forms\Models\CustomForm;
+use App\Forms\Models\CustomFormAnswerFile;
 use App\Forms\Models\CustomFormCondition;
 use App\Forms\Models\CustomFormQuestion;
 use App\Forms\Models\CustomFormQuestionOption;
@@ -35,6 +36,8 @@ class AdminRegistrationSavedViewsTest extends TestCase
     private CustomFormQuestion $mealQuestion;
 
     private CustomFormQuestion $allergyQuestion;
+
+    private CustomFormQuestion $photoQuestion;
 
     protected function setUp(): void
     {
@@ -208,6 +211,18 @@ class AdminRegistrationSavedViewsTest extends TestCase
             'type' => FormQuestionType::Text,
             'is_required' => false,
             'sort_order' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->photoQuestion = CustomFormQuestion::query()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'custom_form_id' => $form->id,
+            'key' => 'photo',
+            'label' => 'Photo',
+            'type' => FormQuestionType::Upload,
+            'is_required' => false,
+            'sort_order' => 3,
             'is_active' => true,
         ]);
 
@@ -516,6 +531,44 @@ class AdminRegistrationSavedViewsTest extends TestCase
             ->headers->get('content-disposition'));
     }
 
+    #[Test]
+    public function upload_answers_use_full_clickable_urls_in_the_list_and_csv(): void
+    {
+        $this->makeRegistrationWithAnswers();
+        $file = CustomFormAnswerFile::query()->first();
+        $this->assertNotNull($file);
+        $downloadUrl = route('admin.custom-form-answer-files.download', $file);
+
+        $view = $this->createView(
+            $this->ownerId,
+            'Photo desk',
+            RegistrationSavedViewVisibility::Private,
+            [],
+            ['std:reference', 'q:'.$this->photoQuestion->public_id]
+        );
+
+        $listing = $this->actingAsAdmin($this->ownerId)
+            ->get(route('admin.registrations.index', [
+                'stage' => 'registered',
+                'view' => $view->public_id,
+            ]));
+
+        $listing->assertOk();
+        $listing->assertSee($downloadUrl, false);
+        $listing->assertSee('href="'.$downloadUrl.'"', false);
+        $listing->assertDontSee('>IMG-20260811-WA0160.jpg<', false);
+
+        $csv = $this->actingAsAdmin($this->ownerId)
+            ->get(route('admin.registrations.views.export', [
+                'view' => $view->public_id,
+                'stage' => 'registered',
+            ]))
+            ->streamedContent();
+
+        $this->assertStringContainsString($downloadUrl, $csv);
+        $this->assertStringNotContainsString('IMG-20260811-WA0160.jpg', $csv);
+    }
+
     private function actingAsAdmin(int $adminId)
     {
         $admin = DB::table('organization_admin_users')->where('id', $adminId)->first();
@@ -622,6 +675,24 @@ class AdminRegistrationSavedViewsTest extends TestCase
             'question_label' => 'Allergy notes',
             'question_type' => FormQuestionType::Text,
             'value' => ['value' => 'Peanuts'],
+        ]);
+        $photoAnswer = $response->answers()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'custom_form_question_id' => $this->photoQuestion->id,
+            'question_key' => 'photo',
+            'question_label' => 'Photo',
+            'question_type' => FormQuestionType::Upload,
+            'value' => ['original_name' => 'IMG-20260811-WA0160.jpg'],
+        ]);
+        $photoAnswer->files()->create([
+            'event_id' => 1,
+            'org_id' => 1,
+            'disk' => 'local',
+            'path' => 'custom-form-answers/photo.jpg',
+            'original_name' => 'IMG-20260811-WA0160.jpg',
+            'mime' => 'image/jpeg',
+            'size' => 1200,
         ]);
 
         return $registration;

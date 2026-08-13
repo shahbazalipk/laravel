@@ -35,4 +35,9 @@ class CustomFormAnswerFile extends Model
     {
         return Storage::disk($this->disk)->path($this->path);
     }
+
+    public function downloadUrl(): string
+    {
+        return route('admin.custom-form-answer-files.download', $this);
+    }
 }

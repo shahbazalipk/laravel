@@ -168,6 +168,22 @@ class AdminRegistrationListItem
     }
 
     /**
+     * @return list<string>
+     */
+    public function urlValuesFor(string $key): array
+    {
+        $value = $this->exportValueFor($key);
+        if ($value === '') {
+            return [];
+        }
+
+        return collect(preg_split('/,\s*/', $value) ?: [])
+            ->filter(fn (string $part) => str_starts_with($part, 'http://') || str_starts_with($part, 'https://'))
+            ->values()
+            ->all();
+    }
+
+    /**
      * @param  Registration|RegistrationDraft  $model
      * @return Collection<int, CustomFormResponse>
      */
@@ -208,9 +224,12 @@ class AdminRegistrationListItem
         $type = $answer->question_type?->value ?? '';
 
         if ($type === 'upload') {
-            $names = $answer->files?->pluck('original_name')->filter()->implode(', ');
+            $urls = ($answer->files ?? collect())
+                ->map(fn ($file) => $file->downloadUrl())
+                ->filter()
+                ->implode(', ');
 
-            return $names !== '' ? $names : 'Uploaded file';
+            return $urls !== '' ? $urls : 'Uploaded file';
         }
 
         $options = $answer->question?->options?->keyBy(fn ($option) => (string) $option->value) ?? collect();

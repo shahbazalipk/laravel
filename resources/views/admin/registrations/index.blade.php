@@ -249,7 +249,20 @@
                                         <span class="text-gray-400">—</span>
                                     @endif
                                 @else
-                                    <span class="max-w-xs truncate block" title="{{ $row->valueFor($column['key']) }}">{{ $row->valueFor($column['key']) }}</span>
+                                    @php $cellUrls = $row->urlValuesFor($column['key']); @endphp
+                                    @if($cellUrls !== [])
+                                        <div class="flex max-w-sm flex-col gap-1">
+                                            @foreach($cellUrls as $url)
+                                                <a href="{{ $url }}"
+                                                   class="break-all text-indigo-600 hover:text-indigo-800 hover:underline"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   data-testid="column-link-{{ $column['key'] }}">{{ $url }}</a>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="max-w-xs truncate block" title="{{ $row->valueFor($column['key']) }}">{{ $row->valueFor($column['key']) }}</span>
+                                    @endif
                                 @endif
                             </td>
                         @endforeach
